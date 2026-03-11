@@ -156,7 +156,7 @@ Make the Send Live buttons go red when live and green, when not live
 
 ## v2 Development Plan (adp-show-graphics)
 
-### SESSION 3 — Gallery UI overhaul (in progress)
+### SESSION 3 — Gallery UI overhaul — COMPLETE ✅ (commit af35dd8)
 
 **Functional bugs to fix:**
 - Scale & rotate sliders don't persist → debounced `pushSelectCtrl` needed in `onScaleInput`/`onRotateInput`
@@ -215,7 +215,23 @@ Make the Send Live buttons go red when live and green, when not live
 
 ---
 
-### SESSION 4 — Editor modal + Credits output pages
+### SESSION 4 — UI refinements — PARTIAL ✅ (last commit: 96e33ad)
+
+**Done:**
+- Center panel buttons larger (pvtgl + lvbtn), ctr-group cards, snap-to-grid checkboxes
+- Removed "Send image to" block (per-card slot buttons replace it)
+- Live Slots section non-collapsible
+- Canvas H = exact 16:9 (640×360px), V = exact 9:16 (202×360px), border-radius:0
+- Sidebar: brighter bg (surf3), monitors H+V side-by-side per group
+
+**Next (Session 5):**
+- Step 5: Manipulation mode toggle ("Manipulate GFX" red / "Manipulate BUG" blue; sliders disabled when off)
+- Step 6: Image tiles 30% bigger + ✏ opens editor modal (not just rename)
+- Step 7: Full Editor modal (crop/trim/KO/rotation, live preview, save-as-copy)
+
+---
+
+### SESSION 5 — Editor modal + advanced features
 
 **Editor modal (open via ✏ on any image card or layout):**
 - Large modal ~70% screen width
