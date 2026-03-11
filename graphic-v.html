@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; }
+  #img {
+    position: absolute;
+    transform-origin: center center;
+    transition: opacity 0.3s;
+    object-fit: contain;
+  }
+  #img.hidden { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="stage"><img id="img" class="hidden"></div>
+<script>
+  const WORKER = 'https://adp-show-graphics.mohn-edgar.workers.dev'; // ← fill in after deploy
+  const LAYER  = 'graphics';
+  const SLOT   = 'v';
+
+  const params  = new URLSearchParams(location.search);
+  const EVENT   = params.get('event') || 'default';
+
+  const stage = document.getElementById('stage');
+  const img   = document.getElementById('img');
+  let currentKey = null;
+  let currentRes = null;
+
+  function applyResolution(res) {
+    if (currentRes && currentRes.w === res.w && currentRes.h === res.h) return;
+    currentRes = res;
+    document.documentElement.style.width  = res.w + 'px';
+    document.documentElement.style.height = res.h + 'px';
+    document.body.style.width  = res.w + 'px';
+    document.body.style.height = res.h + 'px';
+    stage.style.width  = res.w + 'px';
+    stage.style.height = res.h + 'px';
+    img.style.width  = res.w + 'px';
+    img.style.height = res.h + 'px';
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`);
+      const state = await r.json();
+      if (state.resolution) applyResolution(state.resolution);
+      if (!state.live || !state.key) { img.classList.add('hidden'); currentKey = null; return; }
+      if (state.key !== currentKey) {
+        currentKey = state.key;
+        img.classList.add('hidden');
+        img.onload = () => img.classList.remove('hidden');
+        img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
+      }
+      const s = (state.scale || 100) / 100;
+      img.style.objectFit = state.fit === 'cover' ? 'cover' : 'contain';
+      img.style.transform = `translate(-50%, -50%) scale(${s})`;
+      img.style.left = (state.x || 50) + '%';
+      img.style.top  = (state.y || 50) + '%';
+    } catch(e) {}
+  }
+
+  poll();
+  setInterval(poll, 1500);
+</script>
+</body>
+</html>
