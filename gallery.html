@@ -246,15 +246,6 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .tag-dropdown .td-item:hover { background: var(--surf2); }
 .tag-dropdown .td-item input { accent-color: var(--blue); cursor: pointer; }
 
-/* ── Target slot selector ────────────────────────────────────────────────── */
-#target-bar { display: flex; gap: 4px; flex-wrap: wrap; }
-.target-btn {
-  padding: 7px 10px; border-radius: 5px; border: 1px solid var(--border);
-  background: var(--bg); color: var(--muted); font-size: 12px; cursor: pointer;
-  width: 100%; text-align: left; transition: all .15s;
-}
-.target-btn:hover { color: var(--text); border-color: var(--text); }
-.target-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
 /* ── Layouts ─────────────────────────────────────────────────────────────── */
 .layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
@@ -359,37 +350,49 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
+:root { --canvas-h: 360px; }
 .slots-panel {
-  display: grid;
-  grid-template-columns: 2fr 190px 1.2fr 148px;
-  align-items: start;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
 }
 .slot-col {
   display: flex; flex-direction: column;
   border-right: 1px solid var(--border);
-  min-width: 0;
+  flex-shrink: 0;
 }
+/* H column width = canvas width */
+.slot-col.col-h { width: calc(var(--canvas-h) * 16 / 9); }   /* 640px */
+/* V column width = canvas width */
+.slot-col.col-v { width: calc(var(--canvas-h) * 9 / 16); }   /* ~202px */
+
 .slot-col-hdr {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; background: var(--surf3);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
 .slot-col-title { font-size: 11px; font-weight: 700; flex: 1; color: var(--text); text-transform: uppercase; letter-spacing: .05em; }
-.ctrl-tabs { display: flex; gap: 3px; }
+.ctrl-tabs { display: flex; gap: 6px; }
 .ctrl-tab {
-  padding: 3px 8px; font-size: 11px; border-radius: 4px;
+  padding: 5px 12px; font-size: 12px; font-weight: 700; border-radius: 5px;
   background: var(--surf2); border: 1px solid var(--border);
-  color: var(--muted); cursor: pointer; white-space: nowrap;
+  color: var(--muted); cursor: pointer; white-space: nowrap; letter-spacing: .04em;
+  transition: all .15s;
 }
+.ctrl-tab:hover { color: var(--text); }
 .ctrl-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-/* Composite canvas */
+/* Composite canvas — exact aspect ratio, no rounding, pixel-perfect */
 .sp-composite {
   position: relative; background: #0a0a0a; flex-shrink: 0;
-  height: 360px; overflow: hidden; cursor: crosshair;
-  box-shadow: inset 0 0 0 1px var(--border); width: 100%;
+  height: var(--canvas-h); width: calc(var(--canvas-h) * 16 / 9); /* 640px */
+  overflow: hidden; cursor: crosshair;
+  box-shadow: inset 0 0 0 1px var(--border);
+  border-radius: 0;
 }
-.sp-composite.portrait { height: 360px; }
+.sp-composite.portrait {
+  height: var(--canvas-h); width: calc(var(--canvas-h) * 9 / 16); /* ~202px */
+}
 .sp-composite .sp-layer-img {
   position: absolute; width: 100%; height: 100%; object-fit: contain;
   transform-origin: center center; transition: opacity .2s;
@@ -418,6 +421,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   display: flex; flex-direction: column;
   align-self: stretch; overflow-y: auto;
   gap: 3px;
+  flex: 0 0 190px; width: 190px;
 }
 .ctr-group {
   display: flex; flex-direction: column; gap: 3px;
@@ -478,8 +482,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 
 /* Sidebar monitors */
 .sidebar-col {
-  background: var(--bg); overflow-y: auto; padding: 6px 5px;
+  background: var(--surf3); overflow-y: auto; padding: 6px 5px;
   display: flex; flex-direction: column; gap: 5px; align-self: stretch;
+  flex: 1; min-width: 140px;
+  border-left: 1px solid var(--border);
 }
 .sidebar-title {
   font-size: 9px; font-weight: 700; text-transform: uppercase;
@@ -546,8 +552,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 
 <!-- SLOT SECTION -->
 <div class="section" id="slots-section">
-  <div class="sec-hdr open" onclick="toggleSection('slots')">
-    <span class="chevron">›</span>
+  <div class="sec-hdr open" style="cursor:default">
     <h2>🎛 Live Slots</h2>
   </div>
   <div class="sec-body" id="sec-body-slots">
@@ -556,7 +561,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
     <div class="slots-panel">
 
       <!-- ── H COLUMN ── -->
-      <div class="slot-col">
+      <div class="slot-col col-h">
         <div class="slot-col-hdr">
           <span class="slot-col-title">H — Landscape</span>
           <div class="ctrl-tabs">
@@ -678,21 +683,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           </div>
         </div>
 
-        <!-- Target selector -->
-        <div class="ctr-group">
-          <div class="ctr-title">Send image to →</div>
-          <div id="target-bar" style="display:flex;flex-direction:column;gap:3px">
-            <button class="target-btn active" data-target="graphics:h" onclick="setTarget('graphics:h')">🖼 GFX H</button>
-            <button class="target-btn" data-target="graphics:v" onclick="setTarget('graphics:v')">🖼 GFX V</button>
-            <button class="target-btn" data-target="bugs:h" onclick="setTarget('bugs:h')">🔲 Bug H</button>
-            <button class="target-btn" data-target="bugs:v" onclick="setTarget('bugs:v')">🔲 Bug V</button>
-          </div>
-        </div>
-
       </div><!-- /CENTER -->
 
       <!-- ── V COLUMN ── -->
-      <div class="slot-col" style="border-right:none">
+      <div class="slot-col col-v" style="border-right:none">
         <div class="slot-col-hdr">
           <span class="slot-col-title">V — Portrait</span>
           <div class="ctrl-tabs">
