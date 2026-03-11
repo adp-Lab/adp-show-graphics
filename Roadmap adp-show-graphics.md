@@ -143,3 +143,140 @@ Please suggest the repository structure.
 - Name data source: pull from signup sheet (API endpoint to be defined)
 - Contributor data: posted via Panel Liaison tools + Tlaloc Traversal → Worker endpoint (e.g. PUT /credits?event=X)
 - Worker stores credit pages in KV; credits output page polls and renders
+
+
+Add a rotation slider to the SLOTs as well
+
+
+Make the preview buttons toggles, to have everything or also nothing in preview, like desired
+Make the Send Live buttons go red when live and green, when not live
+
+
+_____________________
+
+
+
+
+Before last major changes to v2
+
+Got everything — mock-up, current v2 screenshots, and the Dashmaster multiview. Here's my full analysis before we touch anything.
+
+What I see — current state
+v2 gallery works — the Worker is live, images load, LIVE buttons push correctly to outputs. The Dashmaster confirms 4 separate output URLs are working (Graphics H/V, BUGs H/V). Good foundation.
+
+Issues visible in the screenshots:
+
+Slot canvas proportion wrong — Graphics H preview shows big black bands top and bottom (image floating in a near-square box). The canvas wrapper has a fixed height regardless of H vs V format. This makes the preview inaccurate.
+
+LIVE button color inverted — currently green when live. The mock-up (and broadcast logic) says: red = on air, green = preview/ready, grey = empty. Red = danger/hot is universal in broadcast.
+
+Layout is vertical/stacked — current v2 stacks 4 tall cards. The mock-up proposes a completely different structure.
+
+What the mock-up proposes
+3-column layout + right sidebar:
+
+Far Left	Center	Far Right	Sidebar
+H slot preview (large)	Preview state buttons + Live buttons	V slot preview (large)	Small output monitors
+Center panel:
+
+Row 1 (Preview state): Bug H Preview Bug V Preview GFX H Preview GFX V Preview — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
+Row 2 (Individual live): Bug H LIVE Bug V LIVE / GFX H LIVE GFX V LIVE / Credits H LIVE Credits V LIVE
+Row 3 (Combined): BUG H/V LIVE GFX H/V LIVE / Credits H/V LIVE
+Sidebar (far right):
+
+QR/Bugs OUTPUT: 2 small windows (Klick to magnify)
+Graphics OUTPUT: 2 small windows
+Credits OUTPUT: 2 small windows
+Per-slot additions:
+
+URL bar + open/copy buttons at top of each slot area
+Rotate slider (new) under each slot preview
+Separate Grid settings per slot
+Button states (corrected):
+
+LIVE = RED
+Preview active/ready = GREEN
+Empty = grey
+My questions before starting
+1. Credits feature — the mock-up includes Credits H/V LIVE buttons and Credits OUTPUT section. Credits require new output pages + a Worker endpoint. Should I include credits in this session, or do layout + controls first and credits separately?
+
+2. Output monitor sidebar — the small "Klick to magnify" windows: are these meant to be live iframes of the actual output URLs? They'd auto-update since the output pages poll every 1.5s. This would work. Or just static screenshots? I'd recommend live iframes — they'd be your real Dashmaster alternative built into the gallery.
+
+3. Scope of session — the layout redesign is significant (rewriting the top half of gallery.html). My suggestion for this session:
+
+Fix canvas proportion
+Redesign the slot/control panel section (3-column layout)
+Fix LIVE button colors
+Add rotate slider
+Add output monitor sidebar
+Credits in a separate session
+Does that scope work, or do you want credits included now?
+
+4. The image library below — stays as-is? I don't see changes to the image library, BG refs, tags sections in the mock-up.
+
+cool well perceived.
+Sidebar Output monitor: 
+Yes, please use live iframes and make all 6 previews be magnifying to about 60% screen realestate (in proportion).
+Credits feature in separate session.
+I think, I would need an extra category for the credit assets.
+Please create it and then le´ts see, how we proceed.
+you have this in memory/ access, right?
+"Credits should not scroll... paged is better. Fade in is nice, image support on at least one page is important for the Zoom branding that I think we've agreed to use. We could pull names from the signup sheet for most... Contributors we'd need to get from Mukana, but we could leverage my Panel Liason tools to post contributors and Tlaloc Traversal to an endpoint that you provide"
+Pleas ewrite to memory before proceeding.
+First, updating memory with the credits details. Then I'll read gallery.html before touching anything.
+
+
+Good, I have the full picture. Here's my plan before writing a single line:
+
+Architecture change for slots:
+
+H and V canvas each show ONE layer at a time (switchable via layer tabs: [GFX H | Bug H] and [GFX V | Bug V])
+Center panel: 4 preview status buttons (grey/green/red) + individual LIVE grid + H/V combined + Clear grid
+Right sidebar: 4 live iframes (Bug H, Bug V, GFX H, GFX V) — scaled via transform:scale() based on resolution settings, click to magnify to 60% screen
+Canvas fix: remove flex:1 from .slot-preview-wrap — that's what's causing the black bands (flex grows beyond aspect-ratio)
+LIVE colors: grey = empty, green = has content (not live), red = on air
+Rotate slider: stored in slot state, applied in gallery + output pages
+Credits added to permanentCats
+Starting now. I'll do it in 4 clean edits.
+
+Edit 1 — CSS: replace slot section styles, add new ones
+
+Edit gallery.html
+Edit failed
+wait
+Stopping. What's up?
+
+you´re right in general- more or less. please pay extra attention to the mock-up again.  
+I want to be able to preview both layers togeter as well. Toggle on and off how often i want, see only bug, only gfx, both or nothing in the peview slots.
+Le´ts go back, if this wasn´t clear (because right before the wait it seemed, you missed some parts.
+I will add/ correct some parts.
+3-column layout + right sidebar:
+
+Far Left	Center	Far Right	Sidebar
+H slot preview (large)	Preview state buttons + Live buttons	V slot preview (large)	Small output monitors
+Center panel:
+
+Row 1 (Preview state): Bug H Preview Bug V Preview GFX H Preview GFX V Preview — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
+Row 2 (Individual live): Bug H LIVE Bug V LIVE / GFX H LIVE GFX V LIVE / Credits H LIVE Credits V LIVE — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
+Row 3 (Combined): BUG H/V LIVE GFX H/V LIVE / Credits H/V LIVE — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
+Sidebar (far right):
+
+QR/Bugs OUTPUT: 2 small windows (Klick to magnify)
+Graphics OUTPUT: 2 small windows (Klick to magnify)
+Credits OUTPUT: 2 small windows (Klick to magnify)
+
+Per-slot additions:
+
+URL bar + open/copy buttons at top of each slot area
+Rotate slider (new) under each slot preview
+Separate Grid settings per slot, make Grid and BG Ref toggles better visible
+Show less
+sorry, was not ready, please add this, answer and proceed.
+Maybe we should do a save in this process as well, because 78% usage before auto-compacting.
+
+Button states (corrected):
+
+LIVE = RED
+Preview active/ready = GREEN
+Empty = grey
+Clear. The key correction: the H/V previews are composite — both layers visible simultaneously, with 4 toggle buttons to show/hide each layer independently. Drag/scale/rotate controls affect the active control layer (selected via small tabs per column). Let me save memory, then write the new gallery.html in one shot.
