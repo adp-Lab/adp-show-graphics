@@ -129,3 +129,17 @@ Name the v2 of the tool "adp-show-graphics"
 I created the corresponding folder with roadmap file in Ponyhof
 
 Please suggest the repository structure.
+
+---
+
+## Credits feature (note from collaborator)
+
+"Credits should not scroll... paged is better. Fade in is nice, image support on at least one page is important for the Zoom branding that I think we've agreed to use. We could pull names from the signup sheet for most... Contributors we'd need to get from Mukana, but we could leverage my Panel Liason tools to post contributors and Tlaloc Traversal to an endpoint that you provide"
+
+→ Implementation thoughts:
+- Credits as a separate output page (credits-h.html / credits-v.html) or as a layer within the existing layer system
+- Paged display with fade-in transitions between pages (not continuous scroll)
+- At least one page supports a full background image (Zoom branding)
+- Name data source: pull from signup sheet (API endpoint to be defined)
+- Contributor data: posted via Panel Liaison tools + Tlaloc Traversal → Worker endpoint (e.g. PUT /credits?event=X)
+- Worker stores credit pages in KV; credits output page polls and renders
