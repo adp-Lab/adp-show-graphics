@@ -46,7 +46,38 @@ Layer 1 — Bug / QR codes        → bug-h.html / bug-v.html
 Layer 2 — Graphics              → graphic-h.html / graphic-v.html
 ```
 
-Each layer is independently controlled. Both layers are always transparent until **SEND LIVE** is active.
+Each layer is independently controlled. Output is always transparent until **SEND LIVE** is active.
+
+---
+
+## Gallery — Live Slots panel
+
+The slots panel is a 4-column layout:
+
+```
+[ H column ] [ Center panel ] [ V column ] [ Output monitors ]
+```
+
+### H / V columns
+- **Composite preview canvas** — both Graphics and Bug layers visible simultaneously
+- **Active control tabs** (GFX / Bug) — select which layer the drag, scale, rotate and fit controls affect; both layers remain visible
+- **Scale slider** — 10–300%
+- **Rotate slider** — –180° to +180°; applied in both gallery preview and output pages
+- **Fit / Cover / Fill** mode
+- **URL bar** — output URLs for GFX and Bug per format, with ↗ open and 📋 copy
+- **Grid** — toggle, 10×/20×/40×/80× divisions, snap-to-grid
+- **BG Reference** — enable toggle + opacity slider (gallery preview only)
+
+### Center panel
+- **Preview toggles** (Bug H · Bug V · GFX H · GFX V) — show/hide each layer in the canvas independently
+- **SEND LIVE buttons** — 4 individual + 2 combined (H+V per layer)
+  - Grey = empty slot · Green = content loaded, not live · Red = on air
+- **Send image to →** — target selector, determines which slot GFX H/V / Bug H/V buttons on image tiles send to
+- **Clear slot** — 4 individual clear buttons
+
+### Output monitors sidebar
+- 4 live scaled iframes (GFX H/V, Bug H/V) + 2 Credits placeholders
+- Click any monitor to magnify to ~60% screen
 
 ---
 
@@ -54,12 +85,24 @@ Each layer is independently controlled. Both layers are always transparent until
 
 1. Open gallery → enter Worker URL + API key
 2. Select event from dropdown (or create one)
-3. Upload images via 📤 or drag from Finder
-4. Select target slot (Graphics H/V · Bug H/V)
-5. Click image → appears in slot preview
-6. Click **SEND LIVE** → image goes live on output URL
+3. Upload images via 📤 or drag from Finder onto the window
+4. In the image library, click **GFX H / GFX V / Bug H / Bug V** on any tile to send it to that slot
+   - Button highlights when the image is active in that slot — click again to clear
+5. Drag image in the slot preview canvas to reposition; use Scale / Rotate / Fit controls
+6. Click **SEND LIVE** in the center panel → image goes live on the output URL
 7. Click **SEND LIVE** again → output goes transparent
 8. Save layouts to recall full slot states instantly
+
+---
+
+## Image tiles
+
+Each image card shows:
+- Thumbnail (fixed height, dark background, preserves aspect ratio for both H and V images)
+- Name — double-click to rename inline
+- Tag chips (blue) — click × to remove; 🏷 button opens tag dropdown
+- **GFX H · GFX V · Bug H · Bug V** — slot toggle buttons (highlighted = currently in that slot)
+- ✏️ Rename · 🗑 Delete
 
 ---
 
@@ -89,7 +132,7 @@ GET https://adp-show-graphics.mohn-edgar.workers.dev/go
   &layer=graphics
   &slot=h
   &key=IMAGE_KEY
-  &x=50&y=50&scale=100&fit=contain
+  &x=50&y=50&scale=100&fit=contain&rotate=0
 ```
 
 `slot=both` sets H and V simultaneously.
@@ -153,6 +196,7 @@ npx wrangler secret put API_KEY
   "x": 50,
   "y": 50,
   "scale": 100,
+  "rotate": 0,
   "fit": "contain",
   "live": false,
   "updatedAt": "2026-03-11T00:00:00Z"

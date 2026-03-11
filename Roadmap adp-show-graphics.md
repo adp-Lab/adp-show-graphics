@@ -280,3 +280,63 @@ LIVE = RED
 Preview active/ready = GREEN
 Empty = grey
 Clear. The key correction: the H/V previews are composite — both layers visible simultaneously, with 4 toggle buttons to show/hide each layer independently. Drag/scale/rotate controls affect the active control layer (selected via small tabs per column). Let me save memory, then write the new gallery.html in one shot.
+
+
+
+
+_______________
+
+
+
+Progress saved and pushed. Memory updated.
+
+Session state:
+
+CSS for new slots panel: ✅ committed
+Slots HTML + JS: pending (was mid-edit when you stopped me)
+Tile redesign: decisions locked, not started
+Implementation plan for tiles — confirmed:
+
+Element	Behavior
+Thumbnail	Fixed height, dark bg, object-fit:contain, click = preview
+Name	Truncated; double-click = inline edit field
+Tag chips	Blue style, visible in card, × to remove
+🏷 button	Floating dropdown, checkboxes per category
+GFX H / GFX V / Bug H / Bug V	4 compact toggle buttons, highlighted = in that slot
+✏️	Rename (same as inline double-click, keeps it accessible)
+🗑	Delete
+Next up — I'll do the full implementation in this order:
+
+Tile CSS + buildImgCard rewrite
+New tile JS (slot toggles, tag dropdown, inline rename)
+Slots panel HTML + full slot JS (composite canvas, drag, controls, monitors)
+Output pages rotate fix
+Commit everything
+
+
+
+
+Progress saved and pushed. Memory updated.
+
+Session state:
+
+CSS for new slots panel: ✅ committed
+Slots HTML + JS: pending (was mid-edit when you stopped me)
+Tile redesign: decisions locked, not started
+Implementation plan for tiles — confirmed:
+
+Element	Behavior
+Thumbnail	Fixed height, dark bg, object-fit:contain, click = preview
+Name	Truncated; double-click = inline edit field
+Tag chips	Blue style, visible in card, × to remove
+🏷 button	Floating dropdown, checkboxes per category
+GFX H / GFX V / Bug H / Bug V	4 compact toggle buttons, highlighted = in that slot
+✏️	Rename (same as inline double-click, keeps it accessible)
+🗑	Delete
+Next up — I'll do the full implementation in this order:
+
+Tile CSS + buildImgCard rewrite
+New tile JS (slot toggles, tag dropdown, inline rename)
+Slots panel HTML + full slot JS (composite canvas, drag, controls, monitors)
+Output pages rotate fix
+Commit everything
