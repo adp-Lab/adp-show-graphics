@@ -1,0 +1,21 @@
+name = "adp-show-graphics"
+main = "worker/index.js"
+compatibility_date = "2024-01-01"
+
+r2_buckets = [
+  { binding = "BUCKET", bucket_name = "adp-show-graphics" }
+]
+
+kv_namespaces = [
+  { binding = "KV", id = "af2c176ce7d0465ba36d314cfc808b5c" }
+]
+
+[vars]
+ALLOWED_ORIGIN = "https://adp-lab.github.io"
+
+# After setup:
+# 1. npx wrangler kv namespace create adp-show-graphics
+#    → copy the id above into PLACEHOLDER_KV_ID
+# 2. npx wrangler r2 bucket create adp-show-graphics
+# 3. npx wrangler secret put API_KEY
+# 4. npx wrangler deploy

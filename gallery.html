@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>adp-show-graphics</title>
+<style>
+/* ── Reset & Variables ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #141414;
+  --surf:     #1e1e1e;
+  --surf2:    #282828;
+  --surf3:    #323232;
+  --border:   #3a3a3a;
+  --text:     #e0e0e0;
+  --muted:    #888;
+  --blue:     #4a9eff;
+  --green:    #4caf50;
+  --red:      #e53935;
+  --orange:   #ff9800;
+  --yellow:   #ffeb3b;
+  --live:     #00e676;
+}
+body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; min-height: 100vh; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+#app { max-width: 1400px; margin: 0 auto; padding: 0 16px 80px; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+#hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--surf); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+#hdr h1 { font-size: 15px; font-weight: 700; letter-spacing: .04em; color: var(--blue); white-space: nowrap; }
+#hdr select { background: var(--surf2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; font-size: 13px; }
+#event-add-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
+#event-add-btn:hover { color: var(--text); border-color: var(--text); }
+.hdr-spacer { flex: 1; }
+#auth-status { font-size: 12px; color: var(--muted); }
+#auth-status.ok { color: var(--green); }
+
+/* ── Auth gate ───────────────────────────────────────────────────────────── */
+#auth-gate { max-width: 420px; margin: 80px auto; background: var(--surf); border: 1px solid var(--border); border-radius: 10px; padding: 32px; text-align: center; }
+#auth-gate h2 { margin-bottom: 8px; }
+#auth-gate p { color: var(--muted); margin-bottom: 20px; font-size: 13px; }
+#auth-gate input { width: 100%; padding: 10px 12px; background: var(--surf2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; margin-bottom: 12px; }
+.worker-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.worker-row input { flex: 1; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: opacity .15s; white-space: nowrap; }
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-blue   { background: var(--blue);   color: #fff; }
+.btn-green  { background: var(--green);  color: #fff; }
+.btn-red    { background: var(--red);    color: #fff; }
+.btn-orange { background: var(--orange); color: #000; }
+.btn-gray   { background: var(--surf3);  color: var(--text); border: 1px solid var(--border); }
+.btn-live   { background: var(--surf3);  color: var(--muted); border: 1px solid var(--border); font-weight: 700; letter-spacing: .06em; }
+.btn-live.on { background: var(--live); color: #000; border-color: var(--live); }
+.btn-sm { padding: 4px 8px; font-size: 12px; }
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.section { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; margin-top: 16px; overflow: hidden; }
+.sec-hdr { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
+.sec-hdr h2 { font-size: 14px; font-weight: 600; flex: 1; }
+.sec-hdr .chevron { color: var(--muted); transition: transform .2s; }
+.sec-hdr.open .chevron { transform: rotate(90deg); }
+.sec-body { padding: 14px; }
+.sec-body.collapsed { display: none; }
+
+/* ── Slot Section ────────────────────────────────────────────────────────── */
+#slots-section .sec-body { padding: 0; }
+.layer-block { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.layer-block:last-child { border-bottom: none; }
+.layer-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+
+.slots-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.slot-card {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.slot-card-hdr { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-bottom: 1px solid var(--border); background: var(--surf3); }
+.slot-card-hdr .slot-label { font-size: 12px; font-weight: 600; flex: 1; }
+.slot-card-hdr .slot-url { font-size: 10px; color: var(--muted); cursor: pointer; }
+.slot-card-hdr .slot-url:hover { color: var(--text); }
+
+.slot-preview-wrap {
+  position: relative; background: #0a0a0a; flex: 1;
+  aspect-ratio: 16/9; overflow: hidden; cursor: crosshair;
+}
+.slot-preview-wrap.portrait { aspect-ratio: 9/16; }
+.slot-preview-wrap img.sp-img { position: absolute; width: 100%; height: 100%; object-fit: contain; transition: opacity .2s; }
+.slot-preview-wrap img.sp-img.hidden { opacity: 0; }
+.slot-preview-wrap .sp-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--surf3); font-size: 12px; }
+.slot-preview-wrap .sp-bg { position: absolute; inset: 0; z-index: 0; }
+.slot-preview-wrap .sp-bg img { width: 100%; height: 100%; object-fit: cover; }
+.sp-crosshair { position: absolute; pointer-events: none; z-index: 10; }
+.sp-crosshair::before, .sp-crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,.5); }
+.sp-crosshair::before { width: 1px; height: 14px; top: -7px; left: 0; }
+.sp-crosshair::after  { width: 14px; height: 1px; top: 0; left: -7px; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; }
+.live-dot.on { background: var(--live); box-shadow: 0 0 6px var(--live); }
+
+.slot-controls { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.scale-row { display: flex; align-items: center; gap: 6px; }
+.scale-row input[type=range] { flex: 1; accent-color: var(--blue); }
+.scale-val { font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
+.fit-row { display: flex; gap: 4px; }
+.fit-btn { flex: 1; padding: 4px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); border-radius: 4px; cursor: pointer; text-align: center; }
+.fit-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.slot-action-row { display: flex; gap: 4px; }
+.slot-action-row .btn { flex: 1; justify-content: center; }
+
+/* ── Image Grid ──────────────────────────────────────────────────────────── */
+.lib-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 0 10px; }
+#search-input { flex: 1; min-width: 160px; padding: 7px 10px; background: var(--surf2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; }
+#search-input::placeholder { color: var(--muted); }
+.filter-bar { display: flex; gap: 4px; flex-wrap: wrap; padding-bottom: 8px; }
+.flt-btn { padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: var(--surf2); color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.flt-btn:hover { color: var(--text); }
+.flt-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.img-card {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
+  overflow: hidden; cursor: pointer; position: relative; transition: border-color .15s;
+}
+.img-card:hover { border-color: var(--blue); }
+.img-card.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
+.img-card .thumb-wrap { aspect-ratio: 16/9; background: #0a0a0a; overflow: hidden; position: relative; }
+.img-card.portrait-card .thumb-wrap { aspect-ratio: 9/16; }
+.img-card .thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.img-card .card-foot { padding: 5px 7px; }
+.img-card .card-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.img-card .card-name:hover { overflow: visible; white-space: normal; word-break: break-word; }
+.img-card .card-tags { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+.img-card .tag-pill { font-size: 9px; padding: 1px 5px; background: var(--surf3); border-radius: 8px; color: var(--muted); }
+.img-card .card-actions { display: flex; gap: 3px; margin-top: 5px; }
+.img-card .card-actions button { flex: 1; padding: 3px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
+.img-card .card-actions button:hover { background: var(--blue); border-color: var(--blue); }
+.img-card .card-cb { position: absolute; top: 5px; left: 5px; display: none; }
+.img-card .card-cb input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--orange); }
+.select-mode .img-card .card-cb { display: block; }
+
+/* ── Target slot selector ────────────────────────────────────────────────── */
+#target-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.target-btn {
+  padding: 5px 12px; border-radius: 5px; border: 1px solid var(--border);
+  background: var(--surf2); color: var(--muted); font-size: 12px; cursor: pointer;
+}
+.target-btn:hover { color: var(--text); }
+.target-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* ── Layouts ─────────────────────────────────────────────────────────────── */
+.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.layout-card {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
+  overflow: hidden; cursor: pointer; transition: border-color .15s;
+}
+.layout-card:hover { border-color: var(--blue); }
+.layout-thumb { aspect-ratio: 16/9; background: #0a0a0a; position: relative; overflow: hidden; }
+.layout-thumb .lt-h { position: absolute; inset: 0; }
+.layout-thumb .lt-h img { width: 100%; height: 100%; object-fit: contain; }
+.layout-name { font-size: 12px; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layout-actions { display: flex; gap: 3px; padding: 4px 6px; border-top: 1px solid var(--border); }
+.layout-actions button { flex: 1; padding: 3px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
+.layout-actions button:hover { background: var(--blue); border-color: var(--blue); }
+
+/* ── BG References ───────────────────────────────────────────────────────── */
+.bg-ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.bg-ref-card { background: var(--surf2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.bg-ref-thumb { aspect-ratio: 16/9; background: #0a0a0a; overflow: hidden; }
+.bg-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.bg-ref-foot { padding: 6px 8px; display: flex; align-items: center; gap: 4px; }
+.bg-ref-foot .bg-name { flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgl { position: relative; display: inline-block; width: 32px; height: 17px; }
+.tgl input { opacity: 0; width: 0; height: 0; }
+.tgl-track { position: absolute; inset: 0; background: var(--surf3); border-radius: 17px; cursor: pointer; transition: background .2s; }
+.tgl input:checked + .tgl-track { background: var(--blue); }
+.tgl-track::after { content: ''; position: absolute; left: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.tgl input:checked + .tgl-track::after { transform: translateX(15px); }
+.opacity-row { display: flex; align-items: center; gap: 6px; padding: 0 8px 8px; }
+.opacity-row input { flex: 1; accent-color: var(--blue); }
+.opacity-row span { font-size: 11px; color: var(--muted); width: 30px; }
+
+/* ── Tag Management ──────────────────────────────────────────────────────── */
+.cat-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.cat-row { display: flex; align-items: center; gap: 6px; background: var(--surf2); padding: 5px 8px; border-radius: 5px; border: 1px solid var(--border); }
+.cat-row span { flex: 1; font-size: 13px; }
+.cat-row button { padding: 3px 7px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
+.cat-row button:hover { background: var(--red); border-color: var(--red); }
+.add-cat-row { display: flex; gap: 6px; }
+.add-cat-row input { flex: 1; padding: 6px 8px; background: var(--surf2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; font-size: 13px; }
+.kw-rules { margin-top: 10px; }
+.kw-rule-row { display: flex; align-items: center; gap: 6px; background: var(--surf2); padding: 5px 8px; border-radius: 5px; border: 1px solid var(--border); margin-bottom: 4px; }
+.kw-rule-row .kw-cat { font-size: 12px; font-weight: 600; width: 120px; color: var(--blue); }
+.kw-rule-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 3px 6px; border-radius: 3px; font-size: 12px; }
+
+/* ── Settings modal ──────────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal-overlay.hidden { display: none; }
+.modal { background: var(--surf); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; position: relative; }
+.modal h3 { margin-bottom: 16px; font-size: 15px; }
+.modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+.modal-close:hover { color: var(--text); }
+.form-row { margin-bottom: 12px; }
+.form-row label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.form-row input, .form-row select { width: 100%; padding: 7px 10px; background: var(--surf2); border: 1px solid var(--border); color: var(--text); border-radius: 5px; font-size: 13px; }
+.res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.preset-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+.preset-btn { padding: 3px 8px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 4px; cursor: pointer; }
+.preset-btn:hover { background: var(--blue); border-color: var(--blue); }
+
+/* ── Upload modal ────────────────────────────────────────────────────────── */
+.drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 24px; text-align: center; color: var(--muted); cursor: pointer; margin-bottom: 12px; transition: border-color .2s; }
+.drop-zone.drag-over { border-color: var(--blue); color: var(--text); }
+.ul-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.ul-chip { padding: 3px 9px; border-radius: 12px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); font-size: 12px; cursor: pointer; }
+.ul-chip.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+#ul-progress { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 18px; }
+
+/* ── Preview modal ───────────────────────────────────────────────────────── */
+#preview-modal .modal { width: 800px; }
+#preview-modal img { width: 100%; border-radius: 6px; }
+#preview-modal .prev-info { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+#preview-modal .prev-name { flex: 1; font-weight: 600; }
+
+/* ── Window drop overlay ─────────────────────────────────────────────────── */
+#win-drop-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(74,158,255,.12); border: 3px dashed var(--blue);
+  pointer-events: none; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--blue);
+}
+#win-drop-overlay.visible { display: flex; }
+
+/* ── Floating selection bar ──────────────────────────────────────────────── */
+#sel-bar {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  background: var(--surf); border: 1px solid var(--border); border-radius: 30px;
+  padding: 8px 16px; display: none; align-items: center; gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5); z-index: 300;
+}
+#sel-bar.visible { display: flex; }
+#sel-bar-count { font-size: 13px; color: var(--muted); }
+
+/* ── Help modal ──────────────────────────────────────────────────────────── */
+#help-modal .modal { width: 700px; }
+.help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.help-item { background: var(--surf2); border-radius: 6px; padding: 10px 12px; }
+.help-item h4 { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 4px; }
+.help-item p, .help-item li { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.help-item ul { padding-left: 14px; }
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+.empty-state { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+.tag-pill-big { padding: 2px 8px; border-radius: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); font-size: 11px; }
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<div id="hdr">
+  <h1>adp-show-graphics</h1>
+  <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
+  <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
+  <div class="hdr-spacer"></div>
+  <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
+  <button class="btn btn-gray btn-sm" onclick="openHelp()">❓ Help</button>
+  <span id="auth-status">●  Not connected</span>
+</div>
+
+<!-- ── AUTH GATE ──────────────────────────────────────────────────────────── -->
+<div id="auth-gate">
+  <h2>Connect to Worker</h2>
+  <p>Enter your Worker URL and API key to get started.</p>
+  <div class="worker-row">
+    <input type="text" id="worker-url-input" placeholder="https://adp-show-graphics.xxx.workers.dev">
+    <button class="btn btn-gray" onclick="clearWorker()">✕</button>
+  </div>
+  <input type="password" id="api-key-input" placeholder="API Key" onkeydown="if(event.key==='Enter')authenticate()">
+  <button class="btn btn-blue" style="width:100%;justify-content:center;margin-top:4px" onclick="authenticate()">Connect</button>
+  <div id="auth-error" style="color:var(--red);font-size:12px;margin-top:8px"></div>
+</div>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
+<div id="main" hidden>
+<div id="app">
+
+<!-- SLOT SECTION -->
+<div class="section" id="slots-section">
+  <div class="sec-hdr open" onclick="toggleSection('slots')">
+    <h2>🎛 Live Slots</h2>
+    <span class="chevron">›</span>
+  </div>
+  <div class="sec-body" id="sec-body-slots">
+
+    <!-- Target selector -->
+    <div style="padding:10px 14px 0">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Send image to →</div>
+      <div id="target-bar">
+        <button class="target-btn active" data-target="graphics:h" onclick="setTarget('graphics:h')">🖼 Graphics H</button>
+        <button class="target-btn" data-target="graphics:v" onclick="setTarget('graphics:v')">🖼 Graphics V</button>
+        <button class="target-btn" data-target="bugs:h" onclick="setTarget('bugs:h')">🔲 Bug/QR H</button>
+        <button class="target-btn" data-target="bugs:v" onclick="setTarget('bugs:v')">🔲 Bug/QR V</button>
+      </div>
+    </div>
+
+    <!-- Graphics layer -->
+    <div class="layer-block">
+      <div class="layer-title">🖼 Graphics layer — output URLs below</div>
+      <div class="slots-row" id="slots-graphics"></div>
+    </div>
+
+    <!-- Bugs layer -->
+    <div class="layer-block">
+      <div class="layer-title">🔲 Bug / QR layer — output URLs below</div>
+      <div class="slots-row" id="slots-bugs"></div>
+    </div>
+
+    <!-- BG Reference Library (collapsible) -->
+    <div class="layer-block" id="bg-ref-block">
+      <div class="sec-hdr" onclick="toggleSection('bgrefs')" style="margin:-12px -14px 10px;padding:8px 14px;">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Background Reference Library</span>
+        <span class="chevron" style="margin-left:auto">›</span>
+      </div>
+      <div id="sec-body-bgrefs" class="collapsed">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="btn btn-gray btn-sm" onclick="openUpload('background')">📤 Upload BG Image</button>
+        </div>
+        <div class="bg-ref-grid" id="bg-ref-grid"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- IMAGE LIBRARY -->
+<div class="section" id="lib-section">
+  <div class="sec-hdr open" onclick="toggleSection('lib')">
+    <h2>🗂 Image Library</h2>
+    <span class="chevron">›</span>
+  </div>
+  <div class="sec-body" id="sec-body-lib">
+    <div class="lib-toolbar">
+      <input type="search" id="search-input" placeholder="Search images…" oninput="renderGrid()">
+      <button class="btn btn-blue btn-sm" onclick="openUpload()">📤 Upload</button>
+      <button class="btn btn-gray btn-sm" onclick="toggleSelectMode()">☑ Select</button>
+    </div>
+    <div id="target-bar-lib" style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap">
+      <!-- duplicated target bar near grid -->
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="image-grid" class="img-grid"></div>
+  </div>
+</div>
+
+<!-- SAVED LAYOUTS -->
+<div class="section">
+  <div class="sec-hdr open" onclick="toggleSection('layouts')">
+    <h2>💾 Saved Layouts</h2>
+    <span class="chevron">›</span>
+  </div>
+  <div class="sec-body" id="sec-body-layouts">
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-blue btn-sm" onclick="saveLayout()">+ Save Current</button>
+    </div>
+    <div class="layout-grid" id="layout-grid"></div>
+  </div>
+</div>
+
+<!-- TAG MANAGEMENT (collapsible, collapsed by default) -->
+<div class="section">
+  <div class="sec-hdr" onclick="toggleSection('tags')">
+    <h2>🏷 Tag Management</h2>
+    <span class="chevron">›</span>
+  </div>
+  <div class="sec-body collapsed" id="sec-body-tags">
+    <div class="cat-list" id="cat-list"></div>
+    <div class="add-cat-row">
+      <input type="text" id="new-cat-input" placeholder="New category name…" onkeydown="if(event.key==='Enter')addCategory()">
+      <button class="btn btn-blue btn-sm" onclick="addCategory()">Add</button>
+    </div>
+    <hr class="divider">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Filename auto-tag rules (comma-separated keywords per category):</div>
+    <div class="kw-rules" id="kw-rules"></div>
+    <button class="btn btn-gray btn-sm" style="margin-top:8px" onclick="saveTagRules()">Save Rules</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+</div><!-- #main -->
+
+<!-- ── WINDOW DROP OVERLAY ────────────────────────────────────────────────── -->
+<div id="win-drop-overlay">⬆ Drop images to upload</div>
+
+<!-- ── FLOATING SELECTION BAR ────────────────────────────────────────────── -->
+<div id="sel-bar">
+  <span id="sel-bar-count">Nothing selected</span>
+  <button class="btn btn-red btn-sm" onclick="deleteSelected()">🗑 Delete</button>
+  <button class="btn btn-gray btn-sm" onclick="toggleSelectMode()">✕ Cancel</button>
+</div>
+
+<!-- ── UPLOAD MODAL ───────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="upload-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+    <h3>📤 Upload Images</h3>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      Click or drag files here
+    </div>
+    <input type="file" id="file-input" multiple accept="image/*" style="display:none" onchange="handleFileSelect(this.files)">
+    <div class="form-row">
+      <label>Categories</label>
+      <div class="ul-cats" id="ul-chips"></div>
+    </div>
+    <div class="form-row">
+      <label>Extra tags (comma-separated)</label>
+      <input type="text" id="ul-extra-tags" placeholder="tag1, tag2…">
+    </div>
+    <div id="ul-progress"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-blue" id="ul-btn" onclick="doUpload()">Upload</button>
+      <button class="btn btn-gray" onclick="closeModal('upload-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PREVIEW MODAL ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="preview-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('preview-modal')">✕</button>
+    <img id="preview-img" src="">
+    <div class="prev-info">
+      <span class="prev-name" id="preview-name"></span>
+      <button class="btn btn-gray btn-sm" onclick="openRenameModal()">✏ Rename</button>
+      <button class="btn btn-blue btn-sm" id="preview-send-btn">Send to slot</button>
+      <button class="btn btn-red btn-sm" onclick="deleteFromPreview()">🗑</button>
+    </div>
+    <div id="preview-tags-row" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="settings-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
+    <h3>⚙ Settings — <span id="settings-event-name"></span></h3>
+    <div class="res-grid">
+      <div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">H Format (Landscape)</div>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="applyPreset('h',3840,2160)">4K</button>
+          <button class="preset-btn" onclick="applyPreset('h',2560,1440)">1440p</button>
+          <button class="preset-btn" onclick="applyPreset('h',1920,1080)">1080p</button>
+          <button class="preset-btn" onclick="applyPreset('h',1280,720)">720p</button>
+        </div>
+        <div class="form-row"><label>Width (px)</label><input type="number" id="res-h-w" value="3840"></div>
+        <div class="form-row"><label>Height (px)</label><input type="number" id="res-h-h" value="2160"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">V Format (Portrait)</div>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="applyPreset('v',2160,3840)">4K</button>
+          <button class="preset-btn" onclick="applyPreset('v',1440,2560)">1440p</button>
+          <button class="preset-btn" onclick="applyPreset('v',1080,1920)">1080p</button>
+          <button class="preset-btn" onclick="applyPreset('v',720,1280)">720p</button>
+        </div>
+        <div class="form-row"><label>Width (px)</label><input type="number" id="res-v-w" value="2160"></div>
+        <div class="form-row"><label>Height (px)</label><input type="number" id="res-v-h" value="3840"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-blue" onclick="saveSettings()">Save</button>
+      <button class="btn btn-gray" onclick="closeModal('settings-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EVENT MODAL ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="event-modal">
+  <div class="modal" style="width:360px">
+    <button class="modal-close" onclick="closeModal('event-modal')">✕</button>
+    <h3 id="event-modal-title">New Event</h3>
+    <div class="form-row">
+      <label>Event Name</label>
+      <input type="text" id="event-name-input" placeholder="My Event 2026…" onkeydown="if(event.key==='Enter')saveEvent()">
+    </div>
+    <div id="event-list" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-blue" onclick="saveEvent()">Create</button>
+      <button class="btn btn-gray" onclick="closeModal('event-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── HELP MODAL ─────────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="help-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
+    <h3>❓ How adp-show-graphics works</h3>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Events</h4>
+        <p>Each event has its own isolated image library and layouts. Switch events from the top dropdown. Add events with + Event.</p>
+      </div>
+      <div class="help-item">
+        <h4>Two Layers</h4>
+        <p><b>Graphics</b> — main show graphics. <b>Bug/QR</b> — persistent lower-third overlays. Each layer has H + V format slots = 4 output URLs total.</p>
+      </div>
+      <div class="help-item">
+        <h4>Send to Slot</h4>
+        <p>Select target slot (Graphics H/V, Bug H/V) in the bar above the grid. Click any image to send it to that slot.</p>
+      </div>
+      <div class="help-item">
+        <h4>SEND LIVE</h4>
+        <p>Selecting an image only updates the gallery preview. Click SEND LIVE to push it to the output URL. Toggle again to go transparent.</p>
+      </div>
+      <div class="help-item">
+        <h4>Output URLs</h4>
+        <p>Add each URL as a browser source in vMix. Append <code>?event=ID</code> to target a specific event. URLs shown in each slot header.</p>
+      </div>
+      <div class="help-item">
+        <h4>Resolution</h4>
+        <p>Set H and V canvas size independently in ⚙ Settings per event. Presets: 4K, 1440p, 1080p. Changes affect output pages immediately.</p>
+      </div>
+      <div class="help-item">
+        <h4>Image Library</h4>
+        <p>All uploaded originals. Search by name. Filter by tag. Drag images to reorder. Tags are persistent — name images well before uploading.</p>
+      </div>
+      <div class="help-item">
+        <h4>Upload</h4>
+        <p>Click 📤 Upload or drag files from Finder anywhere onto the window. Assign categories and auto-tag from filename during upload.</p>
+      </div>
+      <div class="help-item">
+        <h4>Tags</h4>
+        <p>Assign categories to images via the 🏷 tag icon on each card. Manage categories and auto-tag keyword rules in Tag Management.</p>
+      </div>
+      <div class="help-item">
+        <h4>Layouts</h4>
+        <p>Save current slot state as a layout. Recall later with ↩. Layout stores graphics + bugs slots for both H and V.</p>
+      </div>
+      <div class="help-item">
+        <h4>Background References</h4>
+        <p>Upload slide/screen reference images for the slot preview background. Tagged <b>background</b>. Visible only in gallery — never in output.</p>
+      </div>
+      <div class="help-item">
+        <h4>Quick trigger (vMix)</h4>
+        <p><code>GET /go?apikey=X&amp;event=E&amp;layer=graphics&amp;slot=h&amp;key=K</code> — set and go live in one call, usable from vMix scripting.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCRIPT ─────────────────────────────────────────────────────────────── -->
+<script>
+// ── State ───────────────────────────────────────────────────────────────────
+let WORKER = '';
+let API_KEY = '';
+let currentEvent = 'default';
+let events = [];
+let images = [];
+let categories = [];
+let tagRules = {};
+let settings = { resolution: { h: { w: 3840, h: 2160 }, v: { w: 2160, h: 3840 } } };
+let active = {};
+let slotTarget = 'graphics:h';
+let selectMode = false;
+let selectedKeys = new Set();
+let currentFilter = 'all';
+let bgRef = { h: null, v: null };
+let slots = {};     // current slot state from KV: {graphics:{h,v}, bugs:{h,v}}
+let drag = null;
+let sectionsState = {};
+let previewKey = null;
+let uploadForLayer = null;
+let pendingFiles = [];
+
+// Slot definitions
+const SLOTS = [
+  { layer: 'graphics', slot: 'h', label: 'Graphics H', portrait: false },
+  { layer: 'graphics', slot: 'v', label: 'Graphics V', portrait: true  },
+  { layer: 'bugs',     slot: 'h', label: 'Bug/QR H',  portrait: false },
+  { layer: 'bugs',     slot: 'v', label: 'Bug/QR V',  portrait: true  },
+];
+
+// ── Auth & init ─────────────────────────────────────────────────────────────
+function loadPersistedAuth() {
+  WORKER  = localStorage.getItem('adp_worker') || '';
+  API_KEY = sessionStorage.getItem('adp_key') || '';
+  if (WORKER) document.getElementById('worker-url-input').value = WORKER;
+  sectionsState = JSON.parse(localStorage.getItem('adp_sections') || '{}');
+  bgRef = JSON.parse(localStorage.getItem('adp_bgref') || '{"h":null,"v":null}');
+  slotTarget = localStorage.getItem('adp_target') || 'graphics:h';
+}
+
+async function authenticate() {
+  const wu = document.getElementById('worker-url-input').value.trim().replace(/\/$/, '');
+  const ak = document.getElementById('api-key-input').value.trim();
+  if (!wu || !ak) { showAuthError('Enter Worker URL and API key'); return; }
+  WORKER  = wu;
+  API_KEY = ak;
+  localStorage.setItem('adp_worker', WORKER);
+  try {
+    const r = await api('GET', '/list');
+    if (!r.ok && r.status === 401) throw new Error('wrong key');
+    sessionStorage.setItem('adp_key', API_KEY);
+    document.getElementById('auth-gate').hidden = true;
+    document.getElementById('main').hidden = false;
+    document.getElementById('auth-status').textContent = '●  Connected';
+    document.getElementById('auth-status').className = 'ok';
+    await loadAll();
+    startPolling();
+  } catch(e) {
+    showAuthError('Connection failed: ' + e.message);
+  }
+}
+
+function showAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
+function clearWorker() { localStorage.removeItem('adp_worker'); document.getElementById('worker-url-input').value = ''; WORKER = ''; }
+
+async function loadAll() {
+  [events, images, categories, tagRules, settings] = await Promise.all([
+    api('GET', '/events').then(r => r.json()),
+    api('GET', `/list?event=${currentEvent}`).then(r => r.json()),
+    api('GET', '/categories').then(r => r.json()),
+    api('GET', '/tag-rules').then(r => r.json()),
+    api('GET', `/settings?event=${currentEvent}`).then(r => r.json()),
+  ]);
+  renderEventSel();
+  renderSlots();
+  renderGrid();
+  renderFilters();
+  renderCatManagement();
+  renderBgRefs();
+  renderLayouts();
+  applyTargetBar();
+  applyOpenSections();
+}
+
+// ── API helper ──────────────────────────────────────────────────────────────
+function api(method, path, body, isForm) {
+  const opts = { method, headers: { 'X-API-Key': API_KEY } };
+  if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  if (body && isForm)  { opts.body = body; }
+  return fetch(WORKER + path, opts);
+}
+
+// ── Events ──────────────────────────────────────────────────────────────────
+function renderEventSel() {
+  const sel = document.getElementById('event-sel');
+  sel.innerHTML = events.map(e => `<option value="${e.id}" ${e.id === currentEvent ? 'selected' : ''}>${e.name}</option>`).join('');
+}
+
+async function switchEvent(id) {
+  currentEvent = id;
+  [images, settings] = await Promise.all([
+    api('GET', `/list?event=${currentEvent}`).then(r => r.json()),
+    api('GET', `/settings?event=${currentEvent}`).then(r => r.json()),
+  ]);
+  bgRef = { h: null, v: null };
+  renderSlots();
+  renderGrid();
+  renderFilters();
+  renderBgRefs();
+  renderLayouts();
+}
+
+function openEventModal() {
+  renderEventList();
+  document.getElementById('event-name-input').value = '';
+  openModal('event-modal');
+}
+
+function renderEventList() {
+  document.getElementById('event-list').innerHTML = events.map(e => `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="flex:1;font-size:13px">${escHtml(e.name)}</span>
+      ${e.id !== 'default' ? `<button class="btn btn-gray btn-sm" onclick="renameEvent('${e.id}')">✏</button>
+      <button class="btn btn-red btn-sm" onclick="deleteEvent('${e.id}')">🗑</button>` : '<span style="font-size:11px;color:var(--muted)">default</span>'}
+    </div>`).join('');
+}
+
+async function saveEvent() {
+  const name = document.getElementById('event-name-input').value.trim();
+  if (!name) return;
+  const r = await api('POST', '/events', { name });
+  const { id } = await r.json();
+  events.push({ id, name });
+  renderEventSel();
+  renderEventList();
+  document.getElementById('event-name-input').value = '';
+}
+
+async function renameEvent(id) {
+  const ev = events.find(e => e.id === id);
+  const name = prompt('Rename event:', ev?.name || '');
+  if (!name) return;
+  await api('PUT', `/events/${encodeURIComponent(id)}`, { name });
+  ev.name = name;
+  renderEventSel();
+  renderEventList();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Delete this event and all its data?')) return;
+  await api('DELETE', `/events/${encodeURIComponent(id)}`);
+  events = events.filter(e => e.id !== id);
+  if (currentEvent === id) { currentEvent = 'default'; }
+  renderEventSel();
+  renderEventList();
+  if (currentEvent === 'default') await switchEvent('default');
+}
+
+// ── Sections ────────────────────────────────────────────────────────────────
+function toggleSection(key) {
+  const body = document.getElementById(`sec-body-${key}`);
+  const hdr  = body?.previousElementSibling;
+  const open = !body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', open);
+  hdr?.classList.toggle('open', !open);
+  sectionsState[key] = !open;
+  localStorage.setItem('adp_sections', JSON.stringify(sectionsState));
+}
+
+function applyOpenSections() {
+  ['slots','lib','layouts','tags','bgrefs'].forEach(key => {
+    const body = document.getElementById(`sec-body-${key}`);
+    if (!body) return;
+    const hdr = body.previousElementSibling;
+    const open = sectionsState[key] !== false; // default open except tags/bgrefs
+    const defaultClosed = ['tags','bgrefs'].includes(key);
+    const shouldOpen = defaultClosed ? (sectionsState[key] === true) : (sectionsState[key] !== false);
+    body.classList.toggle('collapsed', !shouldOpen);
+    hdr?.classList.toggle('open', shouldOpen);
+  });
+}
+
+// ── Slots ───────────────────────────────────────────────────────────────────
+function renderSlots() {
+  ['graphics','bugs'].forEach(layer => {
+    const cont = document.getElementById(`slots-${layer}`);
+    cont.innerHTML = ['h','v'].map(s => buildSlotCard(layer, s)).join('');
+    ['h','v'].forEach(s => initSlotDrag(layer, s));
+  });
+  updateAllSlotPreviews();
+}
+
+function buildSlotCard(layer, slot) {
+  const def = SLOTS.find(d => d.layer === layer && d.slot === slot);
+  const isV = slot === 'v';
+  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
+  const pageUrl = `${location.origin}${location.pathname.replace('gallery.html', '')}${pageMap[layer][slot]}?event=${currentEvent}`;
+  const shortUrl = pageUrl.length > 60 ? '…' + pageUrl.slice(-50) : pageUrl;
+
+  return `
+  <div class="slot-card" id="slot-card-${layer}-${slot}">
+    <div class="slot-card-hdr">
+      <span class="slot-label">${def.label}</span>
+      <span class="live-dot" id="live-dot-${layer}-${slot}"></span>
+    </div>
+    <div class="slot-card-hdr" style="padding:4px 10px;background:var(--bg)">
+      <code style="font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer"
+        title="${escHtml(pageUrl)}" onclick="copyUrl('${layer}','${slot}')">${escHtml(shortUrl)}</code>
+      <a href="${escHtml(pageUrl)}" target="_blank" class="btn btn-gray btn-sm" style="margin-left:4px">↗</a>
+      <button class="btn btn-blue btn-sm" onclick="copyUrl('${layer}','${slot}')">📋</button>
+    </div>
+    <div class="slot-preview-wrap ${isV ? 'portrait' : ''}" id="slot-prev-${layer}-${slot}">
+      <div class="sp-bg" id="sp-bg-${layer}-${slot}"></div>
+      <img class="sp-img hidden" id="sp-img-${layer}-${slot}" draggable="false">
+      <div class="sp-empty" id="sp-empty-${layer}-${slot}">No image</div>
+      <div class="sp-crosshair" id="sp-cross-${layer}-${slot}" style="display:none;left:50%;top:50%"></div>
+    </div>
+    <div class="slot-controls">
+      <div class="scale-row">
+        <span style="font-size:11px;color:var(--muted)">Scale</span>
+        <input type="range" min="10" max="300" value="100" id="scale-${layer}-${slot}"
+          oninput="onScaleInput('${layer}','${slot}',this.value)"
+          onchange="pushSelect('${layer}','${slot}')">
+        <span class="scale-val" id="scale-val-${layer}-${slot}">100%</span>
+      </div>
+      <div class="fit-row">
+        <div class="fit-btn active" id="fit-contain-${layer}-${slot}" onclick="setFit('${layer}','${slot}','contain')">Contain</div>
+        <div class="fit-btn" id="fit-cover-${layer}-${slot}" onclick="setFit('${layer}','${slot}','cover')">Cover</div>
+        <div class="fit-btn" id="fit-fill-${layer}-${slot}" onclick="setFit('${layer}','${slot}','fill')">Fill</div>
+      </div>
+      <div class="slot-action-row">
+        <button class="btn btn-live" id="live-btn-${layer}-${slot}" onclick="toggleLive('${layer}','${slot}')">SEND LIVE</button>
+        <button class="btn btn-gray btn-sm" onclick="clearSlot('${layer}','${slot}')">Clear</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateAllSlotPreviews() {
+  SLOTS.forEach(({ layer, slot }) => updateSlotPreview(layer, slot));
+}
+
+function updateSlotPreview(layer, slot) {
+  const state = slots[layer]?.[slot];
+  const img   = document.getElementById(`sp-img-${layer}-${slot}`);
+  const empty = document.getElementById(`sp-empty-${layer}-${slot}`);
+  const dot   = document.getElementById(`live-dot-${layer}-${slot}`);
+  const liveBtn = document.getElementById(`live-btn-${layer}-${slot}`);
+  if (!img) return;
+
+  if (!state?.key) {
+    img.classList.add('hidden');
+    if (empty) empty.style.display = '';
+    if (dot) dot.classList.remove('on');
+    if (liveBtn) { liveBtn.classList.remove('on'); liveBtn.textContent = 'SEND LIVE'; }
+    return;
+  }
+
+  if (empty) empty.style.display = 'none';
+  if (img.dataset.key !== state.key) {
+    img.dataset.key = state.key;
+    img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
+    img.classList.add('hidden');
+    img.onload = () => img.classList.remove('hidden');
+  }
+
+  const s = (state.scale || 100) / 100;
+  img.style.objectFit  = state.fit === 'cover' ? 'cover' : (state.fit === 'fill' ? 'fill' : 'contain');
+  img.style.transform  = `translate(-50%, -50%) scale(${s})`;
+  img.style.left       = (state.x || 50) + '%';
+  img.style.top        = (state.y || 50) + '%';
+  img.style.width      = '100%';
+  img.style.height     = '100%';
+  img.style.position   = 'absolute';
+  img.style.transformOrigin = 'center center';
+
+  if (dot) dot.classList.toggle('on', !!state.live);
+  if (liveBtn) {
+    liveBtn.classList.toggle('on', !!state.live);
+    liveBtn.textContent = state.live ? '● LIVE' : 'SEND LIVE';
+  }
+
+  const scaleEl = document.getElementById(`scale-${layer}-${slot}`);
+  const scaleVal = document.getElementById(`scale-val-${layer}-${slot}`);
+  if (scaleEl && scaleEl !== document.activeElement) {
+    scaleEl.value = state.scale || 100;
+    if (scaleVal) scaleVal.textContent = (state.scale || 100) + '%';
+  }
+
+  // Fit buttons
+  ['contain','cover','fill'].forEach(f => {
+    document.getElementById(`fit-${f}-${layer}-${slot}`)?.classList.toggle('active', (state.fit||'contain') === f);
+  });
+}
+
+function onScaleInput(layer, slot, val) {
+  document.getElementById(`scale-val-${layer}-${slot}`).textContent = val + '%';
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][slot]) slots[layer][slot] = {};
+  slots[layer][slot].scale = parseFloat(val);
+  updateSlotPreview(layer, slot);
+}
+
+async function pushSelect(layer, slot) {
+  const s = slots[layer]?.[slot];
+  if (!s?.key) return;
+  await api('PUT', `/select?event=${currentEvent}`, { layer, slot, key: s.key, name: s.name, x: s.x || 50, y: s.y || 50, scale: s.scale || 100, fit: s.fit || 'contain' });
+}
+
+async function toggleLive(layer, slot) {
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][slot]) slots[layer][slot] = {};
+  const current = slots[layer][slot].live;
+  slots[layer][slot].live = !current;
+  updateSlotPreview(layer, slot);
+  await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: !current });
+}
+
+async function clearSlot(layer, slot) {
+  if (!slots[layer]) slots[layer] = {};
+  slots[layer][slot] = null;
+  updateSlotPreview(layer, slot);
+  await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
+}
+
+function setFit(layer, slot, fit) {
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][slot]) slots[layer][slot] = {};
+  slots[layer][slot].fit = fit;
+  updateSlotPreview(layer, slot);
+  pushSelect(layer, slot);
+}
+
+function initSlotDrag(layer, slot) {
+  const wrap = document.getElementById(`slot-prev-${layer}-${slot}`);
+  if (!wrap) return;
+  let dragging = false, startX, startY, startPX, startPY;
+
+  wrap.addEventListener('mousedown', e => {
+    if (!slots[layer]?.[slot]?.key) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    const s = slots[layer][slot];
+    startPX = s.x || 50; startPY = s.y || 50;
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const rect = wrap.getBoundingClientRect();
+    const dx = (e.clientX - startX) / rect.width  * 100;
+    const dy = (e.clientY - startY) / rect.height * 100;
+    const nx = Math.max(0, Math.min(100, startPX + dx));
+    const ny = Math.max(0, Math.min(100, startPY + dy));
+    slots[layer][slot].x = nx;
+    slots[layer][slot].y = ny;
+    updateSlotPreview(layer, slot);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (dragging) { dragging = false; pushSelect(layer, slot); }
+  });
+}
+
+function copyUrl(layer, slot) {
+  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
+  const pageUrl = `${location.origin}${location.pathname.replace('gallery.html', '')}${pageMap[layer][slot]}?event=${currentEvent}`;
+  navigator.clipboard.writeText(pageUrl).then(() => {
+    const btn = document.querySelector(`#slot-card-${layer}-${slot} .btn-blue`);
+    if (btn) { const t = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = t, 1500); }
+  });
+}
+
+// ── Target slot selector ─────────────────────────────────────────────────────
+function setTarget(t) {
+  slotTarget = t;
+  localStorage.setItem('adp_target', t);
+  applyTargetBar();
+}
+
+function applyTargetBar() {
+  document.querySelectorAll('.target-btn').forEach(b => b.classList.toggle('active', b.dataset.target === slotTarget));
+}
+
+// ── Image Grid ───────────────────────────────────────────────────────────────
+function renderGrid() {
+  const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+  let list = images.filter(img => {
+    if (img.tags?.includes('background')) return false; // exclude BG images from main library
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'uncategorized') return !img.tags?.length;
+    return img.tags?.includes(currentFilter);
+  });
+  if (q) list = list.filter(i => i.name.toLowerCase().includes(q) || (i.tags||[]).some(t => t.toLowerCase().includes(q)));
+
+  const grid = document.getElementById('image-grid');
+  if (!list.length) { grid.innerHTML = '<div class="empty-state">No images found</div>'; return; }
+  grid.innerHTML = list.map(img => buildImgCard(img)).join('');
+
+  // drag-to-reorder
+  list.forEach((img, idx) => {
+    const card = document.getElementById(`card-${CSS.escape(img.key)}`);
+    if (!card) return;
+    card.setAttribute('draggable', true);
+    card.addEventListener('dragstart', () => { drag = { type: 'img', key: img.key }; card.style.opacity = '.5'; });
+    card.addEventListener('dragend', () => { card.style.opacity = ''; drag = null; });
+    card.addEventListener('dragover', e => { if (drag?.type === 'img') { e.preventDefault(); card.style.borderColor = 'var(--blue)'; } });
+    card.addEventListener('dragleave', () => { card.style.borderColor = ''; });
+    card.addEventListener('drop', async e => {
+      e.preventDefault(); card.style.borderColor = '';
+      if (!drag || drag.type !== 'img' || drag.key === img.key) return;
+      const from = images.findIndex(i => i.key === drag.key);
+      const to   = images.findIndex(i => i.key === img.key);
+      if (from < 0 || to < 0) return;
+      const moved = images.splice(from, 1)[0];
+      images.splice(to, 0, moved);
+      renderGrid();
+      await api('PUT', `/image-order?event=${currentEvent}`, images.map(i => i.key));
+    });
+  });
+}
+
+function buildImgCard(img) {
+  const isPortrait = img.tags?.includes('portrait') || img.tags?.includes('vertical');
+  const isEdited   = img.tags?.includes('edited');
+  const isSelected = selectedKeys.has(img.key);
+  return `
+  <div class="img-card ${isPortrait ? 'portrait-card' : ''} ${isSelected ? 'selected' : ''}" id="card-${img.key.replace(/[^a-z0-9]/gi,'_')}">
+    <div class="card-cb"><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${escAttr(img.key)}',this.checked)"></div>
+    <div class="thumb-wrap" onclick="cardClick('${escAttr(img.key)}')">
+      <img src="${WORKER}/img/${encodeURIComponent(img.key)}" loading="lazy">
+    </div>
+    <div class="card-foot">
+      <div class="card-name" title="${escHtml(img.name)}">${escHtml(img.name)}</div>
+      <div class="card-tags">${(img.tags||[]).filter(t=>t!=='edited').map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>
+      <div class="card-actions">
+        <button onclick="sendToTarget('${escAttr(img.key)}','${escAttr(img.name)}')" title="Send to target slot">▶</button>
+        <button onclick="openPreview('${escAttr(img.key)}')" title="Preview">🔍</button>
+        <button onclick="openTagEditor('${escAttr(img.key)}')" title="Edit tags">🏷</button>
+        <button onclick="deleteImage('${escAttr(img.key)}')" title="Delete">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardClick(key) {
+  if (selectMode) { toggleSelect(key, !selectedKeys.has(key)); return; }
+  sendToTarget(key, images.find(i => i.key === key)?.name || key);
+}
+
+async function sendToTarget(key, name) {
+  const [layer, slot] = slotTarget.split(':');
+  if (!slots[layer]) slots[layer] = {};
+  const existing = slots[layer][slot] || {};
+  slots[layer][slot] = { ...existing, key, name, x: existing.x || 50, y: existing.y || 50, scale: existing.scale || 100, fit: existing.fit || 'contain' };
+  updateSlotPreview(layer, slot);
+  await api('PUT', `/select?event=${currentEvent}`, { layer, slot, key, name, x: existing.x || 50, y: existing.y || 50, scale: existing.scale || 100, fit: existing.fit || 'contain' });
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────────
+function renderFilters() {
+  const tags = ['all', 'uncategorized', ...categories].sort((a, b) => a === 'all' ? -1 : b === 'all' ? 1 : a.localeCompare(b));
+  document.getElementById('filter-bar').innerHTML = tags.map(t =>
+    `<button class="flt-btn ${t === currentFilter ? 'active' : ''}" onclick="setFilter('${escAttr(t)}')">${escHtml(t === 'all' ? 'All' : t === 'uncategorized' ? 'Uncategorized' : t)}</button>`
+  ).join('');
+}
+
+function setFilter(f) { currentFilter = f; renderFilters(); renderGrid(); }
+
+// ── BG References ────────────────────────────────────────────────────────────
+function renderBgRefs() {
+  const bgs = images.filter(i => i.tags?.includes('background'));
+  const grid = document.getElementById('bg-ref-grid');
+  if (!bgs.length) { grid.innerHTML = '<div class="empty-state">No background images uploaded</div>'; return; }
+  grid.innerHTML = bgs.map(bg => `
+    <div class="bg-ref-card">
+      <div class="bg-ref-thumb"><img src="${WORKER}/img/${encodeURIComponent(bg.key)}" loading="lazy"></div>
+      <div class="bg-ref-foot">
+        <span class="bg-name">${escHtml(bg.name)}</span>
+        <button class="btn btn-blue btn-sm" onclick="setBgRef('h','${escAttr(bg.key)}','${escAttr(bg.name)}')">Set H</button>
+        <button class="btn btn-blue btn-sm" onclick="setBgRef('v','${escAttr(bg.key)}','${escAttr(bg.name)}')">Set V</button>
+        <button class="btn btn-red btn-sm" onclick="deleteImage('${escAttr(bg.key)}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function setBgRef(slot, key, name) {
+  bgRef[slot] = { key, name, opacity: bgRef[slot]?.opacity || 0.3, enabled: true };
+  localStorage.setItem('adp_bgref', JSON.stringify(bgRef));
+  updateBgRefInSlot(slot);
+}
+
+function updateBgRefInSlot(slot) {
+  ['graphics','bugs'].forEach(layer => {
+    const bg = document.getElementById(`sp-bg-${layer}-${slot}`);
+    if (!bg) return;
+    const ref = bgRef[slot];
+    if (!ref?.enabled || !ref.key) { bg.innerHTML = ''; return; }
+    bg.innerHTML = `<img src="${WORKER}/img/${encodeURIComponent(ref.key)}" style="opacity:${ref.opacity||0.3}">`;
+  });
+}
+
+// ── Select mode ──────────────────────────────────────────────────────────────
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedKeys.clear();
+  document.getElementById('image-grid').classList.toggle('select-mode', selectMode);
+  document.getElementById('sel-bar').classList.toggle('visible', selectMode);
+  renderGrid();
+}
+
+function toggleSelect(key, checked) {
+  if (checked) selectedKeys.add(key); else selectedKeys.delete(key);
+  const count = selectedKeys.size;
+  document.getElementById('sel-bar-count').textContent = count ? `${count} selected` : 'Nothing selected';
+  const card = document.getElementById(`card-${key.replace(/[^a-z0-9]/gi,'_')}`);
+  card?.classList.toggle('selected', checked);
+}
+
+async function deleteSelected() {
+  if (!selectedKeys.size || !confirm(`Delete ${selectedKeys.size} image(s)?`)) return;
+  for (const key of [...selectedKeys]) {
+    await api('DELETE', `/img/${encodeURIComponent(key)}?event=${currentEvent}`);
+    images = images.filter(i => i.key !== key);
+  }
+  selectedKeys.clear();
+  toggleSelectMode();
+  renderGrid();
+  renderBgRefs();
+}
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+function openUpload(forLayer) {
+  uploadForLayer = forLayer || null;
+  pendingFiles = [];
+  document.getElementById('ul-extra-tags').value = '';
+  document.getElementById('ul-progress').textContent = '';
+  populateChips();
+  // Pre-check 'background' chip if uploading BG
+  if (forLayer === 'background') {
+    document.querySelectorAll('.ul-chip').forEach(c => { c.classList.toggle('on', c.dataset.cat === 'background'); });
+  }
+  openModal('upload-modal');
+}
+
+function populateChips() {
+  const permanentCats = ['background', 'QR codes'];
+  const all = [...new Set([...permanentCats, ...categories])].sort();
+  document.getElementById('ul-chips').innerHTML = all.map(c =>
+    `<span class="ul-chip" data-cat="${escAttr(c)}" onclick="this.classList.toggle('on')">${escHtml(c)}</span>`
+  ).join('');
+}
+
+function getSelectedChips() {
+  return [...document.querySelectorAll('.ul-chip.on')].map(c => c.dataset.cat);
+}
+
+function handleFileSelect(files) {
+  pendingFiles = [...files];
+  const dz = document.getElementById('drop-zone');
+  dz.textContent = `${files.length} file(s) ready: ${[...files].map(f => f.name).join(', ')}`;
+  // Auto-suggest chips based on filenames
+  autoSuggestChips([...files].map(f => f.name));
+}
+
+function autoSuggestChips(names) {
+  const allNames = names.join(' ').toLowerCase();
+  document.querySelectorAll('.ul-chip').forEach(chip => {
+    const cat = chip.dataset.cat;
+    const kws = tagRules[cat] || [];
+    if (kws.some(kw => allNames.includes(kw.toLowerCase()))) chip.classList.add('on');
+  });
+}
+
+async function doUpload() {
+  if (!pendingFiles.length) { document.getElementById('ul-progress').textContent = 'No files selected.'; return; }
+  const btn = document.getElementById('ul-btn');
+  btn.disabled = true;
+  const chips = getSelectedChips();
+  const extra = document.getElementById('ul-extra-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const total = pendingFiles.length;
+  let done = 0;
+
+  for (const file of pendingFiles) {
+    const tags = buildFileTags(file.name, chips, extra);
+    const form = new FormData();
+    form.append('file', file);
+    form.append('name', file.name.replace(/\.[^.]+$/, ''));
+    form.append('tags', tags.join(','));
+    await api('POST', `/upload?event=${currentEvent}`, form, true);
+    done++;
+    document.getElementById('ul-progress').textContent = `Uploading… ${done}/${total}`;
+  }
+
+  // Refresh image list
+  images = await api('GET', `/list?event=${currentEvent}`).then(r => r.json());
+  renderGrid();
+  renderBgRefs();
+  renderFilters();
+  btn.disabled = false;
+  pendingFiles = [];
+  document.getElementById('drop-zone').textContent = 'Click or drag files here';
+  document.getElementById('ul-progress').textContent = `✓ Uploaded ${total} image(s)`;
+}
+
+function buildFileTags(filename, chips, extra) {
+  const name = filename.toLowerCase();
+  const autoTags = [];
+  Object.entries(tagRules).forEach(([cat, kws]) => {
+    if ((kws || []).some(kw => name.includes(kw.toLowerCase()))) autoTags.push(cat);
+  });
+  return [...new Set([...chips, ...autoTags, ...extra])];
+}
+
+// ── Drop zone in upload modal ───���─────────────────────────────────────────────
+function initDropZone() {
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files);
+  });
+}
+
+// ── Window-level Finder drag-drop ─────────────────────────────────────────────
+function initWindowDrop() {
+  let enterCount = 0;
+  const overlay = document.getElementById('win-drop-overlay');
+  window.addEventListener('dragenter', e => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    enterCount++;
+    overlay.classList.add('visible');
+  });
+  window.addEventListener('dragleave', () => {
+    enterCount--;
+    if (enterCount <= 0) { enterCount = 0; overlay.classList.remove('visible'); }
+  });
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => {
+    e.preventDefault(); enterCount = 0; overlay.classList.remove('visible');
+    if (e.dataTransfer.files.length) { handleFileSelect(e.dataTransfer.files); openModal('upload-modal'); }
+  });
+}
+
+// ── Preview ───────────────────────────────────────────────────────────────────
+function openPreview(key) {
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+  previewKey = key;
+  document.getElementById('preview-img').src = `${WORKER}/img/${encodeURIComponent(key)}`;
+  document.getElementById('preview-name').textContent = img.name;
+  document.getElementById('preview-send-btn').onclick = () => sendToTarget(key, img.name);
+  document.getElementById('preview-tags-row').innerHTML =
+    (img.tags || []).map(t => `<span class="tag-pill-big">${escHtml(t)}</span>`).join('') +
+    `<button class="btn btn-gray btn-sm" style="margin-left:4px" onclick="openTagEditor('${escAttr(key)}')">✏ Tags</button>`;
+  openModal('preview-modal');
+}
+
+async function openRenameModal() {
+  const img = images.find(i => i.key === previewKey);
+  if (!img) return;
+  const name = prompt('Rename image:', img.name);
+  if (!name || name === img.name) return;
+  await api('PUT', `/rename/${encodeURIComponent(previewKey)}?event=${currentEvent}`, { name });
+  img.name = name;
+  document.getElementById('preview-name').textContent = name;
+  renderGrid();
+}
+
+async function deleteFromPreview() {
+  if (!previewKey || !confirm('Delete this image?')) return;
+  await api('DELETE', `/img/${encodeURIComponent(previewKey)}?event=${currentEvent}`);
+  images = images.filter(i => i.key !== previewKey);
+  closeModal('preview-modal');
+  renderGrid();
+  renderBgRefs();
+}
+
+// ── Tag editor ────────────────────────────────────────────────────────────────
+async function openTagEditor(key) {
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+  const allTags = [...new Set([...categories, 'background', 'QR codes', 'edited'])].sort();
+  const current = img.tags || [];
+  const chosen = prompt(`Tags for "${img.name}"\n\nAvailable: ${allTags.join(', ')}\n\nCurrent (comma-separated):`, current.join(', '));
+  if (chosen === null) return;
+  const newTags = chosen.split(',').map(t => t.trim()).filter(Boolean);
+  await api('PUT', `/tags/${encodeURIComponent(key)}?event=${currentEvent}`, { tags: newTags });
+  img.tags = newTags;
+  renderGrid();
+  renderBgRefs();
+}
+
+async function deleteImage(key) {
+  if (!confirm('Delete this image?')) return;
+  await api('DELETE', `/img/${encodeURIComponent(key)}?event=${currentEvent}`);
+  images = images.filter(i => i.key !== key);
+  renderGrid();
+  renderBgRefs();
+}
+
+// ── Layouts ───────────────────────────────────────────────────────────────────
+async function renderLayouts() {
+  const r = await api('GET', `/layouts?event=${currentEvent}`);
+  const { layouts, order } = await r.json();
+  const sorted = order.length ? order.filter(id => layouts[id]) : Object.keys(layouts);
+  const grid = document.getElementById('layout-grid');
+  if (!sorted.length) { grid.innerHTML = '<div class="empty-state">No layouts saved</div>'; return; }
+  grid.innerHTML = sorted.map(id => buildLayoutCard(id, layouts[id])).join('');
+}
+
+function buildLayoutCard(id, layout) {
+  const previewKey = layout.graphics?.h?.key;
+  return `
+  <div class="layout-card">
+    <div class="layout-thumb">
+      ${previewKey ? `<div class="lt-h"><img src="${WORKER}/img/${encodeURIComponent(previewKey)}" style="width:100%;height:100%;object-fit:contain"></div>` : '<div style="color:var(--muted);font-size:11px;text-align:center;padding-top:30%">No preview</div>'}
+    </div>
+    <div class="layout-name">${escHtml(layout.name || id)}</div>
+    <div class="layout-actions">
+      <button onclick="recallLayout('${escAttr(id)}')" title="Recall">↩ Recall</button>
+      <button onclick="renameLayout('${escAttr(id)}')" title="Rename">✏</button>
+      <button onclick="deleteLayout('${escAttr(id)}')" title="Delete" style="color:var(--red)">🗑</button>
+    </div>
+  </div>`;
+}
+
+async function saveLayout() {
+  const name = prompt('Layout name:');
+  if (!name) return;
+  const id = `layout_${Date.now()}`;
+  const payload = { name, graphics: { h: slots.graphics?.h || null, v: slots.graphics?.v || null }, bugs: { h: slots.bugs?.h || null, v: slots.bugs?.v || null } };
+  await api('PUT', `/layouts/${encodeURIComponent(id)}?event=${currentEvent}`, payload);
+  // Update order
+  const r = await api('GET', `/layouts?event=${currentEvent}`);
+  const { order } = await r.json();
+  order.push(id);
+  await api('PUT', `/layout-order?event=${currentEvent}`, order);
+  renderLayouts();
+}
+
+async function recallLayout(id) {
+  const r = await api('GET', `/layouts?event=${currentEvent}`);
+  const { layouts } = await r.json();
+  const layout = layouts[id];
+  if (!layout) return;
+  const setSlot = async (layer, slot, state) => {
+    if (!state?.key) return;
+    if (!slots[layer]) slots[layer] = {};
+    slots[layer][slot] = { ...state };
+    updateSlotPreview(layer, slot);
+    await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...state });
+  };
+  await Promise.all([
+    setSlot('graphics', 'h', layout.graphics?.h),
+    setSlot('graphics', 'v', layout.graphics?.v),
+    setSlot('bugs', 'h', layout.bugs?.h),
+    setSlot('bugs', 'v', layout.bugs?.v),
+  ]);
+}
+
+async function renameLayout(id) {
+  const r = await api('GET', `/layouts?event=${currentEvent}`);
+  const { layouts } = await r.json();
+  const layout = layouts[id];
+  const name = prompt('Rename layout:', layout?.name || id);
+  if (!name) return;
+  layout.name = name;
+  await api('PUT', `/layouts/${encodeURIComponent(id)}?event=${currentEvent}`, layout);
+  renderLayouts();
+}
+
+async function deleteLayout(id) {
+  if (!confirm('Delete this layout?')) return;
+  await api('DELETE', `/layouts/${encodeURIComponent(id)}?event=${currentEvent}`);
+  renderLayouts();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settings-event-name').textContent = events.find(e => e.id === currentEvent)?.name || currentEvent;
+  document.getElementById('res-h-w').value = settings.resolution?.h?.w || 3840;
+  document.getElementById('res-h-h').value = settings.resolution?.h?.h || 2160;
+  document.getElementById('res-v-w').value = settings.resolution?.v?.w || 2160;
+  document.getElementById('res-v-h').value = settings.resolution?.v?.h || 3840;
+  openModal('settings-modal');
+}
+
+function applyPreset(slot, w, h) {
+  document.getElementById(`res-${slot}-w`).value = w;
+  document.getElementById(`res-${slot}-h`).value = h;
+}
+
+async function saveSettings() {
+  settings.resolution = {
+    h: { w: parseInt(document.getElementById('res-h-w').value), h: parseInt(document.getElementById('res-h-h').value) },
+    v: { w: parseInt(document.getElementById('res-v-w').value), h: parseInt(document.getElementById('res-v-h').value) },
+  };
+  await api('PUT', `/settings?event=${currentEvent}`, settings);
+  closeModal('settings-modal');
+}
+
+// ── Category management ───────────────────────────────────────────────────────
+function renderCatManagement() {
+  document.getElementById('cat-list').innerHTML = categories.sort().map(c => `
+    <div class="cat-row">
+      <span>${escHtml(c)}</span>
+      <button onclick="renameCategory('${escAttr(c)}')">✏</button>
+      <button onclick="deleteCategory('${escAttr(c)}')">🗑</button>
+    </div>`).join('');
+  renderTagRuleInputs();
+}
+
+async function addCategory() {
+  const name = document.getElementById('new-cat-input').value.trim();
+  if (!name || categories.includes(name)) return;
+  categories.push(name);
+  categories.sort();
+  await api('PUT', '/categories', categories);
+  document.getElementById('new-cat-input').value = '';
+  renderCatManagement();
+  renderFilters();
+}
+
+async function renameCategory(old) {
+  const name = prompt('Rename category:', old);
+  if (!name || name === old) return;
+  categories = categories.map(c => c === old ? name : c);
+  await api('PUT', '/categories', categories);
+  if (tagRules[old]) { tagRules[name] = tagRules[old]; delete tagRules[old]; await api('PUT', '/tag-rules', tagRules); }
+  renderCatManagement();
+  renderFilters();
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`Delete category "${name}"?`)) return;
+  categories = categories.filter(c => c !== name);
+  await api('PUT', '/categories', categories);
+  renderCatManagement();
+  renderFilters();
+}
+
+function renderTagRuleInputs() {
+  const all = [...new Set(['background', 'QR codes', ...categories])].sort();
+  document.getElementById('kw-rules').innerHTML = all.map(c => `
+    <div class="kw-rule-row">
+      <span class="kw-cat">${escHtml(c)}</span>
+      <input type="text" id="kw-${c.replace(/[^a-z0-9]/gi,'_')}" placeholder="keyword1, keyword2…"
+        value="${escHtml((tagRules[c] || []).join(', '))}">
+    </div>`).join('');
+}
+
+async function saveTagRules() {
+  const all = [...new Set(['background', 'QR codes', ...categories])].sort();
+  all.forEach(c => {
+    const el = document.getElementById(`kw-${c.replace(/[^a-z0-9]/gi,'_')}`);
+    if (el) tagRules[c] = el.value.split(',').map(t => t.trim()).filter(Boolean);
+  });
+  await api('PUT', '/tag-rules', tagRules);
+  const btn = event?.target;
+  if (btn) { btn.textContent = '✓ Saved'; setTimeout(() => btn.textContent = 'Save Rules', 1500); }
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+function startPolling() {
+  setInterval(async () => {
+    try {
+      const results = await Promise.all(SLOTS.map(({ layer, slot }) =>
+        fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
+      ));
+      SLOTS.forEach(({ layer, slot }, i) => {
+        if (!slots[layer]) slots[layer] = {};
+        const prev = slots[layer][slot];
+        const next = results[i];
+        if (!next || (!next.key && !prev?.key)) return;
+        // Only update if changed
+        if (JSON.stringify(prev) !== JSON.stringify(next)) {
+          slots[layer][slot] = next;
+          updateSlotPreview(layer, slot);
+        }
+      });
+    } catch(e) {}
+  }, 3000);
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openHelp() { openModal('help-modal'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(o => closeModal(o.id)); });
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s).replace(/'/g,'&#39;'); }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadPersistedAuth();
+initDropZone();
+initWindowDrop();
+
+// Auto-connect if credentials cached
+if (WORKER && API_KEY) {
+  document.getElementById('worker-url-input').value = WORKER;
+  authenticate();
+}
+</script>
+</body>
+</html>
