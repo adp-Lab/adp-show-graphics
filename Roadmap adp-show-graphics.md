@@ -152,191 +152,106 @@ Make the preview buttons toggles, to have everything or also nothing in preview,
 Make the Send Live buttons go red when live and green, when not live
 
 
-_____________________
+---
+
+## v2 Development Plan (adp-show-graphics)
+
+### SESSION 3 — Gallery UI overhaul (in progress)
+
+**Functional bugs to fix:**
+- Scale & rotate sliders don't persist → debounced `pushSelectCtrl` needed in `onScaleInput`/`onRotateInput`
+- BG Reference Library collapse button does nothing → fix `toggleSection` binding
+- Drag jump issue (occasional position jump during drag) → guard against mid-drag polling overwrite
+
+**Slots panel layout:**
+- H and V canvases: same fixed pixel height (V shows content smaller — correct)
+- URL bars → move ABOVE the canvas, buttons labeled "Open" / "Copy"
+- Remove Fill fit button (only Contain / Cover)
+- GFX/Bug tab labels → "Manipulate GFX" / "Manipulate Bug"
+- Grid selector format → "40×40" not "40×"
+- Monitor magnify → 70% screen (was 60%)
+
+**Center panel — 13 buttons + clears + target:**
+- Group 1 (Preview toggles, 4 buttons): Bug H Preview | Bug V Preview | GFX H Preview | GFX V Preview
+- Group 2 (LIVE, 9 buttons): Bug H-LIVE | Bug V-LIVE → GFX H-LIVE | GFX V-LIVE → Credits H-LIVE | Credits V-LIVE → BUG H/V-LIVE | GFX H/V-LIVE | Credits H/V-LIVE
+- Clear group (4 buttons): GFX H ✕ | GFX V ✕ | Bug H ✕ | Bug V ✕
+- Target selector (Send image to →): GFX H | GFX V | Bug H | Bug V
+
+**Output sidebar — 3 labeled groups:**
+- QR / Bugs OUTPUT: Bug H monitor + Bug V monitor (each clickable → magnify 70%)
+- Graphics OUTPUT: GFX H monitor + GFX V monitor
+- Credits OUTPUT: Credits H + Credits V (stub) — note: "Click Credits windows to edit Credits"
+
+**Section order (top→bottom below Slots):**
+1. Saved Layouts
+2. Processed Images (add — images tagged `edited`)
+3. Category Management (= Tag Management)
+4. Image Library
+5. BG Reference Library (moved out of Slots section)
+6. Credits Library (add — images tagged `Credits`)
+- Chevron LEFT of section title (not far right)
+- Default: all sections expanded
+- Upload / Add / Select buttons → LEFT side of toolbar rows
+
+**Upload modal improvements:**
+- Single upload window for all categories
+- Checkbox selectors to choose target library/libraries (Image Library, BG Reference, Credits Library, Processed Images)
+- File browser button in addition to drag & drop (native file picker)
+- Auto-suggest category based on filename rules (existing feature, keep)
+
+**Tag Management improvements:**
+- Rename tag: inline or prompt → immediately renames tag on all images (via Worker)
+- Delete tag: confirmation → removes tag from all images
+- Changes reflected immediately in filter bar, card chips, and upload chips
+
+**Image preview modal:**
+- H (16:9) preview LEFT + V (9:16) preview RIGHT, side-by-side
+- 4 slot buttons: GFX H / GFX V / Bug H / Bug V (replaces single "Send to slot")
+- Image card thumbnail background → lighter grey (#2d2d2d)
+
+**Page zoom / font scale:**
+- Increase base font-size so 100% browser zoom = previous 125% zoom appearance
+- Page should scale smoothly at any zoom level
+
+---
+
+### SESSION 4 — Editor modal + Credits output pages
+
+**Editor modal (open via ✏ on any image card or layout):**
+- Large modal ~70% screen width
+- Left side: Image crop/trim controls (unified — crop handles and trim sliders control the same thing, not additive), color picker / background knock-out, rotation slider
+- Right side: 16:9 constrained live preview reflecting all changes in real time
+- Save as new copy (tagged `edited`) — never overwrites original library asset
+- Name field pre-populated, selectable, editable before saving
+- Reset button resets both crop/trim and preview together
+- Crop handles: larger / better visible
+
+**Credits output pages:**
+- credits-h.html / credits-v.html (new output pages)
+- Paged display with fade-in transitions (not scrolling)
+- At least one page supports full background image (Zoom branding)
+- Worker endpoint: PUT /credits?event=X → stores credit page data in KV
+- Gallery: Credits H-LIVE / Credits V-LIVE / Credits H+V-LIVE buttons (activate from center panel stubs)
+- Gallery: Credits Library section → images tagged `Credits`
+- Name source: signup sheet / Mukana Panel Liaison tools (TBD)
+
+---
+
+### SESSION 5 — Polish + Advanced features
+
+- Export asset to local disk from gallery
+- Drag jump fix (if not fully resolved in session 3)
+- Sort/filter controls for image library (name, date, active-in-slot)
+- Bitfocus Companion webhook support
+- Video playback support (future)
+- remove.bg API integration for background knock-out (optional upgrade)
+
+---
+
+### OPEN QUESTIONS (to confirm before Session 3 implementation)
+
+1. **Editor save behaviour**: Save as new edited copy OR overwrite in place? (Recommendation: always new copy, never overwrite — consistent with "library assets are protected" principle)
+2. **Top toolbar annotation in mock-up** ("Place adjusted top bar in this section. Including the settings button.") — move Settings/Help/Event selector into the Live Slots section header bar?
+3. **Rotate slider position**: URL bars move above canvas. Rotate slider stays below canvas (with Scale/Fit). Correct?
 
 
-
-
-Before last major changes to v2
-
-Got everything — mock-up, current v2 screenshots, and the Dashmaster multiview. Here's my full analysis before we touch anything.
-
-What I see — current state
-v2 gallery works — the Worker is live, images load, LIVE buttons push correctly to outputs. The Dashmaster confirms 4 separate output URLs are working (Graphics H/V, BUGs H/V). Good foundation.
-
-Issues visible in the screenshots:
-
-Slot canvas proportion wrong — Graphics H preview shows big black bands top and bottom (image floating in a near-square box). The canvas wrapper has a fixed height regardless of H vs V format. This makes the preview inaccurate.
-
-LIVE button color inverted — currently green when live. The mock-up (and broadcast logic) says: red = on air, green = preview/ready, grey = empty. Red = danger/hot is universal in broadcast.
-
-Layout is vertical/stacked — current v2 stacks 4 tall cards. The mock-up proposes a completely different structure.
-
-What the mock-up proposes
-3-column layout + right sidebar:
-
-Far Left	Center	Far Right	Sidebar
-H slot preview (large)	Preview state buttons + Live buttons	V slot preview (large)	Small output monitors
-Center panel:
-
-Row 1 (Preview state): Bug H Preview Bug V Preview GFX H Preview GFX V Preview — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
-Row 2 (Individual live): Bug H LIVE Bug V LIVE / GFX H LIVE GFX V LIVE / Credits H LIVE Credits V LIVE
-Row 3 (Combined): BUG H/V LIVE GFX H/V LIVE / Credits H/V LIVE
-Sidebar (far right):
-
-QR/Bugs OUTPUT: 2 small windows (Klick to magnify)
-Graphics OUTPUT: 2 small windows
-Credits OUTPUT: 2 small windows
-Per-slot additions:
-
-URL bar + open/copy buttons at top of each slot area
-Rotate slider (new) under each slot preview
-Separate Grid settings per slot
-Button states (corrected):
-
-LIVE = RED
-Preview active/ready = GREEN
-Empty = grey
-My questions before starting
-1. Credits feature — the mock-up includes Credits H/V LIVE buttons and Credits OUTPUT section. Credits require new output pages + a Worker endpoint. Should I include credits in this session, or do layout + controls first and credits separately?
-
-2. Output monitor sidebar — the small "Klick to magnify" windows: are these meant to be live iframes of the actual output URLs? They'd auto-update since the output pages poll every 1.5s. This would work. Or just static screenshots? I'd recommend live iframes — they'd be your real Dashmaster alternative built into the gallery.
-
-3. Scope of session — the layout redesign is significant (rewriting the top half of gallery.html). My suggestion for this session:
-
-Fix canvas proportion
-Redesign the slot/control panel section (3-column layout)
-Fix LIVE button colors
-Add rotate slider
-Add output monitor sidebar
-Credits in a separate session
-Does that scope work, or do you want credits included now?
-
-4. The image library below — stays as-is? I don't see changes to the image library, BG refs, tags sections in the mock-up.
-
-cool well perceived.
-Sidebar Output monitor: 
-Yes, please use live iframes and make all 6 previews be magnifying to about 60% screen realestate (in proportion).
-Credits feature in separate session.
-I think, I would need an extra category for the credit assets.
-Please create it and then le´ts see, how we proceed.
-you have this in memory/ access, right?
-"Credits should not scroll... paged is better. Fade in is nice, image support on at least one page is important for the Zoom branding that I think we've agreed to use. We could pull names from the signup sheet for most... Contributors we'd need to get from Mukana, but we could leverage my Panel Liason tools to post contributors and Tlaloc Traversal to an endpoint that you provide"
-Pleas ewrite to memory before proceeding.
-First, updating memory with the credits details. Then I'll read gallery.html before touching anything.
-
-
-Good, I have the full picture. Here's my plan before writing a single line:
-
-Architecture change for slots:
-
-H and V canvas each show ONE layer at a time (switchable via layer tabs: [GFX H | Bug H] and [GFX V | Bug V])
-Center panel: 4 preview status buttons (grey/green/red) + individual LIVE grid + H/V combined + Clear grid
-Right sidebar: 4 live iframes (Bug H, Bug V, GFX H, GFX V) — scaled via transform:scale() based on resolution settings, click to magnify to 60% screen
-Canvas fix: remove flex:1 from .slot-preview-wrap — that's what's causing the black bands (flex grows beyond aspect-ratio)
-LIVE colors: grey = empty, green = has content (not live), red = on air
-Rotate slider: stored in slot state, applied in gallery + output pages
-Credits added to permanentCats
-Starting now. I'll do it in 4 clean edits.
-
-Edit 1 — CSS: replace slot section styles, add new ones
-
-Edit gallery.html
-Edit failed
-wait
-Stopping. What's up?
-
-you´re right in general- more or less. please pay extra attention to the mock-up again.  
-I want to be able to preview both layers togeter as well. Toggle on and off how often i want, see only bug, only gfx, both or nothing in the peview slots.
-Le´ts go back, if this wasn´t clear (because right before the wait it seemed, you missed some parts.
-I will add/ correct some parts.
-3-column layout + right sidebar:
-
-Far Left	Center	Far Right	Sidebar
-H slot preview (large)	Preview state buttons + Live buttons	V slot preview (large)	Small output monitors
-Center panel:
-
-Row 1 (Preview state): Bug H Preview Bug V Preview GFX H Preview GFX V Preview — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
-Row 2 (Individual live): Bug H LIVE Bug V LIVE / GFX H LIVE GFX V LIVE / Credits H LIVE Credits V LIVE — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
-Row 3 (Combined): BUG H/V LIVE GFX H/V LIVE / Credits H/V LIVE — these are indicators/toggles showing what's loaded, colored when content present, grey when empty
-Sidebar (far right):
-
-QR/Bugs OUTPUT: 2 small windows (Klick to magnify)
-Graphics OUTPUT: 2 small windows (Klick to magnify)
-Credits OUTPUT: 2 small windows (Klick to magnify)
-
-Per-slot additions:
-
-URL bar + open/copy buttons at top of each slot area
-Rotate slider (new) under each slot preview
-Separate Grid settings per slot, make Grid and BG Ref toggles better visible
-Show less
-sorry, was not ready, please add this, answer and proceed.
-Maybe we should do a save in this process as well, because 78% usage before auto-compacting.
-
-Button states (corrected):
-
-LIVE = RED
-Preview active/ready = GREEN
-Empty = grey
-Clear. The key correction: the H/V previews are composite — both layers visible simultaneously, with 4 toggle buttons to show/hide each layer independently. Drag/scale/rotate controls affect the active control layer (selected via small tabs per column). Let me save memory, then write the new gallery.html in one shot.
-
-
-
-
-_______________
-
-
-
-Progress saved and pushed. Memory updated.
-
-Session state:
-
-CSS for new slots panel: ✅ committed
-Slots HTML + JS: pending (was mid-edit when you stopped me)
-Tile redesign: decisions locked, not started
-Implementation plan for tiles — confirmed:
-
-Element	Behavior
-Thumbnail	Fixed height, dark bg, object-fit:contain, click = preview
-Name	Truncated; double-click = inline edit field
-Tag chips	Blue style, visible in card, × to remove
-🏷 button	Floating dropdown, checkboxes per category
-GFX H / GFX V / Bug H / Bug V	4 compact toggle buttons, highlighted = in that slot
-✏️	Rename (same as inline double-click, keeps it accessible)
-🗑	Delete
-Next up — I'll do the full implementation in this order:
-
-Tile CSS + buildImgCard rewrite
-New tile JS (slot toggles, tag dropdown, inline rename)
-Slots panel HTML + full slot JS (composite canvas, drag, controls, monitors)
-Output pages rotate fix
-Commit everything
-
-
-
-
-Progress saved and pushed. Memory updated.
-
-Session state:
-
-CSS for new slots panel: ✅ committed
-Slots HTML + JS: pending (was mid-edit when you stopped me)
-Tile redesign: decisions locked, not started
-Implementation plan for tiles — confirmed:
-
-Element	Behavior
-Thumbnail	Fixed height, dark bg, object-fit:contain, click = preview
-Name	Truncated; double-click = inline edit field
-Tag chips	Blue style, visible in card, × to remove
-🏷 button	Floating dropdown, checkboxes per category
-GFX H / GFX V / Bug H / Bug V	4 compact toggle buttons, highlighted = in that slot
-✏️	Rename (same as inline double-click, keeps it accessible)
-🗑	Delete
-Next up — I'll do the full implementation in this order:
-
-Tile CSS + buildImgCard rewrite
-New tile JS (slot toggles, tag dropdown, inline rename)
-Slots panel HTML + full slot JS (composite canvas, drag, controls, monitors)
-Output pages rotate fix
-Commit everything
