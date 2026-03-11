@@ -260,6 +260,149 @@ body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans
 .empty-state { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
 .tag-pill-big { padding: 2px 8px; border-radius: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); font-size: 11px; }
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+/* ── New Slots Panel ─────────────────────────────────────────────────────── */
+.slots-panel {
+  display: grid;
+  grid-template-columns: 2fr 190px 1.2fr 148px;
+  align-items: start;
+}
+.slot-col {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.slot-col-hdr {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; background: var(--surf3);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.slot-col-title { font-size: 11px; font-weight: 700; flex: 1; color: var(--text); text-transform: uppercase; letter-spacing: .05em; }
+.ctrl-tabs { display: flex; gap: 3px; }
+.ctrl-tab {
+  padding: 3px 8px; font-size: 11px; border-radius: 4px;
+  background: var(--surf2); border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; white-space: nowrap;
+}
+.ctrl-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* Composite canvas */
+.sp-composite {
+  position: relative; background: #0a0a0a; flex-shrink: 0;
+  aspect-ratio: 16/9; overflow: hidden; cursor: crosshair;
+  box-shadow: inset 0 0 0 1px var(--border); width: 100%;
+}
+.sp-composite.portrait { aspect-ratio: 9/16; }
+.sp-composite .sp-layer-img {
+  position: absolute; width: 100%; height: 100%; object-fit: contain;
+  transform-origin: center center; transition: opacity .2s;
+}
+.sp-composite .sp-layer-img.hidden { opacity: 0; }
+.sp-composite .sp-empty {
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  color: var(--surf3); font-size: 12px; pointer-events: none;
+}
+.sp-composite .sp-bg-layer { position: absolute; inset: 0; z-index: 0; }
+.sp-composite .sp-bg-layer img { width: 100%; height: 100%; object-fit: cover; }
+.sp-grid-overlay {
+  position: absolute; inset: 0; pointer-events: none; z-index: 20;
+}
+.sp-grid-overlay.active {
+  background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px);
+  background-size: var(--grid-sz,5%) var(--grid-sz,5%);
+}
+
+/* Center control panel */
+.center-panel {
+  padding: 8px 7px; background: var(--surf2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-self: stretch; overflow-y: auto;
+}
+.ctr-title {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin: 8px 0 3px;
+}
+.ctr-title:first-child { margin-top: 0; }
+.btn2g { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+
+/* Preview toggle buttons */
+.pvtgl {
+  padding: 4px 4px; font-size: 11px; font-weight: 600; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--surf3); color: var(--muted);
+  cursor: pointer; transition: all .15s; text-align: center; white-space: nowrap;
+}
+.pvtgl.active { background: var(--green); color: #000; border-color: var(--green); }
+
+/* LIVE buttons */
+.lvbtn {
+  padding: 5px 4px; font-size: 11px; font-weight: 700; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--surf3); color: var(--muted);
+  cursor: pointer; transition: all .15s; letter-spacing: .04em; text-align: center; white-space: nowrap;
+}
+.lvbtn.ready { background: var(--green); color: #000; border-color: var(--green); }
+.lvbtn.live  { background: var(--red);   color: #fff; border-color: var(--red);   }
+
+/* URL bar */
+.url-bar { padding: 4px 6px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+.url-bar-row {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.url-bar-row:last-child { border-bottom: none; }
+.url-label { font-size: 9px; color: var(--muted); width: 34px; flex-shrink: 0; }
+.url-code {
+  flex: 1; font-size: 9px; color: var(--muted); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; cursor: pointer; font-family: monospace;
+}
+.url-code:hover { color: var(--text); }
+
+/* Grid + BG ref footer controls */
+.grid-ctrl-row, .bgref-ctrl-row {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 5px 8px; border-top: 1px solid var(--border);
+  background: var(--surf3); flex-shrink: 0;
+}
+.rotate-row { display: flex; align-items: center; gap: 6px; }
+.rotate-row input[type=range] { flex: 1; accent-color: var(--blue); }
+
+/* Sidebar monitors */
+.sidebar-col {
+  background: var(--bg); overflow-y: auto; padding: 6px 5px;
+  display: flex; flex-direction: column; gap: 5px; align-self: stretch;
+}
+.sidebar-title {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.mon-item { cursor: pointer; }
+.mon-item:hover .mon-iframe-wrap { outline: 1px solid var(--blue); }
+.mon-item.placeholder { cursor: default; opacity: .45; }
+.mon-item.placeholder:hover .mon-iframe-wrap { outline: none; }
+.mon-label { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+.mon-iframe-wrap {
+  position: relative; overflow: hidden; background: #0a0a0a;
+  aspect-ratio: 16/9; width: 100%;
+}
+.mon-iframe-wrap.portrait { aspect-ratio: 9/16; }
+.mon-iframe-wrap iframe {
+  position: absolute; top: 0; left: 0;
+  transform-origin: top left; pointer-events: none; border: none;
+}
+
+/* Monitor magnify modal */
+#mon-modal .modal { background: var(--surf); border-radius: 8px; padding: 12px; width: auto; }
+#mon-modal .modal-close { position: absolute; top: 8px; right: 10px; }
+.mon-mag-wrap {
+  position: relative; overflow: hidden; background: #0a0a0a;
+}
+.mon-mag-wrap iframe {
+  position: absolute; top: 0; left: 0;
+  transform-origin: top left; border: none;
+}
 </style>
 </head>
 <body>
