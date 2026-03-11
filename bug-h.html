@@ -56,8 +56,9 @@
         img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
       }
       const s = (state.scale || 100) / 100;
+      const r = state.rotate || 0;
       img.style.objectFit = state.fit === 'cover' ? 'cover' : 'contain';
-      img.style.transform = `translate(-50%, -50%) scale(${s})`;
+      img.style.transform = `translate(-50%, -50%) scale(${s}) rotate(${r}deg)`;
       img.style.left = (state.x || 50) + '%';
       img.style.top  = (state.y || 50) + '%';
     } catch(e) {}
