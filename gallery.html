@@ -124,27 +124,127 @@ body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans
 .flt-btn:hover { color: var(--text); }
 .flt-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+
+/* Card container */
 .img-card {
-  background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
-  overflow: hidden; cursor: pointer; position: relative; transition: border-color .15s;
+  background: var(--surf2); border: 2px solid transparent; border-radius: 7px;
+  overflow: visible; position: relative; transition: border-color .15s;
+  display: flex; flex-direction: column;
 }
 .img-card:hover { border-color: var(--blue); }
 .img-card.selected { border-color: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
-.img-card .thumb-wrap { aspect-ratio: 16/9; background: #0a0a0a; overflow: hidden; position: relative; }
-.img-card.portrait-card .thumb-wrap { aspect-ratio: 9/16; }
-.img-card .thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
-.img-card .card-foot { padding: 5px 7px; }
-.img-card .card-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.img-card .card-name:hover { overflow: visible; white-space: normal; word-break: break-word; }
-.img-card .card-tags { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
-.img-card .tag-pill { font-size: 9px; padding: 1px 5px; background: var(--surf3); border-radius: 8px; color: var(--muted); }
-.img-card .card-actions { display: flex; gap: 3px; margin-top: 5px; }
-.img-card .card-actions button { flex: 1; padding: 3px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
-.img-card .card-actions button:hover { background: var(--blue); border-color: var(--blue); }
-.img-card .card-cb { position: absolute; top: 5px; left: 5px; display: none; }
+/* Active-in-slot border tints */
+.img-card.in-gfx-h  { border-color: #4a9eff; }
+.img-card.in-gfx-v  { border-color: #7c3aed; }
+.img-card.in-bug-h  { border-color: #0d9488; }
+.img-card.in-bug-v  { border-color: #f59e0b; }
+
+/* Thumbnail — fixed height, contain, dark bg */
+.img-card .thumb-wrap {
+  height: 110px; background: #1c1c1c; overflow: hidden; position: relative;
+  border-radius: 5px 5px 0 0; cursor: pointer; flex-shrink: 0;
+}
+.img-card .thumb-wrap img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+}
+/* slot badge overlay on thumbnail */
+.img-card .slot-badges {
+  position: absolute; bottom: 3px; right: 3px;
+  display: flex; gap: 2px; flex-wrap: wrap; justify-content: flex-end;
+}
+.img-card .slot-badge {
+  font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+  letter-spacing: .04em; line-height: 1.4;
+}
+.img-card .slot-badge.gh { background: #1e3a5f; color: #93c5fd; }
+.img-card .slot-badge.gv { background: #3b1d6e; color: #c4b5fd; }
+.img-card .slot-badge.bh { background: #134e4a; color: #5eead4; }
+.img-card .slot-badge.bv { background: #78350f; color: #fcd34d; }
+
+/* Card foot */
+.img-card .card-foot { padding: 5px 7px 6px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+/* Name with hover tooltip */
+.img-card .card-name-wrap { position: relative; }
+.img-card .card-name {
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; display: block;
+  cursor: text; outline: none; border-radius: 3px;
+  padding: 1px 3px; margin: -1px -3px;
+}
+.img-card .card-name:hover { background: rgba(255,255,255,.05); }
+.img-card .card-name[contenteditable=true] {
+  white-space: normal; overflow: visible; background: var(--surf3);
+  border: 1px solid var(--blue); border-radius: 3px;
+  box-shadow: 0 0 0 2px rgba(74,158,255,.25);
+}
+.img-card .card-name-full {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 50;
+  background: var(--surf3); border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 7px; font-size: 11px; white-space: normal; word-break: break-word;
+  max-width: 240px; box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+.img-card .card-name-wrap:hover .card-name-full { display: block; }
+
+/* Tag chips — blue style */
+.img-card .card-tags { display: flex; flex-wrap: wrap; gap: 3px; min-height: 0; }
+.img-card .tag-chip {
+  font-size: 9px; padding: 2px 5px; border-radius: 8px;
+  background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb44;
+  display: inline-flex; align-items: center; gap: 3px; line-height: 1;
+}
+.img-card .tag-chip .chip-x {
+  cursor: pointer; opacity: .6; font-size: 10px; line-height: 1;
+}
+.img-card .tag-chip .chip-x:hover { opacity: 1; color: var(--red); }
+.img-card .edited-badge {
+  font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+  background: #134e4a; color: #5eead4; letter-spacing: .05em; align-self: flex-start;
+}
+
+/* Slot toggle buttons row */
+.img-card .slot-btns {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+}
+.img-card .slt-btn {
+  padding: 3px 2px; font-size: 9px; font-weight: 700; border-radius: 3px;
+  border: 1px solid var(--border); background: var(--surf3); color: var(--muted);
+  cursor: pointer; text-align: center; transition: all .15s; white-space: nowrap;
+}
+.img-card .slt-btn:hover { color: var(--text); border-color: var(--text); }
+.img-card .slt-btn.gh.on { background: #1e3a5f; color: #93c5fd; border-color: #2563eb; }
+.img-card .slt-btn.gv.on { background: #3b1d6e; color: #c4b5fd; border-color: #7c3aed; }
+.img-card .slt-btn.bh.on { background: #134e4a; color: #5eead4; border-color: #0d9488; }
+.img-card .slt-btn.bv.on { background: #78350f; color: #fcd34d; border-color: #f59e0b; }
+
+/* Card utility actions */
+.img-card .card-utils { display: flex; gap: 3px; }
+.img-card .card-utils button {
+  flex: 1; padding: 3px; font-size: 11px; background: var(--surf3);
+  border: 1px solid var(--border); color: var(--muted); border-radius: 3px; cursor: pointer;
+}
+.img-card .card-utils button:hover { background: var(--surf2); color: var(--text); border-color: var(--text); }
+.img-card .card-utils button.del:hover { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* Checkbox for select mode */
+.img-card .card-cb { position: absolute; top: 5px; left: 5px; display: none; z-index: 10; }
 .img-card .card-cb input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--orange); }
 .select-mode .img-card .card-cb { display: block; }
+
+/* Tag dropdown */
+.tag-dropdown {
+  position: fixed; z-index: 400; background: var(--surf); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.5);
+  min-width: 160px; max-height: 240px; overflow-y: auto;
+}
+.tag-dropdown .td-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.tag-dropdown .td-item {
+  display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+  border-radius: 4px; cursor: pointer; font-size: 12px;
+}
+.tag-dropdown .td-item:hover { background: var(--surf2); }
+.tag-dropdown .td-item input { accent-color: var(--blue); cursor: pointer; }
 
 /* ── Target slot selector ────────────────────────────────────────────────── */
 #target-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -700,6 +800,16 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
 </div>
 
+<!-- ── MONITOR MAGNIFY MODAL ──────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="mon-modal">
+  <div id="mon-modal-inner" style="position:relative">
+    <button class="modal-close" onclick="closeModal('mon-modal')" style="position:absolute;top:-28px;right:0;background:var(--surf3);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:2px 10px;cursor:pointer;font-size:14px;z-index:10">✕</button>
+    <div class="mon-mag-wrap" id="mon-mag-wrap">
+      <iframe id="mon-mag-iframe" scrolling="no" frameborder="0"></iframe>
+    </div>
+  </div>
+</div>
+
 <!-- ── SCRIPT ─────────────────────────────────────────────────────────────── -->
 <script>
 // ── State ───────────────────────────────────────────────────────────────────
@@ -738,8 +848,17 @@ function loadPersistedAuth() {
   API_KEY = sessionStorage.getItem('adp_key') || '';
   if (WORKER) document.getElementById('worker-url-input').value = WORKER;
   sectionsState = JSON.parse(localStorage.getItem('adp_sections') || '{}');
-  bgRef = JSON.parse(localStorage.getItem('adp_bgref') || '{"h":null,"v":null}');
-  slotTarget = localStorage.getItem('adp_target') || 'graphics:h';
+  bgRef         = JSON.parse(localStorage.getItem('adp_bgref')     || '{"h":null,"v":null}');
+  slotTarget    = localStorage.getItem('adp_target') || 'graphics:h';
+  // Restore composite-canvas prefs
+  try { const pv = JSON.parse(localStorage.getItem('adp_prev_vis')); if (pv) previewVis = pv; } catch(e){}
+  try { const ac = JSON.parse(localStorage.getItem('adp_active_ctrl')); if (ac) activeCtrl = { ...activeCtrl, ...ac }; } catch(e){}
+  // Restore previewVis button states (elements exist after DOMContentLoaded)
+  setTimeout(() => {
+    ['graphics','bugs'].forEach(layer => ['h','v'].forEach(slot => {
+      document.getElementById(`pvtgl-${layer}-${slot}`)?.classList.toggle('active', !!previewVis[layer]?.[slot]);
+    }));
+  }, 0);
 }
 
 async function authenticate() {
@@ -884,140 +1003,199 @@ function applyOpenSections() {
   });
 }
 
-// ── Slots ───────────────────────────────────────────────────────────────────
+// ── Slots — new composite-canvas implementation ──────────────────────────────
+let activeCtrl   = { h: 'graphics', v: 'graphics' };
+let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
+let compositeDragInit = false;
+
 function renderSlots() {
-  ['graphics','bugs'].forEach(layer => {
-    const cont = document.getElementById(`slots-${layer}`);
-    cont.innerHTML = ['h','v'].map(s => buildSlotCard(layer, s)).join('');
-    ['h','v'].forEach(s => initSlotDrag(layer, s));
-  });
   updateAllSlotPreviews();
+  initUrlBars();
+  restoreGridPrefs();
+  ['h','v'].forEach(cs => {
+    updateBgRefInSlot(cs);
+    syncColControls(cs);
+    restoreActiveCtrl(cs);
+  });
+  initOutputMonitors();
+  if (!compositeDragInit) { initCompositeDrag(); compositeDragInit = true; }
 }
 
-function buildSlotCard(layer, slot) {
-  const def = SLOTS.find(d => d.layer === layer && d.slot === slot);
-  const isV = slot === 'v';
-  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
-  const pageUrl = `${location.origin}${location.pathname.replace('gallery.html', '')}${pageMap[layer][slot]}?event=${currentEvent}`;
-  const shortUrl = pageUrl.length > 60 ? '…' + pageUrl.slice(-50) : pageUrl;
-
-  return `
-  <div class="slot-card" id="slot-card-${layer}-${slot}">
-    <div class="slot-card-hdr">
-      <span class="slot-label">${def.label}</span>
-      <span class="live-dot" id="live-dot-${layer}-${slot}"></span>
-    </div>
-    <div class="slot-card-hdr" style="padding:4px 10px;background:var(--bg)">
-      <code style="font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer"
-        title="${escHtml(pageUrl)}" onclick="copyUrl('${layer}','${slot}')">${escHtml(shortUrl)}</code>
-      <a href="${escHtml(pageUrl)}" target="_blank" class="btn btn-gray btn-sm" style="margin-left:4px">↗</a>
-      <button class="btn btn-blue btn-sm" onclick="copyUrl('${layer}','${slot}')">📋</button>
-    </div>
-    <div class="slot-preview-wrap ${isV ? 'portrait' : ''}" id="slot-prev-${layer}-${slot}">
-      <div class="sp-bg" id="sp-bg-${layer}-${slot}"></div>
-      <img class="sp-img hidden" id="sp-img-${layer}-${slot}" draggable="false">
-      <div class="sp-empty" id="sp-empty-${layer}-${slot}">No image</div>
-      <div class="sp-crosshair" id="sp-cross-${layer}-${slot}" style="display:none;left:50%;top:50%"></div>
-    </div>
-    <div class="slot-controls">
-      <div class="scale-row">
-        <span style="font-size:11px;color:var(--muted)">Scale</span>
-        <input type="range" min="10" max="300" value="100" id="scale-${layer}-${slot}"
-          oninput="onScaleInput('${layer}','${slot}',this.value)"
-          onchange="pushSelect('${layer}','${slot}')">
-        <span class="scale-val" id="scale-val-${layer}-${slot}">100%</span>
-      </div>
-      <div class="fit-row">
-        <div class="fit-btn active" id="fit-contain-${layer}-${slot}" onclick="setFit('${layer}','${slot}','contain')">Contain</div>
-        <div class="fit-btn" id="fit-cover-${layer}-${slot}" onclick="setFit('${layer}','${slot}','cover')">Cover</div>
-        <div class="fit-btn" id="fit-fill-${layer}-${slot}" onclick="setFit('${layer}','${slot}','fill')">Fill</div>
-      </div>
-      <div class="slot-action-row">
-        <button class="btn btn-live" id="live-btn-${layer}-${slot}" onclick="toggleLive('${layer}','${slot}')">SEND LIVE</button>
-        <button class="btn btn-gray btn-sm" onclick="clearSlot('${layer}','${slot}')">Clear</button>
-      </div>
-    </div>
-  </div>`;
-}
-
+// ── Composite canvas update ───────────────────────────────────────────────────
 function updateAllSlotPreviews() {
   SLOTS.forEach(({ layer, slot }) => updateSlotPreview(layer, slot));
 }
 
 function updateSlotPreview(layer, slot) {
-  const state = slots[layer]?.[slot];
-  const img   = document.getElementById(`sp-img-${layer}-${slot}`);
-  const empty = document.getElementById(`sp-empty-${layer}-${slot}`);
-  const dot   = document.getElementById(`live-dot-${layer}-${slot}`);
-  const liveBtn = document.getElementById(`live-btn-${layer}-${slot}`);
+  const state  = slots[layer]?.[slot];
+  const imgId  = layer === 'graphics' ? `sp-gfx-img-${slot}` : `sp-bug-img-${slot}`;
+  const img    = document.getElementById(imgId);
   if (!img) return;
 
   if (!state?.key) {
     img.classList.add('hidden');
-    if (empty) empty.style.display = '';
-    if (dot) dot.classList.remove('on');
-    if (liveBtn) { liveBtn.classList.remove('on'); liveBtn.textContent = 'SEND LIVE'; }
-    return;
+    img.dataset.key = '';
+  } else {
+    if (img.dataset.key !== state.key) {
+      img.dataset.key = state.key;
+      img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
+      img.classList.add('hidden');
+      img.onload = () => img.classList.remove('hidden');
+    }
+    const s = (state.scale || 100) / 100;
+    const r = state.rotate || 0;
+    img.style.objectFit       = state.fit === 'cover' ? 'cover' : (state.fit === 'fill' ? 'fill' : 'contain');
+    img.style.transform       = `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+    img.style.left            = (state.x || 50) + '%';
+    img.style.top             = (state.y || 50) + '%';
+    img.style.position        = 'absolute';
+    img.style.transformOrigin = 'center center';
   }
 
-  if (empty) empty.style.display = 'none';
-  if (img.dataset.key !== state.key) {
-    img.dataset.key = state.key;
-    img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
-    img.classList.add('hidden');
-    img.onload = () => img.classList.remove('hidden');
-  }
+  // Apply preview visibility toggle
+  img.style.display = (previewVis[layer]?.[slot] === false) ? 'none' : '';
 
-  const s = (state.scale || 100) / 100;
-  img.style.objectFit  = state.fit === 'cover' ? 'cover' : (state.fit === 'fill' ? 'fill' : 'contain');
-  img.style.transform  = `translate(-50%, -50%) scale(${s})`;
-  img.style.left       = (state.x || 50) + '%';
-  img.style.top        = (state.y || 50) + '%';
-  img.style.width      = '100%';
-  img.style.height     = '100%';
-  img.style.position   = 'absolute';
-  img.style.transformOrigin = 'center center';
+  // Empty state: show only when both layers in this column have no image
+  const cs = slot;
+  const gfxKey = slots.graphics?.[cs]?.key;
+  const bugKey = slots.bugs?.[cs]?.key;
+  const emptyEl = document.getElementById(`sp-empty-comp-${cs}`);
+  if (emptyEl) emptyEl.style.display = (!gfxKey && !bugKey) ? '' : 'none';
 
-  if (dot) dot.classList.toggle('on', !!state.live);
-  if (liveBtn) {
-    liveBtn.classList.toggle('on', !!state.live);
-    liveBtn.textContent = state.live ? '● LIVE' : 'SEND LIVE';
-  }
+  // Live button state
+  updateLiveBtn(layer, slot);
 
-  const scaleEl = document.getElementById(`scale-${layer}-${slot}`);
-  const scaleVal = document.getElementById(`scale-val-${layer}-${slot}`);
-  if (scaleEl && scaleEl !== document.activeElement) {
-    scaleEl.value = state.scale || 100;
-    if (scaleVal) scaleVal.textContent = (state.scale || 100) + '%';
-  }
+  // Sync col controls if this layer is the active ctrl for this col
+  if (activeCtrl[slot] === layer) syncColControls(slot);
+}
 
-  // Fit buttons
-  ['contain','cover','fill'].forEach(f => {
-    document.getElementById(`fit-${f}-${layer}-${slot}`)?.classList.toggle('active', (state.fit||'contain') === f);
+function updateLiveBtn(layer, slot) {
+  const btn = document.getElementById(`lvb-${layer}-${slot}`);
+  if (!btn) return;
+  const state = slots[layer]?.[slot];
+  btn.classList.remove('ready','live');
+  if (state?.key && state.live) btn.classList.add('live');
+  else if (state?.key)          btn.classList.add('ready');
+}
+
+// ── Column controls ───────────────────────────────────────────────────────────
+function setActiveCtrl(colSlot, layer) {
+  activeCtrl[colSlot] = layer;
+  localStorage.setItem('adp_active_ctrl', JSON.stringify(activeCtrl));
+  restoreActiveCtrl(colSlot);
+  syncColControls(colSlot);
+}
+
+function restoreActiveCtrl(colSlot) {
+  const saved = localStorage.getItem('adp_active_ctrl');
+  if (saved) { try { const p = JSON.parse(saved); if (p[colSlot]) activeCtrl[colSlot] = p[colSlot]; } catch(e){} }
+  ['graphics','bugs'].forEach(l => {
+    document.getElementById(`ctab-${colSlot}-${l}`)?.classList.toggle('active', l === activeCtrl[colSlot]);
   });
 }
 
-function onScaleInput(layer, slot, val) {
-  document.getElementById(`scale-val-${layer}-${slot}`).textContent = val + '%';
-  if (!slots[layer]) slots[layer] = {};
-  if (!slots[layer][slot]) slots[layer][slot] = {};
-  slots[layer][slot].scale = parseFloat(val);
-  updateSlotPreview(layer, slot);
+function syncColControls(colSlot) {
+  const layer = activeCtrl[colSlot];
+  const state = slots[layer]?.[colSlot];
+  const scaleEl  = document.getElementById(`scale-ctrl-${colSlot}`);
+  const scaleVal = document.getElementById(`scale-val-ctrl-${colSlot}`);
+  const rotEl    = document.getElementById(`rotate-ctrl-${colSlot}`);
+  const rotVal   = document.getElementById(`rotate-val-ctrl-${colSlot}`);
+  if (scaleEl && scaleEl !== document.activeElement) {
+    scaleEl.value = state?.scale || 100;
+    if (scaleVal) scaleVal.textContent = (state?.scale || 100) + '%';
+  }
+  if (rotEl && rotEl !== document.activeElement) {
+    rotEl.value = state?.rotate || 0;
+    if (rotVal) rotVal.textContent = (state?.rotate || 0) + '°';
+  }
+  ['contain','cover','fill'].forEach(f => {
+    document.getElementById(`fit-${f}-ctrl-${colSlot}`)?.classList.toggle('active', (state?.fit||'contain') === f);
+  });
 }
 
+function onScaleInput(colSlot, val) {
+  const layer = activeCtrl[colSlot];
+  document.getElementById(`scale-val-ctrl-${colSlot}`).textContent = val + '%';
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
+  slots[layer][colSlot].scale = parseFloat(val);
+  updateSlotPreview(layer, colSlot);
+}
+
+function onRotateInput(colSlot, val) {
+  const layer = activeCtrl[colSlot];
+  document.getElementById(`rotate-val-ctrl-${colSlot}`).textContent = val + '°';
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
+  slots[layer][colSlot].rotate = parseFloat(val);
+  updateSlotPreview(layer, colSlot);
+}
+
+function setFitCtrl(colSlot, fit) {
+  const layer = activeCtrl[colSlot];
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
+  slots[layer][colSlot].fit = fit;
+  updateSlotPreview(layer, colSlot);
+  pushSelectCtrl(colSlot);
+}
+
+// keep setFit alias for any legacy calls
+function setFit(layer, slot, fit) { setFitCtrl(slot, fit); }
+
+async function pushSelectCtrl(colSlot) {
+  const layer = activeCtrl[colSlot];
+  const s = slots[layer]?.[colSlot];
+  if (!s?.key) return;
+  await api('PUT', `/select?event=${currentEvent}`, {
+    layer, slot: colSlot, key: s.key, name: s.name || '',
+    x: s.x || 50, y: s.y || 50, scale: s.scale || 100,
+    rotate: s.rotate || 0, fit: s.fit || 'contain', live: s.live || false
+  });
+}
+
+// keep pushSelect alias
 async function pushSelect(layer, slot) {
   const s = slots[layer]?.[slot];
   if (!s?.key) return;
-  await api('PUT', `/select?event=${currentEvent}`, { layer, slot, key: s.key, name: s.name, x: s.x || 50, y: s.y || 50, scale: s.scale || 100, fit: s.fit || 'contain' });
+  await api('PUT', `/select?event=${currentEvent}`, {
+    layer, slot, key: s.key, name: s.name || '',
+    x: s.x || 50, y: s.y || 50, scale: s.scale || 100,
+    rotate: s.rotate || 0, fit: s.fit || 'contain', live: s.live || false
+  });
 }
 
+// ── Preview visibility toggles ────────────────────────────────────────────────
+function togglePreview(layer, slot) {
+  previewVis[layer][slot] = !previewVis[layer][slot];
+  localStorage.setItem('adp_prev_vis', JSON.stringify(previewVis));
+  document.getElementById(`pvtgl-${layer}-${slot}`)?.classList.toggle('active', previewVis[layer][slot]);
+  const imgId = layer === 'graphics' ? `sp-gfx-img-${slot}` : `sp-bug-img-${slot}`;
+  const img = document.getElementById(imgId);
+  if (img) img.style.display = previewVis[layer][slot] ? '' : 'none';
+}
+
+// ── LIVE ──────────────────────────────────────────────────────────────────────
 async function toggleLive(layer, slot) {
   if (!slots[layer]) slots[layer] = {};
   if (!slots[layer][slot]) slots[layer][slot] = {};
-  const current = slots[layer][slot].live;
-  slots[layer][slot].live = !current;
-  updateSlotPreview(layer, slot);
-  await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: !current });
+  slots[layer][slot].live = !slots[layer][slot].live;
+  updateLiveBtn(layer, slot);
+  await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: slots[layer][slot].live });
+}
+
+async function toggleLiveBoth(layer) {
+  const hLive = !!slots[layer]?.h?.live;
+  const vLive = !!slots[layer]?.v?.live;
+  const newLive = !(hLive && vLive);
+  for (const slot of ['h','v']) {
+    if (!slots[layer]) slots[layer] = {};
+    if (!slots[layer][slot]) slots[layer][slot] = {};
+    slots[layer][slot].live = newLive;
+    updateLiveBtn(layer, slot);
+    await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: newLive });
+  }
 }
 
 async function clearSlot(layer, slot) {
@@ -1025,54 +1203,180 @@ async function clearSlot(layer, slot) {
   slots[layer][slot] = null;
   updateSlotPreview(layer, slot);
   await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
+  renderGrid();
 }
 
-function setFit(layer, slot, fit) {
-  if (!slots[layer]) slots[layer] = {};
-  if (!slots[layer][slot]) slots[layer][slot] = {};
-  slots[layer][slot].fit = fit;
-  updateSlotPreview(layer, slot);
-  pushSelect(layer, slot);
+// ── Composite drag ────────────────────────────────────────────────────────────
+function initCompositeDrag() {
+  ['h','v'].forEach(colSlot => {
+    const wrap = document.getElementById(`sp-comp-${colSlot}`);
+    if (!wrap) return;
+    let dragging = false, startX, startY, startPX, startPY, dragLayer;
+
+    wrap.addEventListener('mousedown', e => {
+      const layer = activeCtrl[colSlot];
+      if (!slots[layer]?.[colSlot]?.key) return;
+      dragging = true; dragLayer = layer;
+      startX = e.clientX; startY = e.clientY;
+      startPX = slots[layer][colSlot].x || 50;
+      startPY = slots[layer][colSlot].y || 50;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const rect = wrap.getBoundingClientRect();
+      let nx = Math.max(0, Math.min(100, startPX + (e.clientX - startX) / rect.width  * 100));
+      let ny = Math.max(0, Math.min(100, startPY + (e.clientY - startY) / rect.height * 100));
+      // Snap
+      const snapEl = document.getElementById(`snap-on-${colSlot}`);
+      if (snapEl?.checked) {
+        const sz = parseInt(document.getElementById(`grid-size-${colSlot}`)?.value || 20);
+        const step = 100 / sz;
+        nx = Math.round(nx / step) * step;
+        ny = Math.round(ny / step) * step;
+      }
+      slots[dragLayer][colSlot].x = nx;
+      slots[dragLayer][colSlot].y = ny;
+      updateSlotPreview(dragLayer, colSlot);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (dragging) { dragging = false; pushSelectCtrl(colSlot); }
+    });
+  });
 }
 
-function initSlotDrag(layer, slot) {
-  const wrap = document.getElementById(`slot-prev-${layer}-${slot}`);
-  if (!wrap) return;
-  let dragging = false, startX, startY, startPX, startPY;
+// ── Grid overlay ──────────────────────────────────────────────────────────────
+function applyGrid(colSlot) {
+  const on   = document.getElementById(`grid-on-${colSlot}`)?.checked;
+  const size = parseInt(document.getElementById(`grid-size-${colSlot}`)?.value || 20);
+  const overlay = document.getElementById(`sp-grid-${colSlot}`);
+  if (!overlay) return;
+  overlay.classList.toggle('active', !!on);
+  overlay.style.setProperty('--grid-sz', `${100/size}%`);
+  const prefs = JSON.parse(localStorage.getItem('adp_grid_prefs') || '{}');
+  prefs[colSlot] = { on: !!on, size };
+  localStorage.setItem('adp_grid_prefs', JSON.stringify(prefs));
+}
 
-  wrap.addEventListener('mousedown', e => {
-    if (!slots[layer]?.[slot]?.key) return;
-    dragging = true;
-    startX = e.clientX; startY = e.clientY;
-    const s = slots[layer][slot];
-    startPX = s.x || 50; startPY = s.y || 50;
-    e.preventDefault();
+function restoreGridPrefs() {
+  const prefs = JSON.parse(localStorage.getItem('adp_grid_prefs') || '{}');
+  ['h','v'].forEach(cs => {
+    const p = prefs[cs] || { on: false, size: 20 };
+    const onEl   = document.getElementById(`grid-on-${cs}`);
+    const sizeEl = document.getElementById(`grid-size-${cs}`);
+    if (onEl)   onEl.checked = p.on;
+    if (sizeEl) sizeEl.value = p.size;
+    applyGrid(cs);
   });
+}
 
-  window.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const rect = wrap.getBoundingClientRect();
-    const dx = (e.clientX - startX) / rect.width  * 100;
-    const dy = (e.clientY - startY) / rect.height * 100;
-    const nx = Math.max(0, Math.min(100, startPX + dx));
-    const ny = Math.max(0, Math.min(100, startPY + dy));
-    slots[layer][slot].x = nx;
-    slots[layer][slot].y = ny;
-    updateSlotPreview(layer, slot);
-  });
+// ── BG Ref ────────────────────────────────────────────────────────────────────
+function updateBgRefDisplay(colSlot) {
+  const onEl = document.getElementById(`bgref-on-${colSlot}`);
+  if (bgRef[colSlot]) bgRef[colSlot].enabled = !!onEl?.checked;
+  localStorage.setItem('adp_bgref', JSON.stringify(bgRef));
+  updateBgRefInSlot(colSlot);
+}
 
-  window.addEventListener('mouseup', () => {
-    if (dragging) { dragging = false; pushSelect(layer, slot); }
+function updateBgRefOpacity(colSlot, opacity) {
+  if (!bgRef[colSlot]) return;
+  bgRef[colSlot].opacity = opacity;
+  const valEl = document.getElementById(`bgref-val-${colSlot}`);
+  if (valEl) valEl.textContent = Math.round(opacity * 100) + '%';
+  localStorage.setItem('adp_bgref', JSON.stringify(bgRef));
+  updateBgRefInSlot(colSlot);
+}
+
+function updateBgRefInSlot(colSlot) {
+  const bg  = document.getElementById(`sp-bg-comp-${colSlot}`);
+  if (!bg) return;
+  const ref = bgRef[colSlot];
+  if (!ref?.enabled || !ref.key) { bg.innerHTML = ''; return; }
+  bg.innerHTML = `<img src="${WORKER}/img/${encodeURIComponent(ref.key)}" style="width:100%;height:100%;object-fit:cover;opacity:${ref.opacity||0.3}">`;
+}
+
+function setBgRef(slot, key, name) {
+  bgRef[slot] = { key, name, opacity: bgRef[slot]?.opacity || 0.3, enabled: true };
+  const onEl = document.getElementById(`bgref-on-${slot}`);
+  if (onEl) onEl.checked = true;
+  const opEl = document.getElementById(`bgref-opacity-${slot}`);
+  if (opEl) opEl.value = Math.round((bgRef[slot].opacity) * 100);
+  localStorage.setItem('adp_bgref', JSON.stringify(bgRef));
+  updateBgRefInSlot(slot);
+}
+
+// ── URL bars ──────────────────────────────────────────────────────────────────
+function initUrlBars() {
+  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
+  SLOTS.forEach(({ layer, slot }) => {
+    const base = location.pathname.replace('gallery.html','');
+    const url  = `${location.origin}${base}${pageMap[layer][slot]}?event=${currentEvent}`;
+    const codeEl = document.getElementById(`url-code-${layer}-${slot}`);
+    const openEl = document.getElementById(`url-open-${layer}-${slot}`);
+    if (codeEl) { codeEl.textContent = '…' + url.slice(-46); codeEl.title = url; }
+    if (openEl) openEl.href = url;
   });
 }
 
 function copyUrl(layer, slot) {
+  const base = location.pathname.replace('gallery.html','');
   const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
-  const pageUrl = `${location.origin}${location.pathname.replace('gallery.html', '')}${pageMap[layer][slot]}?event=${currentEvent}`;
-  navigator.clipboard.writeText(pageUrl).then(() => {
-    const btn = document.querySelector(`#slot-card-${layer}-${slot} .btn-blue`);
-    if (btn) { const t = btn.textContent; btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = t, 1500); }
+  const url = `${location.origin}${base}${pageMap[layer][slot]}?event=${currentEvent}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector(`#url-code-${layer}-${slot}`)?.closest('.url-bar-row')?.querySelector('.btn-blue');
+    if (btn) { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = t, 1500); }
   });
+}
+
+// ── Output monitors ───────────────────────────────────────────────────────────
+function initOutputMonitors() {
+  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
+  SLOTS.forEach(({ layer, slot }) => {
+    const base  = location.pathname.replace('gallery.html','');
+    const url   = `${location.origin}${base}${pageMap[layer][slot]}?event=${currentEvent}`;
+    const iframe = document.getElementById(`mon-iframe-${layer}-${slot}`);
+    const wrap   = document.getElementById(`mon-wrap-${layer}-${slot}`);
+    if (!iframe || !wrap) return;
+    if (iframe.src !== url) iframe.src = url;
+    // Scale iframe to fit wrap
+    const isV  = slot === 'v';
+    const resW = isV ? (settings.resolution?.v?.w || 2160) : (settings.resolution?.h?.w || 3840);
+    const resH = isV ? (settings.resolution?.v?.h || 3840) : (settings.resolution?.h?.h || 2160);
+    requestAnimationFrame(() => {
+      const ww = wrap.offsetWidth || 140;
+      const scale = ww / resW;
+      iframe.style.width  = resW + 'px';
+      iframe.style.height = resH + 'px';
+      iframe.style.transform = `scale(${scale})`;
+    });
+  });
+}
+
+function magnifyMonitor(layer, slot) {
+  const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
+  const base = location.pathname.replace('gallery.html','');
+  const url  = `${location.origin}${base}${pageMap[layer][slot]}?event=${currentEvent}`;
+  const isV  = slot === 'v';
+  const resW = isV ? (settings.resolution?.v?.w || 2160) : (settings.resolution?.h?.w || 3840);
+  const resH = isV ? (settings.resolution?.v?.h || 3840) : (settings.resolution?.h?.h || 2160);
+
+  const maxW = window.innerWidth  * 0.6;
+  const maxH = window.innerHeight * 0.8;
+  let w = maxW, h = w * resH / resW;
+  if (h > maxH) { h = maxH; w = h * resW / resH; }
+
+  const scale = w / resW;
+  const wrap   = document.getElementById('mon-mag-wrap');
+  const iframe = document.getElementById('mon-mag-iframe');
+  wrap.style.width  = Math.round(w) + 'px';
+  wrap.style.height = Math.round(h) + 'px';
+  iframe.src = url;
+  iframe.style.width     = resW + 'px';
+  iframe.style.height    = resH + 'px';
+  iframe.style.transform = `scale(${scale})`;
+  openModal('mon-modal');
 }
 
 // ── Target slot selector ─────────────────────────────────────────────────────
@@ -1125,40 +1429,93 @@ function renderGrid() {
 }
 
 function buildImgCard(img) {
-  const isPortrait = img.tags?.includes('portrait') || img.tags?.includes('vertical');
   const isEdited   = img.tags?.includes('edited');
   const isSelected = selectedKeys.has(img.key);
+  const safeKey    = escAttr(img.key);
+  const cardId     = 'card-' + img.key.replace(/[^a-z0-9]/gi,'_');
+
+  // Slot active states
+  const inGH = slots.graphics?.h?.key === img.key;
+  const inGV = slots.graphics?.v?.key === img.key;
+  const inBH = slots.bugs?.h?.key     === img.key;
+  const inBV = slots.bugs?.v?.key     === img.key;
+  const borderClass = inGH ? 'in-gfx-h' : inGV ? 'in-gfx-v' : inBH ? 'in-bug-h' : inBV ? 'in-bug-v' : '';
+
+  // Slot badges (thumbnail overlay)
+  const badges = [
+    inGH ? '<span class="slot-badge gh">GFX H</span>' : '',
+    inGV ? '<span class="slot-badge gv">GFX V</span>' : '',
+    inBH ? '<span class="slot-badge bh">Bug H</span>' : '',
+    inBV ? '<span class="slot-badge bv">Bug V</span>' : '',
+  ].join('');
+
+  // Visible tags (exclude 'edited', 'background')
+  const visibleTags = (img.tags||[]).filter(t => t !== 'edited' && t !== 'background');
+  const tagChips = visibleTags.map(t =>
+    `<span class="tag-chip">${escHtml(t)}<span class="chip-x" onclick="removeTagFromCard('${safeKey}','${escAttr(t)}',event)">×</span></span>`
+  ).join('');
+
   return `
-  <div class="img-card ${isPortrait ? 'portrait-card' : ''} ${isSelected ? 'selected' : ''}" id="card-${img.key.replace(/[^a-z0-9]/gi,'_')}">
-    <div class="card-cb"><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${escAttr(img.key)}',this.checked)"></div>
-    <div class="thumb-wrap" onclick="cardClick('${escAttr(img.key)}')">
+  <div class="img-card ${borderClass} ${isSelected ? 'selected' : ''}" id="${cardId}">
+    <div class="card-cb"><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect('${safeKey}',this.checked)"></div>
+    <div class="thumb-wrap" onclick="cardThumbClick('${safeKey}',event)">
       <img src="${WORKER}/img/${encodeURIComponent(img.key)}" loading="lazy">
+      <div class="slot-badges">${badges}</div>
     </div>
     <div class="card-foot">
-      <div class="card-name" title="${escHtml(img.name)}">${escHtml(img.name)}</div>
-      <div class="card-tags">${(img.tags||[]).filter(t=>t!=='edited').map(t=>`<span class="tag-pill">${escHtml(t)}</span>`).join('')}</div>
-      <div class="card-actions">
-        <button onclick="sendToTarget('${escAttr(img.key)}','${escAttr(img.name)}')" title="Send to target slot">▶</button>
-        <button onclick="openPreview('${escAttr(img.key)}')" title="Preview">🔍</button>
-        <button onclick="openTagEditor('${escAttr(img.key)}')" title="Edit tags">🏷</button>
-        <button onclick="deleteImage('${escAttr(img.key)}')" title="Delete">🗑</button>
+      <div class="card-name-wrap">
+        <span class="card-name" id="cname-${cardId}"
+          ondblclick="startInlineRename('${safeKey}',this)"
+          onblur="commitInlineRename('${safeKey}',this)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}if(event.key==='Escape'){cancelInlineRename(this)}"
+        >${escHtml(img.name)}</span>
+        <span class="card-name-full">${escHtml(img.name)}</span>
+      </div>
+      ${isEdited ? '<span class="edited-badge">EDITED</span>' : ''}
+      <div class="card-tags" id="ctags-${cardId}">${tagChips}</div>
+      <div class="slot-btns">
+        <button class="slt-btn gh ${inGH?'on':''}" onclick="toggleSlot('${safeKey}','graphics','h',event)">GFX H</button>
+        <button class="slt-btn gv ${inGV?'on':''}" onclick="toggleSlot('${safeKey}','graphics','v',event)">GFX V</button>
+        <button class="slt-btn bh ${inBH?'on':''}" onclick="toggleSlot('${safeKey}','bugs','h',event)">Bug H</button>
+        <button class="slt-btn bv ${inBV?'on':''}" onclick="toggleSlot('${safeKey}','bugs','v',event)">Bug V</button>
+      </div>
+      <div class="card-utils">
+        <button title="Edit tags" onclick="openTagDropdown('${safeKey}',this,event)">🏷</button>
+        <button title="Rename (or double-click name)" onclick="startInlineRename('${safeKey}',document.getElementById('cname-${cardId}'))">✏️</button>
+        <button class="del" title="Delete" onclick="deleteImage('${safeKey}')">🗑</button>
       </div>
     </div>
   </div>`;
 }
 
-function cardClick(key) {
+function cardThumbClick(key, e) {
   if (selectMode) { toggleSelect(key, !selectedKeys.has(key)); return; }
-  sendToTarget(key, images.find(i => i.key === key)?.name || key);
+  openPreview(key);
 }
 
+// Send image to slot, or clear if already there (toggle)
+async function toggleSlot(key, layer, slot, e) {
+  e?.stopPropagation();
+  const name = images.find(i => i.key === key)?.name || key;
+  if (!slots[layer]) slots[layer] = {};
+  if (slots[layer][slot]?.key === key) {
+    // Already in slot → clear
+    slots[layer][slot] = null;
+    await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
+  } else {
+    // Send to slot (preserve position/scale/fit if slot had same image before)
+    const existing = slots[layer][slot] || {};
+    slots[layer][slot] = { key, name, x: 50, y: 50, scale: 100, fit: 'contain', rotate: 0, live: false, ...existing, key, name };
+    await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...slots[layer][slot] });
+  }
+  updateSlotPreview(layer, slot);
+  renderGrid(); // refresh slot-active states on all cards
+}
+
+// Keep sendToTarget for backward compat (used by preview modal)
 async function sendToTarget(key, name) {
   const [layer, slot] = slotTarget.split(':');
-  if (!slots[layer]) slots[layer] = {};
-  const existing = slots[layer][slot] || {};
-  slots[layer][slot] = { ...existing, key, name, x: existing.x || 50, y: existing.y || 50, scale: existing.scale || 100, fit: existing.fit || 'contain' };
-  updateSlotPreview(layer, slot);
-  await api('PUT', `/select?event=${currentEvent}`, { layer, slot, key, name, x: existing.x || 50, y: existing.y || 50, scale: existing.scale || 100, fit: existing.fit || 'contain' });
+  await toggleSlot(key, layer, slot, null);
 }
 
 // ── Filters ──────────────────────────────────────────────────────────────────
@@ -1248,7 +1605,7 @@ function openUpload(forLayer) {
 }
 
 function populateChips() {
-  const permanentCats = ['background', 'QR codes'];
+  const permanentCats = ['background', 'QR codes', 'Credits'];
   const all = [...new Set([...permanentCats, ...categories])].sort();
   document.getElementById('ul-chips').innerHTML = all.map(c =>
     `<span class="ul-chip" data-cat="${escAttr(c)}" onclick="this.classList.toggle('on')">${escHtml(c)}</span>`
@@ -1364,12 +1721,27 @@ function openPreview(key) {
 async function openRenameModal() {
   const img = images.find(i => i.key === previewKey);
   if (!img) return;
-  const name = prompt('Rename image:', img.name);
-  if (!name || name === img.name) return;
-  await api('PUT', `/rename/${encodeURIComponent(previewKey)}?event=${currentEvent}`, { name });
-  img.name = name;
-  document.getElementById('preview-name').textContent = name;
-  renderGrid();
+  const nameEl = document.getElementById('preview-name');
+  // Make the name element inline-editable in the modal
+  nameEl.contentEditable = 'true';
+  nameEl.focus();
+  const range = document.createRange();
+  range.selectNodeContents(nameEl);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  const save = async () => {
+    nameEl.contentEditable = 'false';
+    nameEl.removeEventListener('blur', save);
+    nameEl.removeEventListener('keydown', keyHandler);
+    const newName = nameEl.textContent.trim();
+    if (!newName || newName === img.name) { nameEl.textContent = img.name; return; }
+    await api('PUT', `/rename/${encodeURIComponent(previewKey)}?event=${currentEvent}`, { name: newName });
+    img.name = newName;
+    renderGrid();
+  };
+  const keyHandler = e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } if (e.key === 'Escape') { nameEl.textContent = img.name; nameEl.blur(); } };
+  nameEl.addEventListener('blur', save, { once: true });
+  nameEl.addEventListener('keydown', keyHandler);
 }
 
 async function deleteFromPreview() {
@@ -1381,19 +1753,115 @@ async function deleteFromPreview() {
   renderBgRefs();
 }
 
-// ── Tag editor ────────────────────────────────────────────────────────────────
-async function openTagEditor(key) {
+// ── Inline rename ─────────────────────────────────────────────────────────────
+function startInlineRename(key, el) {
+  if (!el) return;
+  el.contentEditable = 'true';
+  el.dataset.origName = el.textContent;
+  el.focus();
+  // Select all text
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+
+async function commitInlineRename(key, el) {
+  if (el.contentEditable !== 'true') return;
+  el.contentEditable = 'false';
+  const newName = el.textContent.trim();
+  const origName = el.dataset.origName || '';
+  if (!newName || newName === origName) { el.textContent = origName || newName; return; }
   const img = images.find(i => i.key === key);
   if (!img) return;
-  const allTags = [...new Set([...categories, 'background', 'QR codes', 'edited'])].sort();
-  const current = img.tags || [];
-  const chosen = prompt(`Tags for "${img.name}"\n\nAvailable: ${allTags.join(', ')}\n\nCurrent (comma-separated):`, current.join(', '));
-  if (chosen === null) return;
-  const newTags = chosen.split(',').map(t => t.trim()).filter(Boolean);
-  await api('PUT', `/tags/${encodeURIComponent(key)}?event=${currentEvent}`, { tags: newTags });
-  img.tags = newTags;
-  renderGrid();
-  renderBgRefs();
+  await api('PUT', `/rename/${encodeURIComponent(key)}?event=${currentEvent}`, { name: newName });
+  img.name = newName;
+  // Update the full-name tooltip too
+  const wrap = el.closest('.card-name-wrap');
+  const full = wrap?.querySelector('.card-name-full');
+  if (full) full.textContent = newName;
+  // Also update preview modal if open
+  if (previewKey === key) document.getElementById('preview-name').textContent = newName;
+}
+
+function cancelInlineRename(el) {
+  el.contentEditable = 'false';
+  el.textContent = el.dataset.origName || el.textContent;
+}
+
+// ── Tag dropdown ──────────────────────────────────────────────────────────────
+let tagDropdownKey = null;
+
+function openTagDropdown(key, btn, e) {
+  e?.stopPropagation();
+  closeTagDropdown();
+  tagDropdownKey = key;
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+
+  const allTags = [...new Set(['background', 'QR codes', 'Credits', 'edited', ...categories])].sort();
+  const current = new Set(img.tags || []);
+
+  const div = document.createElement('div');
+  div.className = 'tag-dropdown';
+  div.id = 'tag-dropdown';
+  div.innerHTML = `<div class="td-title">Tags — ${escHtml(img.name)}</div>` +
+    allTags.map(t => `
+      <div class="td-item" onclick="toggleTagItem('${escAttr(key)}','${escAttr(t)}',this)">
+        <input type="checkbox" ${current.has(t) ? 'checked' : ''} readonly>
+        <span>${escHtml(t)}</span>
+      </div>`).join('');
+
+  document.body.appendChild(div);
+
+  // Position near button
+  const rect = btn.getBoundingClientRect();
+  const top = rect.bottom + 4;
+  const left = Math.min(rect.left, window.innerWidth - 180);
+  div.style.top  = top  + 'px';
+  div.style.left = left + 'px';
+
+  setTimeout(() => document.addEventListener('click', closeTagDropdown, { once: true }), 0);
+}
+
+async function toggleTagItem(key, tag, rowEl) {
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+  const cb = rowEl.querySelector('input');
+  const has = img.tags?.includes(tag);
+  if (has) {
+    img.tags = (img.tags || []).filter(t => t !== tag);
+    cb.checked = false;
+  } else {
+    img.tags = [...(img.tags || []), tag];
+    cb.checked = true;
+  }
+  await api('PUT', `/tags/${encodeURIComponent(key)}?event=${currentEvent}`, { tags: img.tags });
+  refreshCardTags(key, img);
+}
+
+async function removeTagFromCard(key, tag, e) {
+  e?.stopPropagation();
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+  img.tags = (img.tags || []).filter(t => t !== tag);
+  await api('PUT', `/tags/${encodeURIComponent(key)}?event=${currentEvent}`, { tags: img.tags });
+  refreshCardTags(key, img);
+}
+
+function refreshCardTags(key, img) {
+  const cardId = 'card-' + key.replace(/[^a-z0-9]/gi,'_');
+  const tagsEl = document.getElementById(`ctags-${cardId}`);
+  if (!tagsEl) return;
+  const visibleTags = (img.tags||[]).filter(t => t !== 'edited' && t !== 'background');
+  tagsEl.innerHTML = visibleTags.map(t =>
+    `<span class="tag-chip">${escHtml(t)}<span class="chip-x" onclick="removeTagFromCard('${escAttr(key)}','${escAttr(t)}',event)">×</span></span>`
+  ).join('');
+}
+
+function closeTagDropdown() {
+  document.getElementById('tag-dropdown')?.remove();
+  tagDropdownKey = null;
 }
 
 async function deleteImage(key) {
