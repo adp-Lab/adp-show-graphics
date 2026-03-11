@@ -380,7 +380,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   transition: all .15s;
 }
 .ctrl-tab:hover { color: var(--text); }
-.ctrl-tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
+.ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
+.slot-controls.ctrl-disabled { opacity: .35; pointer-events: none; }
 
 /* Composite canvas — exact aspect ratio, no rounding, pixel-perfect */
 .sp-composite {
@@ -599,7 +601,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="sp-empty" id="sp-empty-comp-h">empty</div>
           <div class="sp-grid-overlay" id="sp-grid-h"></div>
         </div>
-        <div class="slot-controls">
+        <div class="slot-controls ctrl-disabled" id="slot-controls-h">
           <div class="scale-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
             <input type="range" id="scale-ctrl-h" min="10" max="300" value="100" oninput="onScaleInput('h',this.value)">
@@ -724,7 +726,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="sp-empty" id="sp-empty-comp-v">empty</div>
           <div class="sp-grid-overlay" id="sp-grid-v"></div>
         </div>
-        <div class="slot-controls">
+        <div class="slot-controls ctrl-disabled" id="slot-controls-v">
           <div class="scale-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
             <input type="range" id="scale-ctrl-v" min="10" max="300" value="100" oninput="onScaleInput('v',this.value)">
@@ -1299,7 +1301,7 @@ function applyOpenSections() {
 }
 
 // ── Slots — new composite-canvas implementation ──────────────────────────────
-let activeCtrl   = { h: 'graphics', v: 'graphics' };
+let activeCtrl   = { h: null, v: null };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
 
@@ -1309,8 +1311,9 @@ function renderSlots() {
   restoreGridPrefs();
   ['h','v'].forEach(cs => {
     updateBgRefInSlot(cs);
-    syncColControls(cs);
     restoreActiveCtrl(cs);
+    applyColDisabled(cs);
+    syncColControls(cs);
   });
   initOutputMonitors();
   if (!compositeDragInit) { initCompositeDrag(); compositeDragInit = true; }
@@ -1375,22 +1378,33 @@ function updateLiveBtn(layer, slot) {
 
 // ── Column controls ───────────────────────────────────────────────────────────
 function setActiveCtrl(colSlot, layer) {
-  activeCtrl[colSlot] = layer;
+  // clicking the active mode deactivates it (toggle off)
+  activeCtrl[colSlot] = (activeCtrl[colSlot] === layer) ? null : layer;
   localStorage.setItem('adp_active_ctrl', JSON.stringify(activeCtrl));
   restoreActiveCtrl(colSlot);
+  applyColDisabled(colSlot);
   syncColControls(colSlot);
 }
 
 function restoreActiveCtrl(colSlot) {
   const saved = localStorage.getItem('adp_active_ctrl');
-  if (saved) { try { const p = JSON.parse(saved); if (p[colSlot]) activeCtrl[colSlot] = p[colSlot]; } catch(e){} }
+  if (saved) { try { const p = JSON.parse(saved); if ('h' in p) activeCtrl[colSlot] = p[colSlot]; } catch(e){} }
   ['graphics','bugs'].forEach(l => {
-    document.getElementById(`ctab-${colSlot}-${l}`)?.classList.toggle('active', l === activeCtrl[colSlot]);
+    const btn = document.getElementById(`ctab-${colSlot}-${l}`);
+    if (!btn) return;
+    btn.classList.remove('active-gfx', 'active-bug');
+    if (l === activeCtrl[colSlot]) btn.classList.add(l === 'graphics' ? 'active-gfx' : 'active-bug');
   });
+}
+
+function applyColDisabled(colSlot) {
+  const disabled = activeCtrl[colSlot] === null;
+  document.getElementById(`slot-controls-${colSlot}`)?.classList.toggle('ctrl-disabled', disabled);
 }
 
 function syncColControls(colSlot) {
   const layer = activeCtrl[colSlot];
+  if (!layer) return; // no mode active — controls are greyed out, nothing to sync
   const state = slots[layer]?.[colSlot];
   const scaleEl  = document.getElementById(`scale-ctrl-${colSlot}`);
   const scaleVal = document.getElementById(`scale-val-ctrl-${colSlot}`);
@@ -1411,6 +1425,7 @@ function syncColControls(colSlot) {
 
 function onScaleInput(colSlot, val) {
   const layer = activeCtrl[colSlot];
+  if (!layer) return;
   document.getElementById(`scale-val-ctrl-${colSlot}`).textContent = val + '%';
   if (!slots[layer]) slots[layer] = {};
   if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
@@ -1422,6 +1437,7 @@ function onScaleInput(colSlot, val) {
 
 function onRotateInput(colSlot, val) {
   const layer = activeCtrl[colSlot];
+  if (!layer) return;
   document.getElementById(`rotate-val-ctrl-${colSlot}`).textContent = val + '°';
   if (!slots[layer]) slots[layer] = {};
   if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
@@ -1433,6 +1449,7 @@ function onRotateInput(colSlot, val) {
 
 function setFitCtrl(colSlot, fit) {
   const layer = activeCtrl[colSlot];
+  if (!layer) return;
   if (!slots[layer]) slots[layer] = {};
   if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
   slots[layer][colSlot].fit = fit;
