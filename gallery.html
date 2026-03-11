@@ -22,7 +22,7 @@
   --yellow:   #ffeb3b;
   --live:     #00e676;
 }
-body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; min-height: 100vh; }
+body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans-serif; min-height: 100vh; }
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 #app { max-width: none; padding: 0 16px 80px; }
@@ -142,7 +142,7 @@ body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans
 
 /* Thumbnail — fixed height, contain, dark bg */
 .img-card .thumb-wrap {
-  height: 110px; background: #1c1c1c; overflow: hidden; position: relative;
+  height: 110px; background: #2d2d2d; overflow: hidden; position: relative;
   border-radius: 5px 5px 0 0; cursor: pointer; flex-shrink: 0;
 }
 .img-card .thumb-wrap img {
@@ -324,10 +324,6 @@ body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans
 #ul-progress { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 18px; }
 
 /* ── Preview modal ───────────────────────────────────────────────────────── */
-#preview-modal .modal { width: 800px; }
-#preview-modal img { width: 100%; border-radius: 6px; }
-#preview-modal .prev-info { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-#preview-modal .prev-name { flex: 1; font-weight: 600; }
 
 /* ── Window drop overlay ─────────────────────────────────────────────────── */
 #win-drop-overlay {
@@ -389,10 +385,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 /* Composite canvas */
 .sp-composite {
   position: relative; background: #0a0a0a; flex-shrink: 0;
-  aspect-ratio: 16/9; overflow: hidden; cursor: crosshair;
+  height: 360px; overflow: hidden; cursor: crosshair;
   box-shadow: inset 0 0 0 1px var(--border); width: 100%;
 }
-.sp-composite.portrait { aspect-ratio: 9/16; }
+.sp-composite.portrait { height: 360px; }
 .sp-composite .sp-layer-img {
   position: absolute; width: 100%; height: 100%; object-fit: contain;
   transform-origin: center center; transition: opacity .2s;
@@ -513,6 +509,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
   <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
   <div class="hdr-spacer"></div>
+  <button class="btn btn-gray btn-sm" onclick="loadAll()">↺ Refresh</button>
   <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
   <button class="btn btn-gray btn-sm" onclick="openHelp()">❓ Help</button>
   <span id="auth-status">●  Not connected</span>
@@ -538,8 +535,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 <!-- SLOT SECTION -->
 <div class="section" id="slots-section">
   <div class="sec-hdr open" onclick="toggleSection('slots')">
-    <h2>🎛 Live Slots</h2>
     <span class="chevron">›</span>
+    <h2>🎛 Live Slots</h2>
   </div>
   <div class="sec-body" id="sec-body-slots">
 
@@ -551,8 +548,22 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <div class="slot-col-hdr">
           <span class="slot-col-title">H — Landscape</span>
           <div class="ctrl-tabs">
-            <button class="ctrl-tab active" id="ctab-h-graphics" onclick="setActiveCtrl('h','graphics')">GFX</button>
-            <button class="ctrl-tab" id="ctab-h-bugs" onclick="setActiveCtrl('h','bugs')">Bug</button>
+            <button class="ctrl-tab active" id="ctab-h-graphics" onclick="setActiveCtrl('h','graphics')">Manip. GFX</button>
+            <button class="ctrl-tab" id="ctab-h-bugs" onclick="setActiveCtrl('h','bugs')">Manip. Bug</button>
+          </div>
+        </div>
+        <div class="url-bar">
+          <div class="url-bar-row">
+            <span class="url-label">GFX H</span>
+            <span class="url-code" id="url-code-graphics-h" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-graphics-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','h')" style="padding:2px 5px;font-size:10px">Copy</button>
+          </div>
+          <div class="url-bar-row">
+            <span class="url-label">Bug H</span>
+            <span class="url-code" id="url-code-bugs-h" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-bugs-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','h')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
         </div>
         <div class="sp-composite" id="sp-comp-h">
@@ -576,7 +587,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="fit-row">
             <button class="fit-btn active" id="fit-contain-ctrl-h" onclick="setFitCtrl('h','contain')">Contain</button>
             <button class="fit-btn" id="fit-cover-ctrl-h" onclick="setFitCtrl('h','cover')">Cover</button>
-            <button class="fit-btn" id="fit-fill-ctrl-h" onclick="setFitCtrl('h','fill')">Fill</button>
           </div>
         </div>
         <div class="grid-ctrl-row">
@@ -584,10 +594,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
             <input type="checkbox" id="grid-on-h" onchange="applyGrid('h')"> Grid
           </label>
           <select id="grid-size-h" onchange="applyGrid('h')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
-            <option value="10">10×</option>
-            <option value="20" selected>20×</option>
-            <option value="40">40×</option>
-            <option value="80">80×</option>
+            <option value="10">10×10</option>
+            <option value="20" selected>20×20</option>
+            <option value="40">40×40</option>
+            <option value="80">80×80</option>
           </select>
         </div>
         <div class="bgref-ctrl-row">
@@ -596,43 +606,35 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <input type="range" id="bgref-opacity-h" min="0" max="100" value="30" oninput="updateBgRefOpacity('h',this.value/100)" style="flex:1;accent-color:var(--blue)">
           <span id="bgref-val-h" style="font-size:11px;color:var(--muted);width:30px">30%</span>
         </div>
-        <div class="url-bar">
-          <div class="url-bar-row">
-            <span class="url-label">GFX H</span>
-            <span class="url-code" id="url-code-graphics-h" title=""></span>
-            <a class="btn btn-gray btn-sm" id="url-open-graphics-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
-            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','h')" style="padding:2px 5px;font-size:10px">📋</button>
-          </div>
-          <div class="url-bar-row">
-            <span class="url-label">Bug H</span>
-            <span class="url-code" id="url-code-bugs-h" title=""></span>
-            <a class="btn btn-gray btn-sm" id="url-open-bugs-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
-            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','h')" style="padding:2px 5px;font-size:10px">📋</button>
-          </div>
-        </div>
       </div><!-- /H COL -->
 
       <!-- ── CENTER PANEL ── -->
       <div class="center-panel">
         <div class="ctr-title">Preview</div>
         <div class="btn2g">
-          <button class="pvtgl active" id="pvtgl-graphics-h" onclick="togglePreview('graphics','h')">GFX H</button>
-          <button class="pvtgl active" id="pvtgl-graphics-v" onclick="togglePreview('graphics','v')">GFX V</button>
           <button class="pvtgl active" id="pvtgl-bugs-h" onclick="togglePreview('bugs','h')">Bug H</button>
           <button class="pvtgl active" id="pvtgl-bugs-v" onclick="togglePreview('bugs','v')">Bug V</button>
+          <button class="pvtgl active" id="pvtgl-graphics-h" onclick="togglePreview('graphics','h')">GFX H</button>
+          <button class="pvtgl active" id="pvtgl-graphics-v" onclick="togglePreview('graphics','v')">GFX V</button>
         </div>
-        <div class="ctr-title">Graphics Live</div>
-        <div class="btn2g">
-          <button class="lvbtn" id="lvb-graphics-h" onclick="toggleLive('graphics','h')">GFX H</button>
-          <button class="lvbtn" id="lvb-graphics-v" onclick="toggleLive('graphics','v')">GFX V</button>
-        </div>
-        <button class="lvbtn" style="width:100%;margin-top:3px" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
         <div class="ctr-title">Bug / QR Live</div>
         <div class="btn2g">
           <button class="lvbtn" id="lvb-bugs-h" onclick="toggleLive('bugs','h')">Bug H</button>
           <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
         </div>
         <button class="lvbtn" style="width:100%;margin-top:3px" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
+        <div class="ctr-title">Graphics Live</div>
+        <div class="btn2g">
+          <button class="lvbtn" id="lvb-graphics-h" onclick="toggleLive('graphics','h')">GFX H</button>
+          <button class="lvbtn" id="lvb-graphics-v" onclick="toggleLive('graphics','v')">GFX V</button>
+        </div>
+        <button class="lvbtn" style="width:100%;margin-top:3px" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
+        <div class="ctr-title">Credits Live</div>
+        <div class="btn2g">
+          <button class="lvbtn" style="opacity:.45;cursor:default" title="Credits output — Session 4">Credits H</button>
+          <button class="lvbtn" style="opacity:.45;cursor:default" title="Credits output — Session 4">Credits V</button>
+        </div>
+        <button class="lvbtn" style="width:100%;margin-top:3px;opacity:.45;cursor:default" title="Credits output — Session 4">Credits H+V</button>
         <div class="ctr-title" style="margin-top:8px">Clear</div>
         <div class="btn2g">
           <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','h')">GFX H ✕</button>
@@ -654,8 +656,22 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <div class="slot-col-hdr">
           <span class="slot-col-title">V — Portrait</span>
           <div class="ctrl-tabs">
-            <button class="ctrl-tab active" id="ctab-v-graphics" onclick="setActiveCtrl('v','graphics')">GFX</button>
-            <button class="ctrl-tab" id="ctab-v-bugs" onclick="setActiveCtrl('v','bugs')">Bug</button>
+            <button class="ctrl-tab active" id="ctab-v-graphics" onclick="setActiveCtrl('v','graphics')">Manip. GFX</button>
+            <button class="ctrl-tab" id="ctab-v-bugs" onclick="setActiveCtrl('v','bugs')">Manip. Bug</button>
+          </div>
+        </div>
+        <div class="url-bar">
+          <div class="url-bar-row">
+            <span class="url-label">GFX V</span>
+            <span class="url-code" id="url-code-graphics-v" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-graphics-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','v')" style="padding:2px 5px;font-size:10px">Copy</button>
+          </div>
+          <div class="url-bar-row">
+            <span class="url-label">Bug V</span>
+            <span class="url-code" id="url-code-bugs-v" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-bugs-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','v')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
         </div>
         <div class="sp-composite portrait" id="sp-comp-v">
@@ -679,7 +695,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="fit-row">
             <button class="fit-btn active" id="fit-contain-ctrl-v" onclick="setFitCtrl('v','contain')">Contain</button>
             <button class="fit-btn" id="fit-cover-ctrl-v" onclick="setFitCtrl('v','cover')">Cover</button>
-            <button class="fit-btn" id="fit-fill-ctrl-v" onclick="setFitCtrl('v','fill')">Fill</button>
           </div>
         </div>
         <div class="grid-ctrl-row">
@@ -687,10 +702,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
             <input type="checkbox" id="grid-on-v" onchange="applyGrid('v')"> Grid
           </label>
           <select id="grid-size-v" onchange="applyGrid('v')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
-            <option value="10">10×</option>
-            <option value="20" selected>20×</option>
-            <option value="40">40×</option>
-            <option value="80">80×</option>
+            <option value="10">10×10</option>
+            <option value="20" selected>20×20</option>
+            <option value="40">40×40</option>
+            <option value="80">80×80</option>
           </select>
         </div>
         <div class="bgref-ctrl-row">
@@ -699,103 +714,58 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <input type="range" id="bgref-opacity-v" min="0" max="100" value="30" oninput="updateBgRefOpacity('v',this.value/100)" style="flex:1;accent-color:var(--blue)">
           <span id="bgref-val-v" style="font-size:11px;color:var(--muted);width:30px">30%</span>
         </div>
-        <div class="url-bar">
-          <div class="url-bar-row">
-            <span class="url-label">GFX V</span>
-            <span class="url-code" id="url-code-graphics-v" title=""></span>
-            <a class="btn btn-gray btn-sm" id="url-open-graphics-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
-            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','v')" style="padding:2px 5px;font-size:10px">📋</button>
-          </div>
-          <div class="url-bar-row">
-            <span class="url-label">Bug V</span>
-            <span class="url-code" id="url-code-bugs-v" title=""></span>
-            <a class="btn btn-gray btn-sm" id="url-open-bugs-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
-            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','v')" style="padding:2px 5px;font-size:10px">📋</button>
-          </div>
-        </div>
       </div><!-- /V COL -->
 
       <!-- ── SIDEBAR MONITORS ── -->
       <div class="sidebar-col">
-        <div class="sidebar-title">Output Monitors</div>
-        <div class="mon-item" onclick="magnifyMonitor('graphics','h')">
-          <div class="mon-label">GFX H</div>
-          <div class="mon-iframe-wrap" id="mon-wrap-graphics-h">
-            <iframe id="mon-iframe-graphics-h" scrolling="no" frameborder="0"></iframe>
-          </div>
-        </div>
-        <div class="mon-item" onclick="magnifyMonitor('graphics','v')">
-          <div class="mon-label">GFX V</div>
-          <div class="mon-iframe-wrap portrait" id="mon-wrap-graphics-v">
-            <iframe id="mon-iframe-graphics-v" scrolling="no" frameborder="0"></iframe>
-          </div>
-        </div>
+        <div class="sidebar-title">QR / Bugs OUTPUT</div>
         <div class="mon-item" onclick="magnifyMonitor('bugs','h')">
-          <div class="mon-label">Bug H</div>
+          <div class="mon-label">Bug H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
           <div class="mon-iframe-wrap" id="mon-wrap-bugs-h">
             <iframe id="mon-iframe-bugs-h" scrolling="no" frameborder="0"></iframe>
           </div>
         </div>
         <div class="mon-item" onclick="magnifyMonitor('bugs','v')">
-          <div class="mon-label">Bug V</div>
+          <div class="mon-label">Bug V <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
           <div class="mon-iframe-wrap portrait" id="mon-wrap-bugs-v">
             <iframe id="mon-iframe-bugs-v" scrolling="no" frameborder="0"></iframe>
           </div>
         </div>
+        <div class="sidebar-title" style="margin-top:10px">Graphics OUTPUT</div>
+        <div class="mon-item" onclick="magnifyMonitor('graphics','h')">
+          <div class="mon-label">GFX H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
+          <div class="mon-iframe-wrap" id="mon-wrap-graphics-h">
+            <iframe id="mon-iframe-graphics-h" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="mon-item" onclick="magnifyMonitor('graphics','v')">
+          <div class="mon-label">GFX V <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
+          <div class="mon-iframe-wrap portrait" id="mon-wrap-graphics-v">
+            <iframe id="mon-iframe-graphics-v" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="sidebar-title" style="margin-top:10px">Credits OUTPUT</div>
+        <div style="font-size:9px;color:var(--muted);padding:2px 0 5px;font-style:italic;line-height:1.4">Click Credits windows<br>to edit Credits</div>
         <div class="mon-item placeholder">
           <div class="mon-label">Credits H</div>
-          <div class="mon-iframe-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">soon</div>
+          <div class="mon-iframe-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">coming soon</div>
         </div>
         <div class="mon-item placeholder">
           <div class="mon-label">Credits V</div>
-          <div class="mon-iframe-wrap portrait" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">soon</div>
+          <div class="mon-iframe-wrap portrait" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">coming soon</div>
         </div>
       </div><!-- /SIDEBAR -->
 
     </div><!-- /slots-panel -->
 
-    <!-- BG Reference Library (collapsible) -->
-    <div class="layer-block" id="bg-ref-block">
-      <div class="sec-hdr" onclick="toggleSection('bgrefs')" style="margin:-12px -14px 10px;padding:8px 14px;">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Background Reference Library</span>
-        <span class="chevron" style="margin-left:auto">›</span>
-      </div>
-      <div id="sec-body-bgrefs" class="collapsed">
-        <div style="display:flex;gap:6px;margin-bottom:10px">
-          <button class="btn btn-gray btn-sm" onclick="openUpload('background')">📤 Upload BG Image</button>
-        </div>
-        <div class="bg-ref-grid" id="bg-ref-grid"></div>
-      </div>
-    </div>
-
   </div>
 </div>
 
-<!-- IMAGE LIBRARY -->
-<div class="section" id="lib-section">
-  <div class="sec-hdr open" onclick="toggleSection('lib')">
-    <h2>🗂 Image Library</h2>
-    <span class="chevron">›</span>
-  </div>
-  <div class="sec-body" id="sec-body-lib">
-    <div class="lib-toolbar">
-      <input type="search" id="search-input" placeholder="Search images…" oninput="renderGrid()">
-      <button class="btn btn-blue btn-sm" onclick="openUpload()">📤 Upload</button>
-      <button class="btn btn-gray btn-sm" onclick="toggleSelectMode()">☑ Select</button>
-    </div>
-    <div id="target-bar-lib" style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap">
-      <!-- duplicated target bar near grid -->
-    </div>
-    <div class="filter-bar" id="filter-bar"></div>
-    <div id="image-grid" class="img-grid"></div>
-  </div>
-</div>
-
-<!-- SAVED LAYOUTS -->
+<!-- SAVED LAYOUTS — topmost section -->
 <div class="section">
   <div class="sec-hdr open" onclick="toggleSection('layouts')">
-    <h2>💾 Saved Layouts</h2>
     <span class="chevron">›</span>
+    <h2>💾 Saved Layouts</h2>
   </div>
   <div class="sec-body" id="sec-body-layouts">
     <div style="display:flex;gap:6px;margin-bottom:10px">
@@ -805,13 +775,27 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
 </div>
 
-<!-- TAG MANAGEMENT (collapsible, collapsed by default) -->
+<!-- PROCESSED IMAGES -->
 <div class="section">
-  <div class="sec-hdr" onclick="toggleSection('tags')">
-    <h2>🏷 Tag Management</h2>
+  <div class="sec-hdr open" onclick="toggleSection('processed')">
     <span class="chevron">›</span>
+    <h2>✏️ Processed Images</h2>
   </div>
-  <div class="sec-body collapsed" id="sec-body-tags">
+  <div class="sec-body" id="sec-body-processed">
+    <div class="lib-toolbar">
+      <button class="btn btn-blue btn-sm" onclick="openUpload()">📤 Upload</button>
+    </div>
+    <div id="processed-grid" class="img-grid"></div>
+  </div>
+</div>
+
+<!-- TAG MANAGEMENT -->
+<div class="section">
+  <div class="sec-hdr open" onclick="toggleSection('tags')">
+    <span class="chevron">›</span>
+    <h2>🏷 Tag Management</h2>
+  </div>
+  <div class="sec-body" id="sec-body-tags">
     <div class="cat-list" id="cat-list"></div>
     <div class="add-cat-row">
       <input type="text" id="new-cat-input" placeholder="New category name…" onkeydown="if(event.key==='Enter')addCategory()">
@@ -821,6 +805,51 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Filename auto-tag rules (comma-separated keywords per category):</div>
     <div class="kw-rules" id="kw-rules"></div>
     <button class="btn btn-gray btn-sm" style="margin-top:8px" onclick="saveTagRules()">Save Rules</button>
+  </div>
+</div>
+
+<!-- IMAGE LIBRARY -->
+<div class="section" id="lib-section">
+  <div class="sec-hdr open" onclick="toggleSection('lib')">
+    <span class="chevron">›</span>
+    <h2>🗂 Image Library</h2>
+  </div>
+  <div class="sec-body" id="sec-body-lib">
+    <div class="lib-toolbar">
+      <button class="btn btn-blue btn-sm" onclick="openUpload()">📤 Upload</button>
+      <button class="btn btn-gray btn-sm" onclick="toggleSelectMode()">☑ Select</button>
+      <input type="search" id="search-input" placeholder="Search images…" oninput="renderGrid()">
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="image-grid" class="img-grid"></div>
+  </div>
+</div>
+
+<!-- BG REFERENCE LIBRARY -->
+<div class="section">
+  <div class="sec-hdr open" onclick="toggleSection('bgrefs')">
+    <span class="chevron">›</span>
+    <h2>🖼 Background Reference Library</h2>
+  </div>
+  <div class="sec-body" id="sec-body-bgrefs">
+    <div class="lib-toolbar">
+      <button class="btn btn-gray btn-sm" onclick="openUpload('background')">📤 Upload BG Image</button>
+    </div>
+    <div class="bg-ref-grid" id="bg-ref-grid"></div>
+  </div>
+</div>
+
+<!-- CREDITS LIBRARY -->
+<div class="section">
+  <div class="sec-hdr open" onclick="toggleSection('credits-lib')">
+    <span class="chevron">›</span>
+    <h2>🎬 Credits Library</h2>
+  </div>
+  <div class="sec-body" id="sec-body-credits-lib">
+    <div class="lib-toolbar">
+      <button class="btn btn-gray btn-sm" onclick="openUpload('credits')">📤 Upload Credits Asset</button>
+    </div>
+    <div id="credits-grid" class="img-grid"></div>
   </div>
 </div>
 
@@ -846,6 +875,17 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
       Click or drag files here
     </div>
     <input type="file" id="file-input" multiple accept="image/*" style="display:none" onchange="handleFileSelect(this.files)">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-blue btn-sm" onclick="document.getElementById('file-input').click()">📂 Browse Files</button>
+    </div>
+    <div class="form-row">
+      <label>Add to library</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-images" checked> Image Library</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-bg"> BG Reference</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-credits"> Credits Library</label>
+      </div>
+    </div>
     <div class="form-row">
       <label>Categories</label>
       <div class="ul-cats" id="ul-chips"></div>
@@ -864,13 +904,30 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 
 <!-- ── PREVIEW MODAL ──────────────────────────────────────────────────────── -->
 <div class="modal-overlay hidden" id="preview-modal">
-  <div class="modal">
+  <div class="modal" style="width:min(90vw,1100px);max-width:none">
     <button class="modal-close" onclick="closeModal('preview-modal')">✕</button>
-    <img id="preview-img" src="">
-    <div class="prev-info">
-      <span class="prev-name" id="preview-name"></span>
+    <div id="preview-modal-name" style="font-size:15px;font-weight:700;margin-bottom:12px"></div>
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:20px;align-items:start">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">H — 16:9</div>
+        <div style="background:#2d2d2d;border-radius:6px;overflow:hidden;aspect-ratio:16/9">
+          <img id="preview-img-h" src="" style="width:100%;height:100%;object-fit:contain;display:block">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">V — 9:16</div>
+        <div style="background:#2d2d2d;border-radius:6px;overflow:hidden;width:160px;aspect-ratio:9/16">
+          <img id="preview-img-v" src="" style="width:100%;height:100%;object-fit:contain;display:block">
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-gray btn-sm" onclick="openRenameModal()">✏ Rename</button>
-      <button class="btn btn-blue btn-sm" id="preview-send-btn">Send to slot</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-blue btn-sm" onclick="previewSendSlot('graphics','h')">GFX H</button>
+      <button class="btn btn-blue btn-sm" onclick="previewSendSlot('graphics','v')">GFX V</button>
+      <button class="btn btn-orange btn-sm" onclick="previewSendSlot('bugs','h')">Bug H</button>
+      <button class="btn btn-orange btn-sm" onclick="previewSendSlot('bugs','v')">Bug V</button>
       <button class="btn btn-red btn-sm" onclick="deleteFromPreview()">🗑</button>
     </div>
     <div id="preview-tags-row" style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
@@ -1017,6 +1074,7 @@ let currentFilter = 'all';
 let bgRef = { h: null, v: null };
 let slots = {};     // current slot state from KV: {graphics:{h,v}, bugs:{h,v}}
 let drag = null;
+let pushTimer = {};
 let sectionsState = {};
 let previewKey = null;
 let uploadForLayer = null;
@@ -1088,6 +1146,8 @@ async function loadAll() {
   renderFilters();
   renderCatManagement();
   renderBgRefs();
+  renderProcessedGrid();
+  renderCreditsGrid();
   renderLayouts();
   applyTargetBar();
   applyOpenSections();
@@ -1118,6 +1178,8 @@ async function switchEvent(id) {
   renderGrid();
   renderFilters();
   renderBgRefs();
+  renderProcessedGrid();
+  renderCreditsGrid();
   renderLayouts();
 }
 
@@ -1179,15 +1241,14 @@ function toggleSection(key) {
 }
 
 function applyOpenSections() {
-  ['slots','lib','layouts','tags','bgrefs'].forEach(key => {
+  ['slots','lib','layouts','tags','bgrefs','processed','credits-lib'].forEach(key => {
     const body = document.getElementById(`sec-body-${key}`);
     if (!body) return;
     const hdr = body.previousElementSibling;
-    const open = sectionsState[key] !== false; // default open except tags/bgrefs
-    const defaultClosed = ['tags','bgrefs'].includes(key);
-    const shouldOpen = defaultClosed ? (sectionsState[key] === true) : (sectionsState[key] !== false);
-    body.classList.toggle('collapsed', !shouldOpen);
-    hdr?.classList.toggle('open', shouldOpen);
+    const savedState = sectionsState[key];
+    const open = savedState !== undefined ? savedState : true; // default all open
+    body.classList.toggle('collapsed', !open);
+    hdr?.classList.toggle('open', open);
   });
 }
 
@@ -1309,6 +1370,8 @@ function onScaleInput(colSlot, val) {
   if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
   slots[layer][colSlot].scale = parseFloat(val);
   updateSlotPreview(layer, colSlot);
+  clearTimeout(pushTimer[colSlot]);
+  pushTimer[colSlot] = setTimeout(() => pushSelectCtrl(colSlot), 400);
 }
 
 function onRotateInput(colSlot, val) {
@@ -1318,6 +1381,8 @@ function onRotateInput(colSlot, val) {
   if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
   slots[layer][colSlot].rotate = parseFloat(val);
   updateSlotPreview(layer, colSlot);
+  clearTimeout(pushTimer[colSlot]);
+  pushTimer[colSlot] = setTimeout(() => pushSelectCtrl(colSlot), 400);
 }
 
 function setFitCtrl(colSlot, fit) {
@@ -1550,8 +1615,8 @@ function magnifyMonitor(layer, slot) {
   const resW = isV ? (settings.resolution?.v?.w || 2160) : (settings.resolution?.h?.w || 3840);
   const resH = isV ? (settings.resolution?.v?.h || 3840) : (settings.resolution?.h?.h || 2160);
 
-  const maxW = window.innerWidth  * 0.6;
-  const maxH = window.innerHeight * 0.8;
+  const maxW = window.innerWidth  * 0.7;
+  const maxH = window.innerHeight * 0.85;
   let w = maxW, h = w * resH / resW;
   if (h > maxH) { h = maxH; w = h * resW / resH; }
 
@@ -1614,6 +1679,8 @@ function renderGrid() {
       await api('PUT', `/image-order?event=${currentEvent}`, images.map(i => i.key));
     });
   });
+  renderProcessedGrid();
+  renderCreditsGrid();
 }
 
 function buildImgCard(img) {
@@ -1733,6 +1800,22 @@ function renderBgRefs() {
     </div>`).join('');
 }
 
+function renderProcessedGrid() {
+  const list = images.filter(i => i.tags?.includes('edited'));
+  const grid = document.getElementById('processed-grid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = '<div class="empty-state">No processed images yet</div>'; return; }
+  grid.innerHTML = list.map(img => buildImgCard(img)).join('');
+}
+
+function renderCreditsGrid() {
+  const list = images.filter(i => i.tags?.includes('Credits'));
+  const grid = document.getElementById('credits-grid');
+  if (!grid) return;
+  if (!list.length) { grid.innerHTML = '<div class="empty-state">No credits assets yet</div>'; return; }
+  grid.innerHTML = list.map(img => buildImgCard(img)).join('');
+}
+
 // ── Select mode ──────────────────────────────────────────────────────────────
 function toggleSelectMode() {
   selectMode = !selectMode;
@@ -1769,9 +1852,17 @@ function openUpload(forLayer) {
   document.getElementById('ul-extra-tags').value = '';
   document.getElementById('ul-progress').textContent = '';
   populateChips();
-  // Pre-check 'background' chip if uploading BG
+  // Set library target checkboxes
+  const libImages  = document.getElementById('ul-lib-images');
+  const libBg      = document.getElementById('ul-lib-bg');
+  const libCredits = document.getElementById('ul-lib-credits');
+  if (libImages)  libImages.checked  = forLayer !== 'background' && forLayer !== 'credits';
+  if (libBg)      libBg.checked      = forLayer === 'background';
+  if (libCredits) libCredits.checked = forLayer === 'credits';
   if (forLayer === 'background') {
     document.querySelectorAll('.ul-chip').forEach(c => { c.classList.toggle('on', c.dataset.cat === 'background'); });
+  } else if (forLayer === 'credits') {
+    document.querySelectorAll('.ul-chip').forEach(c => { c.classList.toggle('on', c.dataset.cat === 'Credits'); });
   }
   openModal('upload-modal');
 }
@@ -1811,11 +1902,17 @@ async function doUpload() {
   btn.disabled = true;
   const chips = getSelectedChips();
   const extra = document.getElementById('ul-extra-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const libBgChecked      = document.getElementById('ul-lib-bg')?.checked;
+  const libCreditsChecked = document.getElementById('ul-lib-credits')?.checked;
+  const allTags = [...new Set([...chips, ...extra,
+    ...(libBgChecked      ? ['background'] : []),
+    ...(libCreditsChecked ? ['Credits']    : [])
+  ])];
   const total = pendingFiles.length;
   let done = 0;
 
   for (const file of pendingFiles) {
-    const tags = buildFileTags(file.name, chips, extra);
+    const tags = buildFileTags(file.name, allTags, []);
     const form = new FormData();
     form.append('file', file);
     form.append('name', file.name.replace(/\.[^.]+$/, ''));
@@ -1829,6 +1926,8 @@ async function doUpload() {
   images = await api('GET', `/list?event=${currentEvent}`).then(r => r.json());
   renderGrid();
   renderBgRefs();
+  renderProcessedGrid();
+  renderCreditsGrid();
   renderFilters();
   btn.disabled = false;
   pendingFiles = [];
@@ -1881,19 +1980,25 @@ function openPreview(key) {
   const img = images.find(i => i.key === key);
   if (!img) return;
   previewKey = key;
-  document.getElementById('preview-img').src = `${WORKER}/img/${encodeURIComponent(key)}`;
-  document.getElementById('preview-name').textContent = img.name;
-  document.getElementById('preview-send-btn').onclick = () => sendToTarget(key, img.name);
+  const src = `${WORKER}/img/${encodeURIComponent(key)}`;
+  document.getElementById('preview-img-h').src = src;
+  document.getElementById('preview-img-v').src = src;
+  document.getElementById('preview-modal-name').textContent = img.name;
   document.getElementById('preview-tags-row').innerHTML =
     (img.tags || []).map(t => `<span class="tag-pill-big">${escHtml(t)}</span>`).join('') +
-    `<button class="btn btn-gray btn-sm" style="margin-left:4px" onclick="openTagEditor('${escAttr(key)}')">✏ Tags</button>`;
+    `<button class="btn btn-gray btn-sm" style="margin-left:4px" onclick="openTagDropdown('${escAttr(key)}',this,event)">✏ Tags</button>`;
   openModal('preview-modal');
+}
+
+function previewSendSlot(layer, slot) {
+  if (previewKey) toggleSlot(previewKey, layer, slot, null);
+  closeModal('preview-modal');
 }
 
 async function openRenameModal() {
   const img = images.find(i => i.key === previewKey);
   if (!img) return;
-  const nameEl = document.getElementById('preview-name');
+  const nameEl = document.getElementById('preview-modal-name');
   // Make the name element inline-editable in the modal
   nameEl.contentEditable = 'true';
   nameEl.focus();
@@ -1953,7 +2058,7 @@ async function commitInlineRename(key, el) {
   const full = wrap?.querySelector('.card-name-full');
   if (full) full.textContent = newName;
   // Also update preview modal if open
-  if (previewKey === key) document.getElementById('preview-name').textContent = newName;
+  if (previewKey === key) document.getElementById('preview-modal-name').textContent = newName;
 }
 
 function cancelInlineRename(el) {
@@ -2147,12 +2252,17 @@ async function saveSettings() {
 
 // ── Category management ───────────────────────────────────────────────────────
 function renderCatManagement() {
-  document.getElementById('cat-list').innerHTML = categories.sort().map(c => `
-    <div class="cat-row">
-      <span>${escHtml(c)}</span>
-      <button onclick="renameCategory('${escAttr(c)}')">✏</button>
-      <button onclick="deleteCategory('${escAttr(c)}')">🗑</button>
-    </div>`).join('');
+  const permanentCats = ['background', 'QR codes', 'Credits'];
+  document.getElementById('cat-list').innerHTML = categories.sort().map(cat => {
+    const isPerm = permanentCats.includes(cat);
+    return `<div class="cat-row">
+      <span>${escHtml(cat)}</span>
+      ${isPerm ? '<span style="font-size:11px;color:var(--muted)">built-in</span>' : `
+        <button onclick="renameCategory('${escAttr(cat)}')" style="padding:3px 7px;font-size:11px;background:var(--surf3);border:1px solid var(--border);color:var(--text);border-radius:3px;cursor:pointer">Rename</button>
+        <button onclick="deleteCategory('${escAttr(cat)}')" style="padding:3px 7px;font-size:11px;background:var(--surf3);border:1px solid var(--border);color:var(--text);border-radius:3px;cursor:pointer" onmouseover="this.style.background='var(--red)'" onmouseout="this.style.background='var(--surf3)'">Delete</button>
+      `}
+    </div>`;
+  }).join('');
   renderTagRuleInputs();
 }
 
@@ -2167,22 +2277,34 @@ async function addCategory() {
   renderFilters();
 }
 
-async function renameCategory(old) {
-  const name = prompt('Rename category:', old);
-  if (!name || name === old) return;
-  categories = categories.map(c => c === old ? name : c);
+async function renameCategory(oldName) {
+  const newName = prompt(`Rename category "${oldName}" to:`, oldName);
+  if (!newName || newName === oldName) return;
+  const idx = categories.indexOf(oldName);
+  if (idx >= 0) categories[idx] = newName;
   await api('PUT', '/categories', categories);
-  if (tagRules[old]) { tagRules[name] = tagRules[old]; delete tagRules[old]; await api('PUT', '/tag-rules', tagRules); }
-  renderCatManagement();
-  renderFilters();
+  if (tagRules[oldName]) { tagRules[newName] = tagRules[oldName]; delete tagRules[oldName]; await api('PUT', '/tag-rules', tagRules); }
+  // Update all images that have this tag
+  const affected = images.filter(i => i.tags?.includes(oldName));
+  for (const img of affected) {
+    img.tags = img.tags.map(t => t === oldName ? newName : t);
+    await api('PUT', `/tags/${encodeURIComponent(img.key)}?event=${currentEvent}`, { tags: img.tags });
+  }
+  renderCatManagement(); renderFilters(); populateChips(); renderGrid();
+  renderProcessedGrid(); renderCreditsGrid();
 }
 
 async function deleteCategory(name) {
-  if (!confirm(`Delete category "${name}"?`)) return;
+  if (!confirm(`Delete category "${name}"? This will remove the tag from all images.`)) return;
   categories = categories.filter(c => c !== name);
   await api('PUT', '/categories', categories);
-  renderCatManagement();
-  renderFilters();
+  const affected = images.filter(i => i.tags?.includes(name));
+  for (const img of affected) {
+    img.tags = img.tags.filter(t => t !== name);
+    await api('PUT', `/tags/${encodeURIComponent(img.key)}?event=${currentEvent}`, { tags: img.tags });
+  }
+  renderCatManagement(); renderFilters(); populateChips(); renderGrid();
+  renderProcessedGrid(); renderCreditsGrid();
 }
 
 function renderTagRuleInputs() {
@@ -2217,6 +2339,8 @@ function startPolling() {
         if (!slots[layer]) slots[layer] = {};
         const prev = slots[layer][slot];
         const next = results[i];
+        const activeEl = document.activeElement?.id;
+        if (activeEl === `scale-ctrl-${slot}` || activeEl === `rotate-ctrl-${slot}`) return;
         if (!next || (!next.key && !prev?.key)) return;
         // Only update if changed
         if (JSON.stringify(prev) !== JSON.stringify(next)) {
