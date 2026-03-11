@@ -25,7 +25,7 @@
 body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; min-height: 100vh; }
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
-#app { max-width: 1400px; margin: 0 auto; padding: 0 16px 80px; }
+#app { max-width: none; padding: 0 16px 80px; }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 #hdr {
@@ -543,28 +543,216 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
   <div class="sec-body" id="sec-body-slots">
 
-    <!-- Target selector -->
-    <div style="padding:10px 14px 0">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Send image to →</div>
-      <div id="target-bar">
-        <button class="target-btn active" data-target="graphics:h" onclick="setTarget('graphics:h')">🖼 Graphics H</button>
-        <button class="target-btn" data-target="graphics:v" onclick="setTarget('graphics:v')">🖼 Graphics V</button>
-        <button class="target-btn" data-target="bugs:h" onclick="setTarget('bugs:h')">🔲 Bug/QR H</button>
-        <button class="target-btn" data-target="bugs:v" onclick="setTarget('bugs:v')">🔲 Bug/QR V</button>
-      </div>
-    </div>
+    <!-- 3-column + sidebar panel -->
+    <div class="slots-panel">
 
-    <!-- Graphics layer -->
-    <div class="layer-block">
-      <div class="layer-title">🖼 Graphics layer — output URLs below</div>
-      <div class="slots-row" id="slots-graphics"></div>
-    </div>
+      <!-- ── H COLUMN ── -->
+      <div class="slot-col">
+        <div class="slot-col-hdr">
+          <span class="slot-col-title">H — Landscape</span>
+          <div class="ctrl-tabs">
+            <button class="ctrl-tab active" id="ctab-h-graphics" onclick="setActiveCtrl('h','graphics')">GFX</button>
+            <button class="ctrl-tab" id="ctab-h-bugs" onclick="setActiveCtrl('h','bugs')">Bug</button>
+          </div>
+        </div>
+        <div class="sp-composite" id="sp-comp-h">
+          <div class="sp-bg-layer" id="sp-bg-comp-h"></div>
+          <img class="sp-layer-img" id="sp-gfx-img-h" style="z-index:1" src="" data-key="">
+          <img class="sp-layer-img" id="sp-bug-img-h" style="z-index:2" src="" data-key="">
+          <div class="sp-empty" id="sp-empty-comp-h">empty</div>
+          <div class="sp-grid-overlay" id="sp-grid-h"></div>
+        </div>
+        <div class="slot-controls">
+          <div class="scale-row">
+            <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
+            <input type="range" id="scale-ctrl-h" min="10" max="300" value="100" oninput="onScaleInput('h',this.value)">
+            <span class="scale-val" id="scale-val-ctrl-h">100%</span>
+          </div>
+          <div class="rotate-row">
+            <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
+            <input type="range" id="rotate-ctrl-h" min="-180" max="180" value="0" oninput="onRotateInput('h',this.value)">
+            <span class="scale-val" id="rotate-val-ctrl-h">0°</span>
+          </div>
+          <div class="fit-row">
+            <button class="fit-btn active" id="fit-contain-ctrl-h" onclick="setFitCtrl('h','contain')">Contain</button>
+            <button class="fit-btn" id="fit-cover-ctrl-h" onclick="setFitCtrl('h','cover')">Cover</button>
+            <button class="fit-btn" id="fit-fill-ctrl-h" onclick="setFitCtrl('h','fill')">Fill</button>
+          </div>
+        </div>
+        <div class="grid-ctrl-row">
+          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="grid-on-h" onchange="applyGrid('h')"> Grid
+          </label>
+          <select id="grid-size-h" onchange="applyGrid('h')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
+            <option value="10">10×</option>
+            <option value="20" selected>20×</option>
+            <option value="40">40×</option>
+            <option value="80">80×</option>
+          </select>
+        </div>
+        <div class="bgref-ctrl-row">
+          <label class="tgl"><input type="checkbox" id="bgref-on-h" onchange="updateBgRefDisplay('h')"><span class="tgl-track"></span></label>
+          <span style="font-size:11px;color:var(--muted)">BG Ref</span>
+          <input type="range" id="bgref-opacity-h" min="0" max="100" value="30" oninput="updateBgRefOpacity('h',this.value/100)" style="flex:1;accent-color:var(--blue)">
+          <span id="bgref-val-h" style="font-size:11px;color:var(--muted);width:30px">30%</span>
+        </div>
+        <div class="url-bar">
+          <div class="url-bar-row">
+            <span class="url-label">GFX H</span>
+            <span class="url-code" id="url-code-graphics-h" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-graphics-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','h')" style="padding:2px 5px;font-size:10px">📋</button>
+          </div>
+          <div class="url-bar-row">
+            <span class="url-label">Bug H</span>
+            <span class="url-code" id="url-code-bugs-h" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-bugs-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','h')" style="padding:2px 5px;font-size:10px">📋</button>
+          </div>
+        </div>
+      </div><!-- /H COL -->
 
-    <!-- Bugs layer -->
-    <div class="layer-block">
-      <div class="layer-title">🔲 Bug / QR layer — output URLs below</div>
-      <div class="slots-row" id="slots-bugs"></div>
-    </div>
+      <!-- ── CENTER PANEL ── -->
+      <div class="center-panel">
+        <div class="ctr-title">Preview</div>
+        <div class="btn2g">
+          <button class="pvtgl active" id="pvtgl-graphics-h" onclick="togglePreview('graphics','h')">GFX H</button>
+          <button class="pvtgl active" id="pvtgl-graphics-v" onclick="togglePreview('graphics','v')">GFX V</button>
+          <button class="pvtgl active" id="pvtgl-bugs-h" onclick="togglePreview('bugs','h')">Bug H</button>
+          <button class="pvtgl active" id="pvtgl-bugs-v" onclick="togglePreview('bugs','v')">Bug V</button>
+        </div>
+        <div class="ctr-title">Graphics Live</div>
+        <div class="btn2g">
+          <button class="lvbtn" id="lvb-graphics-h" onclick="toggleLive('graphics','h')">GFX H</button>
+          <button class="lvbtn" id="lvb-graphics-v" onclick="toggleLive('graphics','v')">GFX V</button>
+        </div>
+        <button class="lvbtn" style="width:100%;margin-top:3px" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
+        <div class="ctr-title">Bug / QR Live</div>
+        <div class="btn2g">
+          <button class="lvbtn" id="lvb-bugs-h" onclick="toggleLive('bugs','h')">Bug H</button>
+          <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
+        </div>
+        <button class="lvbtn" style="width:100%;margin-top:3px" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
+        <div class="ctr-title" style="margin-top:8px">Clear</div>
+        <div class="btn2g">
+          <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','h')">GFX H ✕</button>
+          <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','v')">GFX V ✕</button>
+          <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','h')">Bug H ✕</button>
+          <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','v')">Bug V ✕</button>
+        </div>
+        <div class="ctr-title" style="margin-top:8px">Send image to →</div>
+        <div id="target-bar" style="display:flex;flex-direction:column;gap:3px">
+          <button class="target-btn active" data-target="graphics:h" onclick="setTarget('graphics:h')">🖼 GFX H</button>
+          <button class="target-btn" data-target="graphics:v" onclick="setTarget('graphics:v')">🖼 GFX V</button>
+          <button class="target-btn" data-target="bugs:h" onclick="setTarget('bugs:h')">🔲 Bug H</button>
+          <button class="target-btn" data-target="bugs:v" onclick="setTarget('bugs:v')">🔲 Bug V</button>
+        </div>
+      </div><!-- /CENTER -->
+
+      <!-- ── V COLUMN ── -->
+      <div class="slot-col" style="border-right:none">
+        <div class="slot-col-hdr">
+          <span class="slot-col-title">V — Portrait</span>
+          <div class="ctrl-tabs">
+            <button class="ctrl-tab active" id="ctab-v-graphics" onclick="setActiveCtrl('v','graphics')">GFX</button>
+            <button class="ctrl-tab" id="ctab-v-bugs" onclick="setActiveCtrl('v','bugs')">Bug</button>
+          </div>
+        </div>
+        <div class="sp-composite portrait" id="sp-comp-v">
+          <div class="sp-bg-layer" id="sp-bg-comp-v"></div>
+          <img class="sp-layer-img" id="sp-gfx-img-v" style="z-index:1" src="" data-key="">
+          <img class="sp-layer-img" id="sp-bug-img-v" style="z-index:2" src="" data-key="">
+          <div class="sp-empty" id="sp-empty-comp-v">empty</div>
+          <div class="sp-grid-overlay" id="sp-grid-v"></div>
+        </div>
+        <div class="slot-controls">
+          <div class="scale-row">
+            <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
+            <input type="range" id="scale-ctrl-v" min="10" max="300" value="100" oninput="onScaleInput('v',this.value)">
+            <span class="scale-val" id="scale-val-ctrl-v">100%</span>
+          </div>
+          <div class="rotate-row">
+            <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
+            <input type="range" id="rotate-ctrl-v" min="-180" max="180" value="0" oninput="onRotateInput('v',this.value)">
+            <span class="scale-val" id="rotate-val-ctrl-v">0°</span>
+          </div>
+          <div class="fit-row">
+            <button class="fit-btn active" id="fit-contain-ctrl-v" onclick="setFitCtrl('v','contain')">Contain</button>
+            <button class="fit-btn" id="fit-cover-ctrl-v" onclick="setFitCtrl('v','cover')">Cover</button>
+            <button class="fit-btn" id="fit-fill-ctrl-v" onclick="setFitCtrl('v','fill')">Fill</button>
+          </div>
+        </div>
+        <div class="grid-ctrl-row">
+          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="grid-on-v" onchange="applyGrid('v')"> Grid
+          </label>
+          <select id="grid-size-v" onchange="applyGrid('v')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
+            <option value="10">10×</option>
+            <option value="20" selected>20×</option>
+            <option value="40">40×</option>
+            <option value="80">80×</option>
+          </select>
+        </div>
+        <div class="bgref-ctrl-row">
+          <label class="tgl"><input type="checkbox" id="bgref-on-v" onchange="updateBgRefDisplay('v')"><span class="tgl-track"></span></label>
+          <span style="font-size:11px;color:var(--muted)">BG Ref</span>
+          <input type="range" id="bgref-opacity-v" min="0" max="100" value="30" oninput="updateBgRefOpacity('v',this.value/100)" style="flex:1;accent-color:var(--blue)">
+          <span id="bgref-val-v" style="font-size:11px;color:var(--muted);width:30px">30%</span>
+        </div>
+        <div class="url-bar">
+          <div class="url-bar-row">
+            <span class="url-label">GFX V</span>
+            <span class="url-code" id="url-code-graphics-v" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-graphics-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','v')" style="padding:2px 5px;font-size:10px">📋</button>
+          </div>
+          <div class="url-bar-row">
+            <span class="url-label">Bug V</span>
+            <span class="url-code" id="url-code-bugs-v" title=""></span>
+            <a class="btn btn-gray btn-sm" id="url-open-bugs-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">↗</a>
+            <button class="btn btn-blue btn-sm" onclick="copyUrl('bugs','v')" style="padding:2px 5px;font-size:10px">📋</button>
+          </div>
+        </div>
+      </div><!-- /V COL -->
+
+      <!-- ── SIDEBAR MONITORS ── -->
+      <div class="sidebar-col">
+        <div class="sidebar-title">Output Monitors</div>
+        <div class="mon-item" onclick="magnifyMonitor('graphics','h')">
+          <div class="mon-label">GFX H</div>
+          <div class="mon-iframe-wrap" id="mon-wrap-graphics-h">
+            <iframe id="mon-iframe-graphics-h" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="mon-item" onclick="magnifyMonitor('graphics','v')">
+          <div class="mon-label">GFX V</div>
+          <div class="mon-iframe-wrap portrait" id="mon-wrap-graphics-v">
+            <iframe id="mon-iframe-graphics-v" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="mon-item" onclick="magnifyMonitor('bugs','h')">
+          <div class="mon-label">Bug H</div>
+          <div class="mon-iframe-wrap" id="mon-wrap-bugs-h">
+            <iframe id="mon-iframe-bugs-h" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="mon-item" onclick="magnifyMonitor('bugs','v')">
+          <div class="mon-label">Bug V</div>
+          <div class="mon-iframe-wrap portrait" id="mon-wrap-bugs-v">
+            <iframe id="mon-iframe-bugs-v" scrolling="no" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="mon-item placeholder">
+          <div class="mon-label">Credits H</div>
+          <div class="mon-iframe-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">soon</div>
+        </div>
+        <div class="mon-item placeholder">
+          <div class="mon-label">Credits V</div>
+          <div class="mon-iframe-wrap portrait" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">soon</div>
+        </div>
+      </div><!-- /SIDEBAR -->
+
+    </div><!-- /slots-panel -->
 
     <!-- BG Reference Library (collapsible) -->
     <div class="layer-block" id="bg-ref-block">
@@ -1543,22 +1731,6 @@ function renderBgRefs() {
         <button class="btn btn-red btn-sm" onclick="deleteImage('${escAttr(bg.key)}')">🗑</button>
       </div>
     </div>`).join('');
-}
-
-function setBgRef(slot, key, name) {
-  bgRef[slot] = { key, name, opacity: bgRef[slot]?.opacity || 0.3, enabled: true };
-  localStorage.setItem('adp_bgref', JSON.stringify(bgRef));
-  updateBgRefInSlot(slot);
-}
-
-function updateBgRefInSlot(slot) {
-  ['graphics','bugs'].forEach(layer => {
-    const bg = document.getElementById(`sp-bg-${layer}-${slot}`);
-    if (!bg) return;
-    const ref = bgRef[slot];
-    if (!ref?.enabled || !ref.key) { bg.innerHTML = ''; return; }
-    bg.innerHTML = `<img src="${WORKER}/img/${encodeURIComponent(ref.key)}" style="opacity:${ref.opacity||0.3}">`;
-  });
 }
 
 // ── Select mode ──────────────────────────────────────────────────────────────
