@@ -215,7 +215,7 @@ Make the Send Live buttons go red when live and green, when not live
 
 ---
 
-### SESSION 4 — UI refinements — PARTIAL ✅ (last commit: 96e33ad)
+### SESSION 4 — UI refinements — COMPLETE ✅ (last commit: 96e33ad)
 
 **Done:**
 - Center panel buttons larger (pvtgl + lvbtn), ctr-group cards, snap-to-grid checkboxes
@@ -224,42 +224,40 @@ Make the Send Live buttons go red when live and green, when not live
 - Canvas H = exact 16:9 (640×360px), V = exact 9:16 (202×360px), border-radius:0
 - Sidebar: brighter bg (surf3), monitors H+V side-by-side per group
 
-**Next (Session 5):**
-- Step 5: Manipulation mode toggle ("Manipulate GFX" red / "Manipulate BUG" blue; sliders disabled when off)
-- Step 6: Image tiles 30% bigger + ✏ opens editor modal (not just rename)
-- Step 7: Full Editor modal (crop/trim/KO/rotation, live preview, save-as-copy)
+---
+
+### SESSION 5 — Manipulation mode + tiles + editor stub + scaling fix — COMPLETE ✅ (last commit: bcd26dc)
+
+**Done:**
+- **48fb44d** — Step 5: Manipulation mode toggle — Manip. GFX (red glow) / Manip. BUG (blue glow); clicking active mode deactivates; sliders/fit buttons disabled (opacity:.35, pointer-events:none) when no mode active; null guards in input handlers
+- **c51b387** — Step 6: Image tile thumbnails 110px→143px (+30%); ✏️ now opens editor modal stub instead of inline rename; editor modal shell: 72vw two-column layout (left: crop/trim/KO/rotation stubs; right: 16:9 preview canvas); name field pre-populated + auto-selected; Save as Copy footer (disabled until Step 7)
+- **bcd26dc** — Slots section scaling fix: --canvas-h 360px→clamp(240px,28vh,500px); sidebar fixed width calc(canvas-h×1.2) instead of flex:1; sec-body centers block + overflow-x:auto for scroll fallback; portrait monitors width:38% height:auto
 
 ---
 
-### SESSION 5 — Editor modal + advanced features
+### SESSION 6 — Full Editor modal (NEXT)
 
-**Editor modal (open via ✏ on any image card or layout):**
-- Large modal ~70% screen width
-- Left side: Image crop/trim controls (unified — crop handles and trim sliders control the same thing, not additive), color picker / background knock-out, rotation slider
-- Right side: 16:9 constrained live preview reflecting all changes in real time
-- Save as new copy (tagged `edited`) — never overwrites original library asset
-- Name field pre-populated, selectable, editable before saving
-- Reset button resets both crop/trim and preview together
-- Crop handles: larger / better visible
+**Step 7 — Editor modal (full implementation):**
+- Left side: unified crop/trim (handles + sliders control the same thing, not additive), BG color knock-out (color picker + tolerance), rotation slider
+- Right side: 16:9 constrained live preview, updates in real time
+- Reset button resets crop/trim + preview together; crop handles larger/better visible
+- Save as Copy: canvas export → POST /upload tagged `edited`, name editable before saving; never overwrites original
 
-**Credits output pages:**
-- credits-h.html / credits-v.html (new output pages)
+**Layout review (pending user feedback after bcd26dc):**
+- Proportions may need further tuning after seeing live result
+
+**Later — Credits output pages:**
+- credits-h.html / credits-v.html
 - Paged display with fade-in transitions (not scrolling)
 - At least one page supports full background image (Zoom branding)
-- Worker endpoint: PUT /credits?event=X → stores credit page data in KV
-- Gallery: Credits H-LIVE / Credits V-LIVE / Credits H+V-LIVE buttons (activate from center panel stubs)
-- Gallery: Credits Library section → images tagged `Credits`
-- Name source: signup sheet / Mukana Panel Liaison tools (TBD)
+- Worker endpoint: PUT /credits?event=X → stored in KV → polled by output pages
+- Gallery: Credits H/V/H+V LIVE buttons (activate center panel stubs)
 
----
-
-### SESSION 5 — Polish + Advanced features
-
+**Future / backlog:**
 - Export asset to local disk from gallery
-- Drag jump fix (if not fully resolved in session 3)
 - Sort/filter controls for image library (name, date, active-in-slot)
 - Bitfocus Companion webhook support
-- Video playback support (future)
+- Video playback support
 - remove.bg API integration for background knock-out (optional upgrade)
 
 ---
