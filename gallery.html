@@ -72,7 +72,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .sec-body.collapsed { display: none; }
 
 /* ── Slot Section ────────────────────────────────────────────────────────── */
-#slots-section .sec-body { padding: 0; }
+#slots-section .sec-body { padding: 0; display: flex; justify-content: center; overflow-x: auto; }
 .layer-block { padding: 12px 14px; border-bottom: 1px solid var(--border); }
 .layer-block:last-child { border-bottom: none; }
 .layer-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
@@ -396,11 +396,11 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-:root { --canvas-h: 360px; }
+:root { --canvas-h: clamp(240px, 28vh, 500px); }
 .slots-panel {
   display: flex;
   align-items: stretch;
-  overflow-x: auto;
+  flex-shrink: 0;  /* block shrinks together — scroll handled by sec-body */
 }
 .slot-col {
   display: flex; flex-direction: column;
@@ -528,11 +528,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .rotate-row { display: flex; align-items: center; gap: 6px; }
 .rotate-row input[type=range] { flex: 1; accent-color: var(--blue); }
 
-/* Sidebar monitors */
+/* Sidebar monitors — fixed proportional width, never eats remaining space */
 .sidebar-col {
   background: var(--surf3); overflow-y: auto; padding: 6px 5px;
   display: flex; flex-direction: column; gap: 5px; align-self: stretch;
-  flex: 1; min-width: 140px;
+  flex: 0 0 calc(var(--canvas-h) * 1.2);
   border-left: 1px solid var(--border);
 }
 .sidebar-title {
@@ -555,9 +555,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   aspect-ratio: 16/9; width: 100%; border-radius: 0;
 }
 .mon-iframe-wrap.portrait {
-  /* width derived from height: sidebar-pair puts H first, V is height-matched */
   aspect-ratio: 9/16;
-  height: 100%; width: auto;
+  width: 38%; height: auto;  /* proportional to sidebar width, not height-dependent */
+  margin: 0 auto;
 }
 .mon-iframe-wrap iframe {
   position: absolute; top: 0; left: 0;
