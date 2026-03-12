@@ -142,7 +142,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 /* Thumbnail — fixed height, contain, dark bg */
 .img-card .thumb-wrap {
-  height: 110px; background: #2d2d2d; overflow: hidden; position: relative;
+  height: 143px; background: #2d2d2d; overflow: hidden; position: relative;
   border-radius: 5px 5px 0 0; cursor: pointer; flex-shrink: 0;
 }
 .img-card .thumb-wrap img {
@@ -231,6 +231,52 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .img-card .card-cb { position: absolute; top: 5px; left: 5px; display: none; z-index: 10; }
 .img-card .card-cb input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--orange); }
 .select-mode .img-card .card-cb { display: block; }
+
+/* ── Image Editor modal ───────────────────────────────────────────────────── */
+.editor-modal-box {
+  background: var(--surf2); border: 1px solid var(--border); border-radius: 10px;
+  width: 72vw; max-width: 1100px; min-width: 640px;
+  display: flex; flex-direction: column; max-height: 88vh; overflow: hidden;
+}
+.editor-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  font-size: 14px; font-weight: 700;
+}
+.editor-name-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.editor-name-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.editor-name-row input {
+  flex: 1; background: var(--surf3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 5px; padding: 5px 10px; font-size: 13px; outline: none;
+}
+.editor-name-row input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(74,158,255,.2); }
+.editor-body { display: flex; flex: 1; overflow: hidden; }
+.editor-left {
+  width: 260px; flex-shrink: 0; padding: 14px; overflow-y: auto;
+  border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px;
+}
+.editor-right { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.editor-section-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted);
+}
+.editor-stub {
+  background: var(--surf3); border: 1px dashed var(--border); border-radius: 6px;
+  padding: 18px 10px; text-align: center; font-size: 11px; color: var(--muted);
+}
+.editor-preview-wrap {
+  flex: 1; background: #0a0a0a; overflow: hidden; border-radius: 0;
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 16/9;
+}
+.editor-preview-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.editor-footer {
+  display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px;
+  border-top: 1px solid var(--border); flex-shrink: 0;
+}
 
 /* Tag dropdown */
 .tag-dropdown {
@@ -1103,6 +1149,42 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
 </div>
 
+<!-- ── IMAGE EDITOR MODAL ─────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="editor-modal">
+  <div class="editor-modal-box">
+    <div class="editor-hdr">
+      <span>✏️ Image Editor</span>
+      <button class="modal-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div class="editor-name-row">
+      <label>Name</label>
+      <input type="text" id="editor-name-input" placeholder="Image name">
+    </div>
+    <div class="editor-body">
+      <!-- Left: controls (Step 7) -->
+      <div class="editor-left">
+        <div class="editor-section-label">Crop / Trim</div>
+        <div class="editor-stub">Crop handles &amp; trim sliders<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
+        <div class="editor-section-label">Background Knock-Out</div>
+        <div class="editor-stub">Color picker · tolerance · KO<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
+        <div class="editor-section-label">Rotation</div>
+        <div class="editor-stub">Rotation slider<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
+      </div>
+      <!-- Right: live preview -->
+      <div class="editor-right">
+        <div class="editor-section-label">Preview</div>
+        <div class="editor-preview-wrap">
+          <img id="editor-preview-img" src="" alt="">
+        </div>
+      </div>
+    </div>
+    <div class="editor-footer">
+      <button class="btn btn-gray" onclick="closeEditor()">Close</button>
+      <button class="btn btn-green" id="editor-save-btn" style="opacity:.4;cursor:default" title="Save as copy — available in Step 7">Save as Copy</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── SCRIPT ─────────────────────────────────────────────────────────────── -->
 <script>
 // ── State ───────────────────────────────────────────────────────────────────
@@ -1799,7 +1881,7 @@ function buildImgCard(img) {
       </div>
       <div class="card-utils">
         <button title="Edit tags" onclick="openTagDropdown('${safeKey}',this,event)">🏷</button>
-        <button title="Rename (or double-click name)" onclick="startInlineRename('${safeKey}',document.getElementById('cname-${cardId}'))">✏️</button>
+        <button title="Open editor" onclick="openEditor('${safeKey}')">✏️</button>
         <button class="del" title="Delete" onclick="deleteImage('${safeKey}')">🗑</button>
       </div>
     </div>
@@ -2056,6 +2138,27 @@ function openPreview(key) {
 function previewSendSlot(layer, slot) {
   if (previewKey) toggleSlot(previewKey, layer, slot, null);
   closeModal('preview-modal');
+}
+
+// ── Image Editor ─────────────────────────────────────────────────────────────
+let editorKey = null;
+
+function openEditor(key) {
+  const img = images.find(i => i.key === key);
+  if (!img) return;
+  editorKey = key;
+  const nameInput = document.getElementById('editor-name-input');
+  nameInput.value = img.name || key;
+  // select all text so operator can immediately type a new name
+  setTimeout(() => { nameInput.select(); }, 50);
+  document.getElementById('editor-preview-img').src = `${WORKER}/img/${encodeURIComponent(key)}`;
+  openModal('editor-modal');
+}
+
+function closeEditor() {
+  closeModal('editor-modal');
+  editorKey = null;
+  document.getElementById('editor-preview-img').src = '';
 }
 
 async function openRenameModal() {
