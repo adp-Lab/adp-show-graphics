@@ -120,6 +120,8 @@ Set per-event, per-format (H and V independently) in ⚙ Settings.
 Presets: 4K (3840×2160), 1440p, 1080p, 720p — or enter custom values.
 Output pages read resolution from the Worker and set canvas size dynamically.
 
+**vMix vertical note:** vMix vertical video production crops a 1215×2160 column from the 4K canvas. Set V resolution to `1215 × 2160` (custom) for vMix vertical sources.
+
 ---
 
 ## vMix quick trigger

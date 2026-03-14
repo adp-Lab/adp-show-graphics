@@ -10,13 +10,14 @@ Create these as **Browser** inputs. Resolution must match exactly.
 | Input name | URL | Resolution |
 |---|---|---|
 | GFX H | `https://adp-lab.github.io/adp-show-graphics/graphic-h.html?event=default` | 3840 × 2160 |
-| GFX V | `https://adp-lab.github.io/adp-show-graphics/graphic-v.html?event=default` | 2160 × 3840 |
+| GFX V | `https://adp-lab.github.io/adp-show-graphics/graphic-v.html?event=default` | 1215 × 2160 |
 | Bug H | `https://adp-lab.github.io/adp-show-graphics/bug-h.html?event=default` | 3840 × 2160 |
-| Bug V | `https://adp-lab.github.io/adp-show-graphics/bug-v.html?event=default` | 2160 × 3840 |
+| Bug V | `https://adp-lab.github.io/adp-show-graphics/bug-v.html?event=default` | 1215 × 2160 |
 
 - All 4 pages have **transparent background** — overlay them on top of cameras/content
 - They poll the server every 1.5 s — no manual refresh needed
 - Blank = nothing live (transparent), not broken
+- **V resolution note:** vMix vertical video uses a cropped column from the 4K canvas — 1215×2160 is the practical pixel area. In the gallery → ⚙ Settings → set V resolution to **1215 × 2160** so uploaded images are scaled correctly.
 
 ---
 
