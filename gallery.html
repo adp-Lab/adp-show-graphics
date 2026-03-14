@@ -2324,6 +2324,7 @@ let tagDropdownKey = null;
 
 function openTagDropdown(key, btn, e) {
   e?.stopPropagation();
+  if (tagDropdownKey === key) { closeTagDropdown(); return; }
   closeTagDropdown();
   tagDropdownKey = key;
   const img = images.find(i => i.key === key);
@@ -2612,9 +2613,13 @@ function openModal(id) { document.getElementById(id).classList.remove('hidden');
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function openHelp() { openModal('help-modal'); }
 
-// Close on overlay click
+// Close on overlay click (background area)
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+});
+// Close on any click for read-only modals (mon-modal, help-modal)
+['mon-modal', 'help-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () => closeModal(id));
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(o => closeModal(o.id)); });
 
