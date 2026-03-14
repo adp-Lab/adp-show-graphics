@@ -30,17 +30,26 @@
   let currentKey = null;
   let currentRes = null;
 
+  function fitStage(w, h) {
+    const s = Math.min(window.innerWidth / w, window.innerHeight / h);
+    const vw = Math.round(w * s);
+    const vh = Math.round(h * s);
+    stage.style.transformOrigin = '0 0';
+    stage.style.transform = s < 0.999 ? `scale(${s})` : '';
+    document.documentElement.style.width  = vw + 'px';
+    document.documentElement.style.height = vh + 'px';
+    document.body.style.width  = vw + 'px';
+    document.body.style.height = vh + 'px';
+  }
+
   function applyResolution(res) {
     if (currentRes && currentRes.w === res.w && currentRes.h === res.h) return;
     currentRes = res;
-    document.documentElement.style.width  = res.w + 'px';
-    document.documentElement.style.height = res.h + 'px';
-    document.body.style.width  = res.w + 'px';
-    document.body.style.height = res.h + 'px';
     stage.style.width  = res.w + 'px';
     stage.style.height = res.h + 'px';
     img.style.width  = res.w + 'px';
     img.style.height = res.h + 'px';
+    fitStage(res.w, res.h);
   }
 
   async function poll() {
@@ -65,6 +74,7 @@
     } catch(e) {}
   }
 
+  window.addEventListener('resize', () => { if (currentRes) fitStage(currentRes.w, currentRes.h); });
   poll();
   setInterval(poll, 1500);
 </script>
