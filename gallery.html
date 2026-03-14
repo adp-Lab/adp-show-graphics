@@ -396,8 +396,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-/* panel width = canvas-h × 3.34 + 193px  →  canvas-h = (100vw − padding − 193) / 3.34 */
-:root { --canvas-h: clamp(240px, calc((100vw - 240px) / 3.34), 600px); }
+/* panel width = canvas-h × 3.04 + 193px  →  canvas-h = (100vw − 240px) / 3.04 */
+:root { --canvas-h: clamp(240px, calc((100vw - 240px) / 3.04), 600px); }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
@@ -430,6 +430,14 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
 .ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
 .slot-controls.ctrl-disabled { opacity: .35; pointer-events: none; }
+/* GFX mode — red accent */
+.slot-controls.ctrl-gfx input[type=range] { accent-color: var(--red); }
+.slot-controls.ctrl-gfx .scale-val { color: #ff6b6b; font-weight: 600; cursor: pointer; }
+.slot-controls.ctrl-gfx .fit-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
+/* Bug mode — blue accent */
+.slot-controls.ctrl-bug input[type=range] { accent-color: var(--blue); }
+.slot-controls.ctrl-bug .scale-val { color: var(--blue); font-weight: 600; cursor: pointer; }
+.slot-controls.ctrl-bug .fit-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 
 /* Composite canvas — exact aspect ratio, no rounding, pixel-perfect */
 .sp-composite {
@@ -535,7 +543,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   display: flex; flex-direction: column;
   justify-content: space-evenly;   /* 3 groups fill the full height */
   align-self: stretch;
-  flex: 0 0 calc(var(--canvas-h) * 1.0);  /* square-ish; thumbnails fill height */
+  flex: 0 0 calc(var(--canvas-h) * 0.7);  /* narrower sidebar — more space for canvases */
   border-left: 1px solid var(--border);
 }
 .sidebar-group {
@@ -658,12 +666,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="scale-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
             <input type="range" id="scale-ctrl-h" min="10" max="300" value="100" oninput="onScaleInput('h',this.value)">
-            <span class="scale-val" id="scale-val-ctrl-h">100%</span>
+            <span class="scale-val" id="scale-val-ctrl-h" onclick="resetScale('h')" title="Click to reset">100%</span>
           </div>
           <div class="rotate-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
             <input type="range" id="rotate-ctrl-h" min="-180" max="180" value="0" oninput="onRotateInput('h',this.value)">
-            <span class="scale-val" id="rotate-val-ctrl-h">0°</span>
+            <span class="scale-val" id="rotate-val-ctrl-h" onclick="resetRotate('h')" title="Click to reset">0°</span>
           </div>
           <div class="fit-row">
             <button class="fit-btn active" id="fit-contain-ctrl-h" onclick="setFitCtrl('h','contain')">Contain</button>
@@ -783,12 +791,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <div class="scale-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
             <input type="range" id="scale-ctrl-v" min="10" max="300" value="100" oninput="onScaleInput('v',this.value)">
-            <span class="scale-val" id="scale-val-ctrl-v">100%</span>
+            <span class="scale-val" id="scale-val-ctrl-v" onclick="resetScale('v')" title="Click to reset">100%</span>
           </div>
           <div class="rotate-row">
             <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
             <input type="range" id="rotate-ctrl-v" min="-180" max="180" value="0" oninput="onRotateInput('v',this.value)">
-            <span class="scale-val" id="rotate-val-ctrl-v">0°</span>
+            <span class="scale-val" id="rotate-val-ctrl-v" onclick="resetRotate('v')" title="Click to reset">0°</span>
           </div>
           <div class="fit-row">
             <button class="fit-btn active" id="fit-contain-ctrl-v" onclick="setFitCtrl('v','contain')">Contain</button>
@@ -1504,8 +1512,12 @@ function restoreActiveCtrl(colSlot) {
 }
 
 function applyColDisabled(colSlot) {
-  const disabled = activeCtrl[colSlot] === null;
-  document.getElementById(`slot-controls-${colSlot}`)?.classList.toggle('ctrl-disabled', disabled);
+  const layer = activeCtrl[colSlot];
+  const el = document.getElementById(`slot-controls-${colSlot}`);
+  if (!el) return;
+  el.classList.toggle('ctrl-disabled', layer === null);
+  el.classList.toggle('ctrl-gfx', layer === 'graphics');
+  el.classList.toggle('ctrl-bug', layer === 'bugs');
 }
 
 function syncColControls(colSlot) {
@@ -1565,6 +1577,34 @@ function setFitCtrl(colSlot, fit) {
 
 // keep setFit alias for any legacy calls
 function setFit(layer, slot, fit) { setFitCtrl(slot, fit); }
+
+function resetScale(colSlot) {
+  const layer = activeCtrl[colSlot];
+  if (!layer) return;
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
+  slots[layer][colSlot].scale = 100;
+  const sl = document.getElementById(`scale-ctrl-${colSlot}`);
+  const vl = document.getElementById(`scale-val-ctrl-${colSlot}`);
+  if (sl) sl.value = 100;
+  if (vl) vl.textContent = '100%';
+  updateSlotPreview(layer, colSlot);
+  pushSelectCtrl(colSlot);
+}
+
+function resetRotate(colSlot) {
+  const layer = activeCtrl[colSlot];
+  if (!layer) return;
+  if (!slots[layer]) slots[layer] = {};
+  if (!slots[layer][colSlot]) slots[layer][colSlot] = {};
+  slots[layer][colSlot].rotate = 0;
+  const rl = document.getElementById(`rotate-ctrl-${colSlot}`);
+  const vl = document.getElementById(`rotate-val-ctrl-${colSlot}`);
+  if (rl) rl.value = 0;
+  if (vl) vl.textContent = '0°';
+  updateSlotPreview(layer, colSlot);
+  pushSelectCtrl(colSlot);
+}
 
 async function pushSelectCtrl(colSlot) {
   const layer = activeCtrl[colSlot];
@@ -1648,8 +1688,8 @@ function initCompositeDrag() {
     window.addEventListener('mousemove', e => {
       if (!dragging) return;
       const rect = wrap.getBoundingClientRect();
-      let nx = Math.max(0, Math.min(100, startPX + (e.clientX - startX) / rect.width  * 100));
-      let ny = Math.max(0, Math.min(100, startPY + (e.clientY - startY) / rect.height * 100));
+      let nx = startPX + (e.clientX - startX) / rect.width  * 100;
+      let ny = startPY + (e.clientY - startY) / rect.height * 100;
       // Snap
       const snapEl = document.getElementById(`snap-on-${colSlot}`);
       if (snapEl?.checked) {
