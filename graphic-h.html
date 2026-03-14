@@ -45,8 +45,8 @@
 
   async function poll() {
     try {
-      const r = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`);
-      const state = await r.json();
+      const res = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`);
+      const state = await res.json();
       if (state.resolution) applyResolution(state.resolution);
       if (!state.live || !state.key) { img.classList.add('hidden'); currentKey = null; return; }
       if (state.key !== currentKey) {
