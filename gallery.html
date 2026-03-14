@@ -1409,6 +1409,7 @@ function applyOpenSections() {
 let activeCtrl   = { h: null, v: null };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
+let lastDragEnd = 0; // timestamp — poll skips updates briefly after drag to prevent position snap-back
 
 function renderSlots() {
   updateAllSlotPreviews();
@@ -1663,7 +1664,7 @@ function initCompositeDrag() {
     });
 
     window.addEventListener('mouseup', () => {
-      if (dragging) { dragging = false; pushSelectCtrl(colSlot); }
+      if (dragging) { dragging = false; lastDragEnd = Date.now(); pushSelectCtrl(colSlot); }
     });
   });
 }
@@ -2525,12 +2526,14 @@ function startPolling() {
       const results = await Promise.all(SLOTS.map(({ layer, slot }) =>
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
+      const sinceLastDrag = Date.now() - lastDragEnd;
       SLOTS.forEach(({ layer, slot }, i) => {
         if (!slots[layer]) slots[layer] = {};
         const prev = slots[layer][slot];
         const next = results[i];
         const activeEl = document.activeElement?.id;
         if (activeEl === `scale-ctrl-${slot}` || activeEl === `rotate-ctrl-${slot}`) return;
+        if (sinceLastDrag < 2000) return; // skip poll update briefly after drag to prevent snap-back
         if (!next || (!next.key && !prev?.key)) return;
         // Only update if changed
         if (JSON.stringify(prev) !== JSON.stringify(next)) {
