@@ -392,9 +392,23 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #sel-bar-count { font-size: 13px; color: var(--muted); }
 
 /* ── Help modal ──────────────────────────────────────────────────────────── */
-#help-modal .modal { width: 700px; }
+#help-modal .modal { width: min(900px, 94vw); }
 .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
 .help-item { background: var(--surf2); border-radius: 6px; padding: 10px 12px; }
+.help-item h4 { font-size: 13px; margin-bottom: 4px; }
+.help-item p, .help-item li { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.help-item ul { padding-left: 14px; margin: 0; }
+.help-section-lbl {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--blue); margin: 16px 0 6px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.help-section-lbl:first-child { margin-top: 0; }
+.help-note { font-size: 11px; color: var(--muted); margin-top: 6px; background: var(--surf3); border-radius: 5px; padding: 6px 10px; }
+.help-note code { background: var(--surf2); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--orange); }
+.help-kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12px; }
+.help-kv dt { color: var(--text); font-weight: 600; white-space: nowrap; }
+.help-kv dd { color: var(--muted); margin: 0; }
 .help-item h4 { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 4px; }
 .help-item p, .help-item li { font-size: 12px; color: var(--muted); line-height: 1.6; }
 .help-item ul { padding-left: 14px; }
@@ -1126,57 +1140,199 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 <div class="modal-overlay hidden" id="help-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
-    <h3>❓ How adp-show-graphics works</h3>
+    <h3>❓ adp-show-graphics — Quick Reference</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Click anywhere to close. Scroll for full reference.</p>
+
+    <div class="help-section-lbl">Header</div>
     <div class="help-grid">
       <div class="help-item">
-        <h4>Events</h4>
-        <p>Each event has its own isolated image library and layouts. Switch events from the top dropdown. Add events with + Event.</p>
+        <h4>Event selector</h4>
+        <ul>
+          <li>Switch events from the top dropdown — each event has an isolated image library and layouts</li>
+          <li><b>+ Event</b> → add a new event with a unique slug-based ID (used in output URLs as <code>?event=ID</code>)</li>
+        </ul>
       </div>
       <div class="help-item">
-        <h4>Two Layers</h4>
-        <p><b>Graphics</b> — main show graphics. <b>Bug/QR</b> — persistent lower-third overlays. Each layer has H + V format slots = 4 output URLs total.</p>
-      </div>
-      <div class="help-item">
-        <h4>Send to Slot</h4>
-        <p>Select target slot (Graphics H/V, Bug H/V) in the bar above the grid. Click any image to send it to that slot.</p>
-      </div>
-      <div class="help-item">
-        <h4>SEND LIVE</h4>
-        <p>Selecting an image only updates the gallery preview. Click SEND LIVE to push it to the output URL. Toggle again to go transparent.</p>
-      </div>
-      <div class="help-item">
-        <h4>Output URLs</h4>
-        <p>Add each URL as a browser source in vMix. Append <code>?event=ID</code> to target a specific event. URLs shown in each slot header.</p>
-      </div>
-      <div class="help-item">
-        <h4>Resolution</h4>
-        <p>Set H and V canvas size independently in ⚙ Settings per event. Presets: 4K, 1440p, 1080p. Changes affect output pages immediately.</p>
-      </div>
-      <div class="help-item">
-        <h4>Image Library</h4>
-        <p>All uploaded originals. Search by name. Filter by tag. Drag images to reorder. Tags are persistent — name images well before uploading.</p>
-      </div>
-      <div class="help-item">
-        <h4>Upload</h4>
-        <p>Click 📤 Upload or drag files from Finder anywhere onto the window. Assign categories and auto-tag from filename during upload.</p>
-      </div>
-      <div class="help-item">
-        <h4>Tags</h4>
-        <p>Assign categories to images via the 🏷 tag icon on each card. Manage categories and auto-tag keyword rules in Tag Management.</p>
-      </div>
-      <div class="help-item">
-        <h4>Layouts</h4>
-        <p>Save current slot state as a layout. Recall later with ↩. Layout stores graphics + bugs slots for both H and V.</p>
-      </div>
-      <div class="help-item">
-        <h4>Background References</h4>
-        <p>Upload slide/screen reference images for the slot preview background. Tagged <b>background</b>. Visible only in gallery — never in output.</p>
-      </div>
-      <div class="help-item">
-        <h4>Quick trigger (vMix)</h4>
-        <p><code>GET /go?apikey=X&amp;event=E&amp;layer=graphics&amp;slot=h&amp;key=K</code> — set and go live in one call, usable from vMix scripting.</p>
+        <h4>⚙ Settings</h4>
+        <ul>
+          <li>Set canvas resolution for H and V independently per event (presets: 4K / 1440p / 1080p / 720p or custom)</li>
+          <li>vMix V vertical: use <b>1215 × 2160</b> (crops 4K canvas to practical pixel area)</li>
+          <li>Also shows Worker URL and API key entry on first run</li>
+        </ul>
       </div>
     </div>
+
+    <div class="help-section-lbl">H Slot and V Slot columns</div>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Manip. GFX / Manip. Bug tabs</h4>
+        <ul>
+          <li><b>Manip. GFX</b> → controls affect the Graphics layer; buttons &amp; sliders highlighted <span style="color:var(--red)">red</span></li>
+          <li><b>Manip. Bug</b> → controls affect the Bug/QR layer; highlighted <span style="color:var(--blue)">blue</span></li>
+          <li>Both layers always visible in the composite canvas preview; inactive controls are dimmed</li>
+          <li>Click the active tab again to deactivate (all controls dimmed)</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Canvas — drag to reposition</h4>
+        <ul>
+          <li>Drag the image in the preview canvas to set X/Y position</li>
+          <li>Content can be dragged off-frame (partially or fully outside the output area)</li>
+          <li>Position is sent to output on next poll (~1.5 s)</li>
+          <li>Drag updates are paused during drag and resume 2 s after release to avoid snap-back</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Scale &amp; Rotate sliders</h4>
+        <ul>
+          <li><b>Scale</b> 10–300% — click the % value label to reset to 100%</li>
+          <li><b>Rotate</b> −180° to +180° — click the ° value label to reset to 0°</li>
+          <li>Both are applied in gallery preview and on the output pages</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Contain / Cover</h4>
+        <ul>
+          <li><b>Contain</b> — image is scaled &amp; positioned; may have transparent edges</li>
+          <li><b>Cover</b> — image always fills the full frame (zoom-in only, no transparent edges); position/scale ignored</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Grid</h4>
+        <ul>
+          <li>Toggle grid overlay on the canvas preview</li>
+          <li>Grid size selector: 10× / 20× / 40× / 80× divisions</li>
+          <li><b>Snap</b> checkbox — snaps drag movements to grid intersections</li>
+          <li>Grid is gallery-only; never appears on output pages</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>BG Ref (Background Reference)</h4>
+        <ul>
+          <li>Loads a slide or screen reference image behind the graphic in gallery preview</li>
+          <li><b>Gallery only</b> — never sent to output or visible in vMix</li>
+          <li>Opacity slider adjusts reference transparency</li>
+          <li>Reference images are uploaded via the BG References section (tagged <b>background</b>)</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Output URL bar</h4>
+        <ul>
+          <li>Shows the GFX and Bug output URLs for this slot (H or V)</li>
+          <li>↗ Open — opens the output page in a new tab</li>
+          <li>📋 Copy — copies URL to clipboard</li>
+          <li>Add as Browser Input in vMix at the matching resolution (H: 3840×2160, V: 1215×2160)</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Output monitors (right column)</h4>
+        <ul>
+          <li>Live iframe previews of each output page — GFX, Bug/QR, Credits for H and V</li>
+          <li><b>Click any monitor</b> → magnifies to full-screen modal; <b>click anywhere to close</b></li>
+          <li>Monitors poll at the same 1.5 s rate as the output pages</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section-lbl">Buttons Section (center)</div>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Preview toggles</h4>
+        <ul>
+          <li><b>Bug H / Bug V / GFX H / GFX V</b> — show or hide each layer in the canvas preview independently</li>
+          <li>Does not affect output — preview-only</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>SEND LIVE buttons</h4>
+        <ul>
+          <li>Grey = slot empty · Green = image loaded, not on air · <span style="color:var(--red)">Red = ON AIR</span></li>
+          <li>Individual H / V buttons, plus <b>H+V</b> combined for Bug and GFX</li>
+          <li>Click a red button to go transparent (same toggle)</li>
+          <li>Selecting an image from the library only assigns it — it does not go live until SEND LIVE is clicked</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Credits LIVE</h4>
+        <ul>
+          <li>Sends Credits H / V output live (credits-h.html / credits-v.html output pages)</li>
+          <li>Credits windows are separate from GFX and Bug — open them independently in vMix</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>CLEAR buttons</h4>
+        <ul>
+          <li><b>GFX H × / GFX V × / Bug H × / Bug V ×</b> — removes the image from that slot and goes transparent immediately</li>
+          <li>Equivalent to going live with an empty slot</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section-lbl">Upload &amp; Image Library</div>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Upload</h4>
+        <ul>
+          <li>Click <b>📤 Upload</b> (in the Processed Images section or image toolbar)</li>
+          <li>Or <b>drag files from Finder</b> anywhere onto the gallery window</li>
+          <li>During upload: select category tags and add extra tags (comma-separated)</li>
+          <li>Auto-tag rules: set keyword → category mappings in Tag Management; applied automatically on upload based on filename</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Image tiles</h4>
+        <ul>
+          <li>Thumbnail · Name (click ✏ to open editor/rename modal) · Tag chips</li>
+          <li><b>GFX H / GFX V / Bug H / Bug V</b> slot buttons — highlighted = currently assigned to that slot; click to assign/remove</li>
+          <li>🏷 button → tag dropdown (click same button again to close)</li>
+          <li>✏ button → Image Editor · 🗑 button → delete (with confirmation)</li>
+          <li>Drag cards to reorder (order is saved)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section-lbl">Image Editor (✏)</div>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Rotation, Crop, BG Knock-Out</h4>
+        <ul>
+          <li><b>Rotation</b> −180° to +180° — live canvas preview; output auto-resizes to bounding box</li>
+          <li><b>Crop/Trim</b> — Top / Bottom / Left / Right as % of source image; removes edges before rotation</li>
+          <li>Click ° or % labels to reset to 0</li>
+          <li><b>Background Knock-Out</b> — enable checkbox, pick a colour, set tolerance → matching pixels become transparent</li>
+          <li><b>Pick</b> button → EyeDropper colour picker (Chrome 95+; falls back to centre pixel if not supported)</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Save as Copy</h4>
+        <ul>
+          <li>Name field auto-fills with "original name copy" — rename before saving</li>
+          <li>Button is enabled as soon as the source image finishes loading</li>
+          <li>Exports the canvas preview as PNG and uploads it as a new image tagged <b>edited</b></li>
+          <li>Original image is unchanged</li>
+          <li>After save the editor closes and the library reloads — find the copy in the <b>Processed Images</b> section</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section-lbl">Layouts &amp; vMix quick trigger</div>
+    <div class="help-grid">
+      <div class="help-item">
+        <h4>Layouts</h4>
+        <ul>
+          <li><b>+ Save Current</b> → saves all 4 slots (GFX H/V, Bug H/V) and live state as a named layout</li>
+          <li>Click a layout card to recall — restores all slots and live state instantly</li>
+          <li>Delete → removes the layout (does not affect images)</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>vMix quick trigger</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px">Set and go live in one HTTP call — no gallery interaction needed:</p>
+        <div class="help-note"><code>GET /go?apikey=KEY&amp;event=E&amp;layer=graphics&amp;slot=h&amp;key=IMAGE_KEY</code></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:4px">Usable from vMix scripting, Bitfocus Companion, or any HTTP trigger. Image key shown in the preview modal.</p>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2288,6 +2444,7 @@ function openEditor(key) {
     editorNatW = image.naturalWidth;
     editorNatH = image.naturalHeight;
     renderEditorCanvas();
+    document.getElementById('editor-save-btn').disabled = false;
   };
   image.onerror = () => setStatus('Editor: could not load image', 3000);
   image.src = src;
@@ -2405,12 +2562,15 @@ async function saveEditorCopy() {
   try {
     const canvas = document.getElementById('editor-canvas');
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('Canvas export failed — try making an edit first');
     const name = (document.getElementById('editor-name-input').value.trim() || 'edited copy') + '.png';
     const form = new FormData();
     form.append('file', blob, name);
     form.append('name', name.replace(/\.png$/, ''));
     form.append('tags', 'edited');
-    await api('POST', `/upload?event=${currentEvent}`, form, true);
+    const uploadRes = await api('POST', `/upload?event=${currentEvent}`, form, true);
+    if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
+
     setStatus('Saved: ' + name, 3000);
     closeEditor();
     await loadAll();
