@@ -1472,12 +1472,18 @@ function updateSlotPreview(layer, slot) {
     }
     const s = (state.scale || 100) / 100;
     const r = state.rotate || 0;
-    img.style.objectFit       = state.fit === 'cover' ? 'cover' : (state.fit === 'fill' ? 'fill' : 'contain');
-    img.style.transform       = `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
-    img.style.left            = (state.x || 50) + '%';
-    img.style.top             = (state.y || 50) + '%';
     img.style.position        = 'absolute';
     img.style.transformOrigin = 'center center';
+    if (state.fit === 'cover') {
+      img.style.objectFit = 'cover';
+      img.style.transform = `scale(${Math.max(s, 1)}) rotate(${r}deg)`;
+      img.style.left = '0'; img.style.top = '0';
+    } else {
+      img.style.objectFit = state.fit === 'fill' ? 'fill' : 'contain';
+      img.style.transform = `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+      img.style.left = (state.x || 50) + '%';
+      img.style.top  = (state.y || 50) + '%';
+    }
   }
 
   // Apply preview visibility toggle
