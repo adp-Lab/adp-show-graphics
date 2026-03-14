@@ -53,6 +53,7 @@
         currentKey = state.key;
         img.classList.add('hidden');
         img.onload = () => img.classList.remove('hidden');
+        img.onerror = () => { currentKey = null; }; // retry on next poll if load fails
         img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
       }
       const s = (state.scale || 100) / 100;

@@ -191,12 +191,12 @@ export default {
 
     // ── Active state: select, live toggle, clear ───────────────────────────────
     if (request.method === 'PUT' && path === '/select') {
-      const { layer, slot, key, name = key, scale = 100, fit = 'contain', x = 50, y = 50 } = await request.json();
+      const { layer, slot, key, name = key, scale = 100, fit = 'contain', x = 50, y = 50, rotate = 0 } = await request.json();
       if (!layer || !slot || !key) return error('layer, slot and key required', 400, origin);
       const active = (await env.KV.get(`active:${event}`, 'json')) || {};
       if (!active[layer]) active[layer] = {};
       const existing = active[layer][slot] || {};
-      active[layer][slot] = { ...existing, key, name, x, y, scale, fit, updatedAt: new Date().toISOString() };
+      active[layer][slot] = { ...existing, key, name, x, y, scale, fit, rotate, updatedAt: new Date().toISOString() };
       await env.KV.put(`active:${event}`, JSON.stringify(active));
       await bustCache(cacheKey(url.origin, event, layer, slot));
       return json({ ok: true }, 200, origin);
