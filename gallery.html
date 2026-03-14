@@ -273,6 +273,15 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
   aspect-ratio: 16/9;
 }
 .editor-preview-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.editor-ctrl-row { display: flex; align-items: center; gap: 6px; }
+.editor-ctrl-row input[type=range] { flex: 1; }
+.ed-val { font-size: 11px; color: var(--muted); min-width: 38px; text-align: right; cursor: pointer; }
+.ed-val:hover { color: var(--text); }
+.ed-crop-grid { display: flex; flex-direction: column; gap: 4px; }
+.ed-crop-row { display: flex; align-items: center; gap: 6px; }
+.ed-crop-row label { font-size: 11px; color: var(--muted); min-width: 46px; }
+.ed-crop-row input[type=range] { flex: 1; }
+.ed-ko-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
 .editor-footer {
   display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px;
   border-top: 1px solid var(--border); flex-shrink: 0;
@@ -1193,26 +1202,39 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
       <input type="text" id="editor-name-input" placeholder="Image name">
     </div>
     <div class="editor-body">
-      <!-- Left: controls (Step 7) -->
       <div class="editor-left">
-        <div class="editor-section-label">Crop / Trim</div>
-        <div class="editor-stub">Crop handles &amp; trim sliders<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
-        <div class="editor-section-label">Background Knock-Out</div>
-        <div class="editor-stub">Color picker · tolerance · KO<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
         <div class="editor-section-label">Rotation</div>
-        <div class="editor-stub">Rotation slider<br><span style="font-size:10px;opacity:.6">— Step 7 —</span></div>
+        <div class="editor-ctrl-row">
+          <input type="range" id="ed-rotate" min="-180" max="180" step="1" value="0" oninput="editorSetRotate(this.value)">
+          <span id="ed-rotate-val" class="ed-val" onclick="editorResetRotate()" title="Click to reset">0°</span>
+        </div>
+        <div class="editor-section-label" style="margin-top:10px">Crop / Trim</div>
+        <div class="ed-crop-grid">
+          <div class="ed-crop-row"><label>Top</label><input type="range" id="ed-crop-t" min="0" max="50" step="1" value="0" oninput="editorSetCrop('t',this.value)"><span id="ed-crop-t-val" class="ed-val">0%</span></div>
+          <div class="ed-crop-row"><label>Bottom</label><input type="range" id="ed-crop-b" min="0" max="50" step="1" value="0" oninput="editorSetCrop('b',this.value)"><span id="ed-crop-b-val" class="ed-val">0%</span></div>
+          <div class="ed-crop-row"><label>Left</label><input type="range" id="ed-crop-l" min="0" max="50" step="1" value="0" oninput="editorSetCrop('l',this.value)"><span id="ed-crop-l-val" class="ed-val">0%</span></div>
+          <div class="ed-crop-row"><label>Right</label><input type="range" id="ed-crop-r" min="0" max="50" step="1" value="0" oninput="editorSetCrop('r',this.value)"><span id="ed-crop-r-val" class="ed-val">0%</span></div>
+        </div>
+        <button class="btn btn-gray btn-sm" style="align-self:flex-start;margin-top:4px" onclick="editorResetCrop()">Reset crop</button>
+        <div class="editor-section-label" style="margin-top:10px">Background Knock-Out</div>
+        <div class="ed-ko-row">
+          <input type="checkbox" id="ed-ko-enable" onchange="editorKoChanged()">
+          <label for="ed-ko-enable" style="font-size:12px">Enable KO</label>
+          <input type="color" id="ed-ko-color" value="#ffffff" style="width:28px;height:24px;padding:0;cursor:pointer;border-radius:3px;border:1px solid var(--border)" onchange="editorKoChanged()">
+          <button class="btn btn-gray btn-sm" onclick="editorPickKoColor()" title="Pick colour from canvas (EyeDropper)">Pick</button>
+        </div>
+        <div class="ed-crop-row"><label>Tolerance</label><input type="range" id="ed-ko-tol" min="1" max="100" step="1" value="20" oninput="editorKoChanged()"><span id="ed-ko-tol-val" class="ed-val">20</span></div>
       </div>
-      <!-- Right: live preview -->
       <div class="editor-right">
-        <div class="editor-section-label">Preview</div>
+        <div class="editor-section-label">Preview <span id="ed-preview-size" style="font-weight:400;font-size:10px;margin-left:6px;color:var(--muted)"></span></div>
         <div class="editor-preview-wrap">
-          <img id="editor-preview-img" src="" alt="">
+          <canvas id="editor-canvas" style="max-width:100%;max-height:100%"></canvas>
         </div>
       </div>
     </div>
     <div class="editor-footer">
       <button class="btn btn-gray" onclick="closeEditor()">Close</button>
-      <button class="btn btn-green" id="editor-save-btn" style="opacity:.4;cursor:default" title="Save as copy — available in Step 7">Save as Copy</button>
+      <button class="btn btn-green" id="editor-save-btn" onclick="saveEditorCopy()" disabled>Save as Copy</button>
     </div>
   </div>
 </div>
@@ -2229,23 +2251,173 @@ function previewSendSlot(layer, slot) {
 
 // ── Image Editor ─────────────────────────────────────────────────────────────
 let editorKey = null;
+let editorSrcImg = null;
+let editorNatW = 0, editorNatH = 0;
+let editorRotate = 0;
+let editorCrop = { t: 0, r: 0, b: 0, l: 0 };
+let editorKo = { enabled: false, color: '#ffffff', tol: 20 };
 
 function openEditor(key) {
   const img = images.find(i => i.key === key);
   if (!img) return;
   editorKey = key;
+  editorRotate = 0;
+  editorCrop = { t: 0, r: 0, b: 0, l: 0 };
+  editorKo = { enabled: false, color: '#ffffff', tol: 20 };
   const nameInput = document.getElementById('editor-name-input');
-  nameInput.value = img.name || key;
-  // select all text so operator can immediately type a new name
-  setTimeout(() => { nameInput.select(); }, 50);
-  document.getElementById('editor-preview-img').src = `${WORKER}/img/${encodeURIComponent(key)}`;
+  nameInput.value = (img.name ? img.name.replace(/\.[^.]+$/, '') + ' copy' : 'edited copy');
+  setTimeout(() => nameInput.select(), 50);
+  document.getElementById('ed-rotate').value = 0;
+  document.getElementById('ed-rotate-val').textContent = '0°';
+  ['t','r','b','l'].forEach(s => {
+    document.getElementById(`ed-crop-${s}`).value = 0;
+    document.getElementById(`ed-crop-${s}-val`).textContent = '0%';
+  });
+  document.getElementById('ed-ko-enable').checked = false;
+  document.getElementById('ed-ko-tol').value = 20;
+  document.getElementById('ed-ko-tol-val').textContent = '20';
+  document.getElementById('ed-ko-color').value = '#ffffff';
+  document.getElementById('editor-save-btn').disabled = true;
+  document.getElementById('editor-save-btn').textContent = 'Save as Copy';
+  document.getElementById('ed-preview-size').textContent = '';
+  const src = `${WORKER}/img/${encodeURIComponent(key)}`;
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.onload = () => {
+    editorSrcImg = image;
+    editorNatW = image.naturalWidth;
+    editorNatH = image.naturalHeight;
+    renderEditorCanvas();
+  };
+  image.onerror = () => setStatus('Editor: could not load image', 3000);
+  image.src = src;
   openModal('editor-modal');
 }
 
 function closeEditor() {
   closeModal('editor-modal');
   editorKey = null;
-  document.getElementById('editor-preview-img').src = '';
+  editorSrcImg = null;
+  const canvas = document.getElementById('editor-canvas');
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  canvas.width = 0;
+}
+
+function editorSetRotate(val) {
+  editorRotate = +val;
+  document.getElementById('ed-rotate-val').textContent = val + '°';
+  renderEditorCanvas();
+  document.getElementById('editor-save-btn').disabled = false;
+}
+
+function editorResetRotate() {
+  editorRotate = 0;
+  document.getElementById('ed-rotate').value = 0;
+  document.getElementById('ed-rotate-val').textContent = '0°';
+  renderEditorCanvas();
+  document.getElementById('editor-save-btn').disabled = false;
+}
+
+function editorSetCrop(side, val) {
+  editorCrop[side] = +val;
+  document.getElementById(`ed-crop-${side}-val`).textContent = val + '%';
+  renderEditorCanvas();
+  document.getElementById('editor-save-btn').disabled = false;
+}
+
+function editorResetCrop() {
+  editorCrop = { t: 0, r: 0, b: 0, l: 0 };
+  ['t','r','b','l'].forEach(s => {
+    document.getElementById(`ed-crop-${s}`).value = 0;
+    document.getElementById(`ed-crop-${s}-val`).textContent = '0%';
+  });
+  renderEditorCanvas();
+  document.getElementById('editor-save-btn').disabled = false;
+}
+
+function editorKoChanged() {
+  editorKo.enabled = document.getElementById('ed-ko-enable').checked;
+  editorKo.color   = document.getElementById('ed-ko-color').value;
+  editorKo.tol     = +document.getElementById('ed-ko-tol').value;
+  document.getElementById('ed-ko-tol-val').textContent = editorKo.tol;
+  renderEditorCanvas();
+  document.getElementById('editor-save-btn').disabled = false;
+}
+
+function editorPickKoColor() {
+  if (window.EyeDropper) {
+    new EyeDropper().open().then(r => {
+      document.getElementById('ed-ko-color').value = r.sRGBHex;
+      editorKoChanged();
+    }).catch(() => {});
+  } else {
+    const canvas = document.getElementById('editor-canvas');
+    const px = canvas.getContext('2d').getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data;
+    document.getElementById('ed-ko-color').value = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+    editorKoChanged();
+  }
+}
+
+function renderEditorCanvas() {
+  if (!editorSrcImg) return;
+  const canvas = document.getElementById('editor-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = editorNatW, H = editorNatH;
+  const cT = Math.floor(H * editorCrop.t / 100);
+  const cB = Math.floor(H * editorCrop.b / 100);
+  const cL = Math.floor(W * editorCrop.l / 100);
+  const cR = Math.floor(W * editorCrop.r / 100);
+  const srcW = Math.max(1, W - cL - cR);
+  const srcH = Math.max(1, H - cT - cB);
+  const rad = editorRotate * Math.PI / 180;
+  const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+  const outW = Math.round(srcW * cos + srcH * sin);
+  const outH = Math.round(srcW * sin + srcH * cos);
+  canvas.width  = outW;
+  canvas.height = outH;
+  ctx.clearRect(0, 0, outW, outH);
+  ctx.save();
+  ctx.translate(outW / 2, outH / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(editorSrcImg, cL, cT, srcW, srcH, -srcW / 2, -srcH / 2, srcW, srcH);
+  ctx.restore();
+  if (editorKo.enabled) {
+    const r0 = parseInt(editorKo.color.slice(1, 3), 16);
+    const g0 = parseInt(editorKo.color.slice(3, 5), 16);
+    const b0 = parseInt(editorKo.color.slice(5, 7), 16);
+    const t2 = editorKo.tol * editorKo.tol * 3;
+    let imgData;
+    try { imgData = ctx.getImageData(0, 0, outW, outH); } catch(e) { return; }
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const dr = d[i] - r0, dg = d[i+1] - g0, db = d[i+2] - b0;
+      if (dr*dr + dg*dg + db*db <= t2) d[i+3] = 0;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+  document.getElementById('ed-preview-size').textContent = `${outW} × ${outH} px`;
+}
+
+async function saveEditorCopy() {
+  if (!editorKey || !editorSrcImg) return;
+  const btn = document.getElementById('editor-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const canvas = document.getElementById('editor-canvas');
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const name = (document.getElementById('editor-name-input').value.trim() || 'edited copy') + '.png';
+    const form = new FormData();
+    form.append('file', blob, name);
+    form.append('name', name.replace(/\.png$/, ''));
+    form.append('tags', 'edited');
+    await api('POST', `/upload?event=${currentEvent}`, form, true);
+    setStatus('Saved: ' + name, 3000);
+    closeEditor();
+    await loadAll();
+  } catch(e) {
+    setStatus('Save failed: ' + e.message, 4000);
+    btn.disabled = false; btn.textContent = 'Save as Copy';
+  }
 }
 
 async function openRenameModal() {
