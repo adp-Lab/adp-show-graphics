@@ -546,10 +546,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   letter-spacing: .08em; color: var(--muted); padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
-/* Sidebar pair row: H + V side-by-side; equal-height: V_width/total ≈ 24% */
+/* Sidebar pair row: H + V side-by-side; equal-height: V_width/total ≈ 28% */
 .sidebar-pair { display: flex; gap: 3px; align-items: flex-start; }
 .sidebar-pair .mon-item-h { flex: 1; }
-.sidebar-pair .mon-item-v { flex: 0 0 24%; }
+.sidebar-pair .mon-item-v { flex: 0 0 28%; }
 .sidebar-pair .mon-item-v .mon-iframe-wrap.portrait { width: 100%; margin: 0; }
 
 .mon-item { cursor: pointer; }
@@ -1765,15 +1765,16 @@ function initOutputMonitors() {
     const isV  = slot === 'v';
     const resW = isV ? (settings.resolution?.v?.w || 2160) : (settings.resolution?.h?.w || 3840);
     const resH = isV ? (settings.resolution?.v?.h || 3840) : (settings.resolution?.h?.h || 2160);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const ww = wrap.offsetWidth || 140;
       const scale = ww / resW;
       iframe.style.width  = resW + 'px';
       iframe.style.height = resH + 'px';
       iframe.style.transform = `scale(${scale})`;
-    });
+    }, 150);
   });
 }
+window.addEventListener('resize', initOutputMonitors);
 
 function magnifyMonitor(layer, slot) {
   const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
