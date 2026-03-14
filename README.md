@@ -99,10 +99,10 @@ The slots panel is a 4-column layout:
 
 Each image card shows:
 - Thumbnail (fixed height, dark background, preserves aspect ratio for both H and V images)
-- Name — double-click to rename inline
+- Name — click ✏️ to open rename/edit modal
 - Tag chips (blue) — click × to remove; 🏷 button opens tag dropdown
 - **GFX H · GFX V · Bug H · Bug V** — slot toggle buttons (highlighted = currently in that slot)
-- ✏️ Rename · 🗑 Delete
+- ✏️ Edit · 🗑 Delete
 
 ---
 
@@ -216,6 +216,14 @@ npx wrangler secret put API_KEY
 | `bug-v.html` | Bug/QR output — portrait |
 | `worker/index.js` | Cloudflare Worker |
 | `wrangler.toml` | Worker deployment config |
+
+---
+
+---
+
+## Operator quick-start
+
+→ See [CHAD.md](CHAD.md) for a plain-language vMix setup guide.
 
 ---
 
