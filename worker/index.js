@@ -10,6 +10,10 @@ const DEFAULT_SETTINGS = {
   },
 };
 
+function slugify(s) {
+  return s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `evt_${Date.now()}`;
+}
+
 function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin': origin || '*',
@@ -143,7 +147,9 @@ export default {
       const { name } = await request.json();
       if (!name) return error('name required', 400, origin);
       const evts = (await env.KV.get('events', 'json')) || [{ id: 'default', name: 'Default', created: new Date().toISOString() }];
-      const id = `evt_${Date.now()}`;
+      const base = slugify(name);
+      let id = base; let n = 2;
+      while (evts.some(e => e.id === id)) { id = `${base}_${n++}`; }
       evts.push({ id, name, created: new Date().toISOString() });
       await env.KV.put('events', JSON.stringify(evts));
       return json({ ok: true, id }, 200, origin);

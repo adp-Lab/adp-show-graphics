@@ -1102,7 +1102,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
     <h3 id="event-modal-title">New Event</h3>
     <div class="form-row">
       <label>Event Name</label>
-      <input type="text" id="event-name-input" placeholder="My Event 2026…" onkeydown="if(event.key==='Enter')saveEvent()">
+      <input type="text" id="event-name-input" placeholder="My Event 2026…" oninput="updateEventIdPreview()" onkeydown="if(event.key==='Enter')saveEvent()">
+      <div id="event-id-preview" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:monospace"></div>
     </div>
     <div id="event-list" style="margin-bottom:12px"></div>
     <div style="display:flex;gap:8px">
@@ -1344,9 +1345,24 @@ async function switchEvent(id) {
   renderLayouts();
 }
 
+function slugifyLocal(s) {
+  return s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function updateEventIdPreview() {
+  const name = document.getElementById('event-name-input').value;
+  const preview = document.getElementById('event-id-preview');
+  const slug = slugifyLocal(name);
+  if (!slug) { preview.textContent = ''; return; }
+  let id = slug; let n = 2;
+  while (events.some(e => e.id === id)) { id = `${slug}_${n++}`; }
+  preview.textContent = `ID: ${id}  →  ?event=${id}`;
+}
+
 function openEventModal() {
   renderEventList();
   document.getElementById('event-name-input').value = '';
+  document.getElementById('event-id-preview').textContent = '';
   openModal('event-modal');
 }
 
