@@ -59,11 +59,12 @@ The slots panel is a 4-column layout:
 ```
 
 ### H / V columns
-- **Composite preview canvas** — both Graphics and Bug layers visible simultaneously
+- **Composite preview canvas** — both Graphics and Bug layers visible simultaneously; drag to reposition, content can be moved out of frame
 - **Active control tabs** (GFX / Bug) — select which layer the drag, scale, rotate and fit controls affect; both layers remain visible
-- **Scale slider** — 10–300%
-- **Rotate slider** — –180° to +180°; applied in both gallery preview and output pages
-- **Fit / Cover / Fill** mode
+  - GFX mode: controls highlighted **red** · Bug mode: controls highlighted **blue** · inactive: grey
+- **Scale slider** — 10–300%; click the % value to reset to 100%
+- **Rotate slider** — –180° to +180°; click the ° value to reset to 0°; applied in both gallery preview and output pages
+- **Contain / Cover** mode
 - **URL bar** — output URLs for GFX and Bug per format, with ↗ open and 📋 copy
 - **Grid** — toggle, 10×/20×/40×/80× divisions, snap-to-grid
 - **BG Reference** — enable toggle + opacity slider (gallery preview only)
