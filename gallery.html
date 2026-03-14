@@ -396,7 +396,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-:root { --canvas-h: clamp(240px, 28vh, 500px); }
+/* panel width = canvas-h × 3.34 + 193px  →  canvas-h = (100vw − padding − 193) / 3.34 */
+:root { --canvas-h: clamp(240px, calc((100vw - 240px) / 3.34), 600px); }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
