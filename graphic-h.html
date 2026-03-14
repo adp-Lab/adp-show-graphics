@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { background: transparent; overflow: hidden; }
+  html, body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
   #stage { position: relative; overflow: hidden; }
   #img {
     position: absolute;
@@ -32,14 +32,8 @@
 
   function fitStage(w, h) {
     const s = Math.min(window.innerWidth / w, window.innerHeight / h);
-    const vw = Math.round(w * s);
-    const vh = Math.round(h * s);
     stage.style.transformOrigin = '0 0';
     stage.style.transform = s < 0.999 ? `scale(${s})` : '';
-    document.documentElement.style.width  = vw + 'px';
-    document.documentElement.style.height = vh + 'px';
-    document.body.style.width  = vw + 'px';
-    document.body.style.height = vh + 'px';
   }
 
   function applyResolution(res) {
@@ -49,7 +43,7 @@
     stage.style.height = res.h + 'px';
     img.style.width  = res.w + 'px';
     img.style.height = res.h + 'px';
-    fitStage(res.w, res.h);
+    requestAnimationFrame(() => fitStage(res.w, res.h));
   }
 
   async function poll() {
