@@ -32,8 +32,12 @@
 
   function fitStage(w, h) {
     const s = Math.min(window.innerWidth / w, window.innerHeight / h);
-    stage.style.transformOrigin = '0 0';
-    stage.style.transform = s < 0.999 ? `scale(${s})` : '';
+    stage.style.left = '50%';
+    stage.style.top  = '50%';
+    stage.style.transformOrigin = 'center center';
+    stage.style.transform = s < 0.999
+      ? `translate(-50%, -50%) scale(${s})`
+      : 'translate(-50%, -50%)';
   }
 
   function applyResolution(res) {
