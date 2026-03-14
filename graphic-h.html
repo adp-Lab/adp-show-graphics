@@ -5,7 +5,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
-  #stage { position: relative; overflow: hidden; }
+  #stage { position: absolute; top: 0; left: 0; overflow: hidden; }
   #img {
     position: absolute;
     transform-origin: center center;
@@ -61,10 +61,16 @@
       }
       const s = (state.scale || 100) / 100;
       const r = state.rotate || 0;
-      img.style.objectFit = state.fit === 'cover' ? 'cover' : 'contain';
-      img.style.transform = `translate(-50%, -50%) scale(${s}) rotate(${r}deg)`;
-      img.style.left = (state.x || 50) + '%';
-      img.style.top  = (state.y || 50) + '%';
+      if (state.fit === 'cover') {
+        img.style.objectFit = 'cover';
+        img.style.transform = `scale(${Math.max(s, 1)}) rotate(${r}deg)`;
+        img.style.left = '0'; img.style.top = '0';
+      } else {
+        img.style.objectFit = 'contain';
+        img.style.transform = `translate(-50%, -50%) scale(${s}) rotate(${r}deg)`;
+        img.style.left = (state.x || 50) + '%';
+        img.style.top  = (state.y || 50) + '%';
+      }
     } catch(e) {}
   }
 
