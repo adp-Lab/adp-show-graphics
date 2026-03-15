@@ -340,6 +340,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .layout-util-row button { padding: 3px 9px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
 .layout-util-row button:hover { background: var(--surf2); }
 .layout-flag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; align-self: center; }
+.layout-card.active-layout { border-color: var(--live); box-shadow: 0 0 10px rgba(0,230,118,.3); }
+.layout-card.active-layout:hover { border-color: var(--live); }
+.active-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #000; background: var(--live); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
 
 /* layout zoom modal */
 #lp-zoom-modal .lp-zoom-inner { background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: min(96vw, 960px); }
@@ -1471,6 +1474,7 @@ let uploadForLayer = null;
 let pendingFiles = [];
 let _layoutData  = {};
 let _layoutOrder = [];
+let activeLayoutId = null; // ID of last recalled layout — highlighted in cards; cleared when operator changes a slot image
 
 // Slot definitions
 const SLOTS = [
@@ -1935,9 +1939,11 @@ async function clearSlot(layer, slot) {
   if (!slots[layer]) slots[layer] = {};
   slots[layer][slot] = null;
   markDirty(layer, slot);
+  activeLayoutId = null; // operator manually cleared slot
   updateSlotPreview(layer, slot);
   await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
   renderGrid();
+  rebuildLayoutCards();
 }
 
 // ── Composite drag ────────────────────────────────────────────────────────────
@@ -2250,16 +2256,19 @@ async function toggleSlot(key, layer, slot, e) {
     // Already in slot → clear
     slots[layer][slot] = null;
     markDirty(layer, slot);
+    activeLayoutId = null; // operator manually changed slot
     await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
   } else {
     // Send to slot (preserve position/scale/fit if slot had same image before)
     const existing = slots[layer][slot] || {};
     slots[layer][slot] = { key, name, x: 50, y: 50, scale: 100, fit: 'contain', rotate: 0, live: false, ...existing, key, name };
     markDirty(layer, slot);
+    activeLayoutId = null; // operator manually changed slot
     await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...slots[layer][slot] });
   }
   updateSlotPreview(layer, slot);
   renderGrid(); // refresh slot-active states on all cards
+  rebuildLayoutCards();
 }
 
 // Keep sendToTarget for backward compat (used by preview modal)
@@ -2906,8 +2915,9 @@ function buildLayoutCard(id, layout) {
     ? `<button class="layout-recall-btn ${cls}" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
     : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
 
+  const isActive = id === activeLayoutId;
   return `
-  <div class="layout-card">
+  <div class="layout-card${isActive ? ' active-layout' : ''}">
     <div class="layout-preview" onclick="openLpZoom('${sid}',event)">
       ${buildLpSlot(gh, bh, 'lp-h')}
       ${buildLpSlot(gv, bv, 'lp-v')}
@@ -2922,7 +2932,7 @@ function buildLayoutCard(id, layout) {
       <div class="layout-util-row">
         <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
         <button onclick="deleteLayout('${sid}')" title="Delete" style="color:var(--red)">🗑</button>
-        <span class="layout-flag">LAYOUT</span>
+        ${isActive ? '<span class="active-layout-badge">ACTIVE</span>' : '<span class="layout-flag">LAYOUT</span>'}
       </div>
     </div>
   </div>`;
@@ -2976,7 +2986,9 @@ async function recallLayout(id, slot = 'both') {
   if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
   if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
   await Promise.all(calls);
+  activeLayoutId = id;
   renderGrid();
+  rebuildLayoutCards();
 }
 
 async function renameLayout(id) {
