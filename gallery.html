@@ -614,6 +614,16 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   position: absolute; top: 0; left: 0;
   transform-origin: top left; border: none;
 }
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surf3); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 18px; border-radius: 7px; font-size: 13px; z-index: 9999;
+  pointer-events: none; opacity: 0; transition: opacity .2s;
+  white-space: nowrap;
+}
+#toast.visible { opacity: 1; }
 </style>
 </head>
 <body>
@@ -1479,6 +1489,15 @@ async function authenticate() {
 function showAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
 function clearWorker() { localStorage.removeItem('adp_worker'); document.getElementById('worker-url-input').value = ''; WORKER = ''; }
 
+let _toastTimer = null;
+function setStatus(msg, ms = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('visible'), ms);
+}
+
 async function loadAll() {
   [events, images, categories, tagRules, settings] = await Promise.all([
     api('GET', '/events').then(r => r.json()),
@@ -2084,7 +2103,7 @@ function renderGrid() {
 
   // drag-to-reorder
   list.forEach((img, idx) => {
-    const card = document.getElementById(`card-${CSS.escape(img.key)}`);
+    const card = document.getElementById('card-' + img.key.replace(/[^a-z0-9]/gi,'_'));
     if (!card) return;
     card.setAttribute('draggable', true);
     card.addEventListener('dragstart', () => { drag = { type: 'img', key: img.key }; card.style.opacity = '.5'; });
@@ -2985,5 +3004,6 @@ if (WORKER && API_KEY) {
   authenticate();
 }
 </script>
+<div id="toast"></div>
 </body>
 </html>
