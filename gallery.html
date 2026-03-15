@@ -37,6 +37,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #hdr select { background: var(--surf2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; font-size: 13px; }
 #event-add-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
 #event-add-btn:hover { color: var(--text); border-color: var(--text); }
+#how-it-works-btn { background: none; border: 1px solid var(--blue); color: var(--blue); border-radius: 5px; padding: 5px 11px; cursor: pointer; font-size: 14px; font-weight: 600; }
+#how-it-works-btn:hover { background: rgba(74,158,255,.12); }
 .hdr-spacer { flex: 1; }
 #auth-status { font-size: 12px; color: var(--muted); }
 #auth-status.ok { color: var(--green); }
@@ -491,7 +493,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .sp-grid-overlay.active {
   background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px);
-  background-size: var(--grid-sz,5%) var(--grid-sz,5%);
+  background-size: var(--grid-sz-x,5%) var(--grid-sz-y,5%);
 }
 
 /* Center control panel */
@@ -621,10 +623,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   <h1>adp-show-graphics</h1>
   <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
   <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
+  <button id="how-it-works-btn" onclick="openHelp()" title="How it works">❓ How it works</button>
   <div class="hdr-spacer"></div>
   <button class="btn btn-gray btn-sm" onclick="loadAll()">↺ Refresh</button>
   <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
-  <button class="btn btn-gray btn-sm" onclick="openHelp()">❓ Help</button>
   <span id="auth-status">●  Not connected</span>
 </div>
 
@@ -708,7 +710,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <select id="grid-size-h" onchange="applyGrid('h')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
             <option value="10">10×10</option>
             <option value="20" selected>20×20</option>
+            <option value="25">25×25</option>
             <option value="40">40×40</option>
+            <option value="50x40">50×40</option>
             <option value="80">80×80</option>
           </select>
           <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
@@ -833,7 +837,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <select id="grid-size-v" onchange="applyGrid('v')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
             <option value="10">10×10</option>
             <option value="20" selected>20×20</option>
+            <option value="25">25×25</option>
             <option value="40">40×40</option>
+            <option value="50x40">50×40</option>
             <option value="80">80×80</option>
           </select>
           <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
@@ -1141,7 +1147,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   <div class="modal">
     <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
     <h3>❓ adp-show-graphics — Quick Reference</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Click anywhere to close. Scroll for full reference.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Click anywhere to close. Scroll for full reference.</p>
+    <img src="ui-guide.png" alt="UI overview" style="width:100%;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block">
 
     <div class="help-section-lbl">Header</div>
     <div class="help-grid">
@@ -1201,7 +1208,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <h4>Grid</h4>
         <ul>
           <li>Toggle grid overlay on the canvas preview</li>
-          <li>Grid size selector: 10× / 20× / 40× / 80× divisions</li>
+          <li>Grid size selector: 10×10 / 20×20 / 25×25 / 40×40 / 50×40 / 80×80</li>
           <li><b>Snap</b> checkbox — snaps drag movements to grid intersections</li>
           <li>Grid is gallery-only; never appears on output pages</li>
         </ul>
@@ -1893,10 +1900,9 @@ function initCompositeDrag() {
       // Snap
       const snapEl = document.getElementById(`snap-on-${colSlot}`);
       if (snapEl?.checked) {
-        const sz = parseInt(document.getElementById(`grid-size-${colSlot}`)?.value || 20);
-        const step = 100 / sz;
-        nx = Math.round(nx / step) * step;
-        ny = Math.round(ny / step) * step;
+        const { cols, rows } = parseGridVal(document.getElementById(`grid-size-${colSlot}`)?.value || '20');
+        nx = Math.round(nx / (100/cols)) * (100/cols);
+        ny = Math.round(ny / (100/rows)) * (100/rows);
       }
       slots[dragLayer][colSlot].x = nx;
       slots[dragLayer][colSlot].y = ny;
@@ -1910,26 +1916,34 @@ function initCompositeDrag() {
 }
 
 // ── Grid overlay ──────────────────────────────────────────────────────────────
+function parseGridVal(val) {
+  val = (val || '20').toString();
+  if (val.includes('x')) { const [c, r] = val.split('x').map(Number); return { cols: c, rows: r }; }
+  const n = parseInt(val); return { cols: n, rows: n };
+}
+
 function applyGrid(colSlot) {
   const on   = document.getElementById(`grid-on-${colSlot}`)?.checked;
-  const size = parseInt(document.getElementById(`grid-size-${colSlot}`)?.value || 20);
+  const val  = document.getElementById(`grid-size-${colSlot}`)?.value || '20';
+  const { cols, rows } = parseGridVal(val);
   const overlay = document.getElementById(`sp-grid-${colSlot}`);
   if (!overlay) return;
   overlay.classList.toggle('active', !!on);
-  overlay.style.setProperty('--grid-sz', `${100/size}%`);
+  overlay.style.setProperty('--grid-sz-x', `${100/cols}%`);
+  overlay.style.setProperty('--grid-sz-y', `${100/rows}%`);
   const prefs = JSON.parse(localStorage.getItem('adp_grid_prefs') || '{}');
-  prefs[colSlot] = { on: !!on, size };
+  prefs[colSlot] = { on: !!on, size: val };
   localStorage.setItem('adp_grid_prefs', JSON.stringify(prefs));
 }
 
 function restoreGridPrefs() {
   const prefs = JSON.parse(localStorage.getItem('adp_grid_prefs') || '{}');
   ['h','v'].forEach(cs => {
-    const p = prefs[cs] || { on: false, size: 20 };
+    const p = prefs[cs] || { on: false, size: '20' };
     const onEl   = document.getElementById(`grid-on-${cs}`);
     const sizeEl = document.getElementById(`grid-size-${cs}`);
     if (onEl)   onEl.checked = p.on;
-    if (sizeEl) sizeEl.value = p.size;
+    if (sizeEl) sizeEl.value = String(p.size);
     applyGrid(cs);
   });
 }
