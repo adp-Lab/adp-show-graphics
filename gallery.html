@@ -2976,7 +2976,7 @@ async function recallLayout(id, slot = 'both') {
     slots[layer][s] = { ...state };
     markDirty(layer, s); // lock this slot — poll will never overwrite it this session
     updateSlotPreview(layer, s);
-    await api('PUT', `/select?event=${currentEvent}`, { layer, slot: s, ...state });
+    await api('PUT', `/select?event=${currentEvent}`, { layer, slot: s, ...state, live: false });
   };
   const doH = slot === 'h' || slot === 'both';
   const doV = slot === 'v' || slot === 'both';
