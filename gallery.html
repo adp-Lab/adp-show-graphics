@@ -2261,7 +2261,7 @@ async function toggleSlot(key, layer, slot, e) {
   } else {
     // Send to slot (preserve position/scale/fit if slot had same image before)
     const existing = slots[layer][slot] || {};
-    slots[layer][slot] = { key, name, x: 50, y: 50, scale: 100, fit: 'contain', rotate: 0, live: false, ...existing, key, name };
+    slots[layer][slot] = { x: 50, y: 50, scale: 100, fit: 'contain', rotate: 0, ...existing, key, name, live: false };
     markDirty(layer, slot);
     activeLayoutId = null; // operator manually changed slot
     await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...slots[layer][slot] });
