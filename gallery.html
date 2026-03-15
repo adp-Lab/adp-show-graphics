@@ -2964,39 +2964,9 @@ async function recallLayout(id, slot = 'both') {
   const layout = layouts[id];
   if (!layout) return;
 
-  // ── Blank slate: reset all UI state before applying layout ──────────────
-  // 1. Cancel any pending slider debounce (prevents stale pushSelectCtrl)
+  // Cancel any pending slider debounce — prevents stale pushSelectCtrl
+  // from overwriting recalled slot state after the 400ms timer fires
   for (const cs of ['h','v']) { clearTimeout(pushTimer[cs]); delete pushTimer[cs]; }
-
-  // 2. Deactivate manipulation mode → controls go grey (neutral)
-  activeCtrl = { h: null, v: null };
-  localStorage.setItem('adp_active_ctrl', JSON.stringify(activeCtrl));
-  for (const cs of ['h','v']) { restoreActiveCtrl(cs); applyColDisabled(cs); }
-
-  // 3. Turn on all preview toggles so recalled content is visible
-  previewVis = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
-  localStorage.setItem('adp_prev_vis', JSON.stringify(previewVis));
-  SLOTS.forEach(({ layer, slot: s }) => {
-    document.getElementById(`pvtgl-${layer}-${s}`)?.classList.add('active');
-  });
-
-  // 4. Reset slider/fit UI to defaults (setSlot → updateSlotPreview will not
-  //    sync controls because activeCtrl is null — so show clean defaults)
-  for (const cs of ['h','v']) {
-    const scaleEl = document.getElementById(`scale-ctrl-${cs}`);
-    const scaleVal = document.getElementById(`scale-val-ctrl-${cs}`);
-    const rotEl = document.getElementById(`rotate-ctrl-${cs}`);
-    const rotVal = document.getElementById(`rotate-val-ctrl-${cs}`);
-    if (scaleEl) scaleEl.value = 100;
-    if (scaleVal) scaleVal.textContent = '100%';
-    if (rotEl) rotEl.value = 0;
-    if (rotVal) rotVal.textContent = '0°';
-    ['contain','cover','fill'].forEach(f => {
-      document.getElementById(`fit-${f}-ctrl-${cs}`)?.classList.remove('active');
-    });
-    document.getElementById(`fit-contain-ctrl-${cs}`)?.classList.add('active');
-  }
-  // ── End blank slate ─────────────────────────────────────────────────────
 
   const setSlot = async (layer, s, state) => {
     if (!slots[layer]) slots[layer] = {};
