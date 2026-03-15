@@ -1673,10 +1673,12 @@ let activeCtrl   = { h: null, v: null };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
 let lastDragEnd = 0;   // timestamp — poll skips updates briefly after drag to prevent position snap-back
-const dirtyUntil = {}; // per-slot dirty guard: key=`${layer}:${slot}`, value=expiry timestamp
-const DIRTY_TTL  = 30000; // 30s — covers max KV propagation delay + any user action
-function markDirty(layer, slot) { dirtyUntil[`${layer}:${slot}`] = Date.now() + DIRTY_TTL; }
-function isDirty(layer, slot)   { return Date.now() < (dirtyUntil[`${layer}:${slot}`] || 0); }
+// Slots that have been touched by the operator this session.
+// Once dirty, a slot is NEVER updated by the poll — only operator actions change it.
+// Cleared only by page reload (fresh session = fresh KV sync).
+const dirtySlots = new Set();
+function markDirty(layer, slot) { dirtySlots.add(`${layer}:${slot}`); }
+function isDirty(layer, slot)   { return dirtySlots.has(`${layer}:${slot}`); }
 
 function renderSlots() {
   updateAllSlotPreviews();
@@ -2964,7 +2966,7 @@ async function recallLayout(id, slot = 'both') {
     if (!state?.key) return;
     if (!slots[layer]) slots[layer] = {};
     slots[layer][s] = { ...state };
-    markDirty(layer, s); // lock this slot against poll overwrite for 30s
+    markDirty(layer, s); // lock this slot — poll will never overwrite it this session
     updateSlotPreview(layer, s);
     await api('PUT', `/select?event=${currentEvent}`, { layer, slot: s, ...state });
   };
