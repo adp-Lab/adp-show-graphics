@@ -421,7 +421,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #sel-bar-count { font-size: 13px; color: var(--muted); }
 
 /* ── Help modal ──────────────────────────────────────────────────────────── */
-#help-modal .modal { width: min(900px, 94vw); }
+#help-modal .modal { width: min(1440px, 96vw); }
+#help-modal #ui-guide-img { width: 100%; height: auto; image-rendering: -webkit-optimize-contrast; }
 .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
 .help-item { background: var(--surf2); border-radius: 6px; padding: 10px 12px; }
 .help-item h4 { font-size: 13px; margin-bottom: 4px; }
@@ -1185,7 +1186,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
     <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
     <h3>❓ adp-show-graphics — Quick Reference</h3>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Click anywhere to close. Scroll for full reference.</p>
-    <img src="ui-guide.png" alt="UI overview" style="width:100%;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block">
+    <img id="ui-guide-img" src="ui-guide.png" alt="UI overview" style="border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block">
 
     <div class="help-section-lbl">Header</div>
     <div class="help-grid">
@@ -1672,7 +1673,10 @@ let activeCtrl   = { h: null, v: null };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
 let lastDragEnd = 0;   // timestamp — poll skips updates briefly after drag to prevent position snap-back
-let lastRecall  = 0;   // timestamp — poll skips updates briefly after layout recall to prevent KV race
+const dirtyUntil = {}; // per-slot dirty guard: key=`${layer}:${slot}`, value=expiry timestamp
+const DIRTY_TTL  = 30000; // 30s — covers max KV propagation delay + any user action
+function markDirty(layer, slot) { dirtyUntil[`${layer}:${slot}`] = Date.now() + DIRTY_TTL; }
+function isDirty(layer, slot)   { return Date.now() < (dirtyUntil[`${layer}:${slot}`] || 0); }
 
 function renderSlots() {
   updateAllSlotPreviews();
@@ -1871,6 +1875,7 @@ async function pushSelectCtrl(colSlot) {
   const layer = activeCtrl[colSlot];
   const s = slots[layer]?.[colSlot];
   if (!s?.key) return;
+  markDirty(layer, colSlot);
   await api('PUT', `/select?event=${currentEvent}`, {
     layer, slot: colSlot, key: s.key, name: s.name || '',
     x: s.x || 50, y: s.y || 50, scale: s.scale || 100,
@@ -1882,6 +1887,7 @@ async function pushSelectCtrl(colSlot) {
 async function pushSelect(layer, slot) {
   const s = slots[layer]?.[slot];
   if (!s?.key) return;
+  markDirty(layer, slot);
   await api('PUT', `/select?event=${currentEvent}`, {
     layer, slot, key: s.key, name: s.name || '',
     x: s.x || 50, y: s.y || 50, scale: s.scale || 100,
@@ -1904,6 +1910,7 @@ async function toggleLive(layer, slot) {
   if (!slots[layer]) slots[layer] = {};
   if (!slots[layer][slot]) slots[layer][slot] = {};
   slots[layer][slot].live = !slots[layer][slot].live;
+  markDirty(layer, slot);
   updateLiveBtn(layer, slot);
   await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: slots[layer][slot].live });
 }
@@ -1916,6 +1923,7 @@ async function toggleLiveBoth(layer) {
     if (!slots[layer]) slots[layer] = {};
     if (!slots[layer][slot]) slots[layer][slot] = {};
     slots[layer][slot].live = newLive;
+    markDirty(layer, slot);
     updateLiveBtn(layer, slot);
     await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: newLive });
   }
@@ -1924,6 +1932,7 @@ async function toggleLiveBoth(layer) {
 async function clearSlot(layer, slot) {
   if (!slots[layer]) slots[layer] = {};
   slots[layer][slot] = null;
+  markDirty(layer, slot);
   updateSlotPreview(layer, slot);
   await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
   renderGrid();
@@ -2238,11 +2247,13 @@ async function toggleSlot(key, layer, slot, e) {
   if (slots[layer][slot]?.key === key) {
     // Already in slot → clear
     slots[layer][slot] = null;
+    markDirty(layer, slot);
     await api('PUT', `/clear?event=${currentEvent}`, { layer, slot });
   } else {
     // Send to slot (preserve position/scale/fit if slot had same image before)
     const existing = slots[layer][slot] || {};
     slots[layer][slot] = { key, name, x: 50, y: 50, scale: 100, fit: 'contain', rotate: 0, live: false, ...existing, key, name };
+    markDirty(layer, slot);
     await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...slots[layer][slot] });
   }
   updateSlotPreview(layer, slot);
@@ -2945,7 +2956,6 @@ async function saveLayout() {
 }
 
 async function recallLayout(id, slot = 'both') {
-  lastRecall = Date.now(); // suppress poll IMMEDIATELY before any async work
   const r = await api('GET', `/layouts?event=${currentEvent}`);
   const { layouts } = await r.json();
   const layout = layouts[id];
@@ -2954,6 +2964,7 @@ async function recallLayout(id, slot = 'both') {
     if (!state?.key) return;
     if (!slots[layer]) slots[layer] = {};
     slots[layer][s] = { ...state };
+    markDirty(layer, s); // lock this slot against poll overwrite for 30s
     updateSlotPreview(layer, s);
     await api('PUT', `/select?event=${currentEvent}`, { layer, slot: s, ...state });
   };
@@ -2963,7 +2974,6 @@ async function recallLayout(id, slot = 'both') {
   if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
   if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
   await Promise.all(calls);
-  lastRecall = Date.now(); // reset timer from KV write completion — starts fresh 6s window
   renderGrid();
 }
 
@@ -3090,22 +3100,22 @@ async function saveTagRules() {
 function startPolling() {
   setInterval(async () => {
     try {
-      if (Date.now() - lastRecall < 6000) return; // guard BEFORE fetching — prevents racing an in-flight recall
-      const results = await Promise.all(SLOTS.map(({ layer, slot }) =>
+      // Only fetch slots that are not locally dirty
+      const toFetch = SLOTS.filter(({ layer, slot }) => !isDirty(layer, slot));
+      if (!toFetch.length) return;
+      const results = await Promise.all(toFetch.map(({ layer, slot }) =>
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
-      const sinceLastDrag   = Date.now() - lastDragEnd;
-      const sinceLastRecall = Date.now() - lastRecall;
-      if (sinceLastRecall < 6000) return; // guard AFTER fetch — in case recall happened while fetching
-      SLOTS.forEach(({ layer, slot }, i) => {
+      const sinceLastDrag = Date.now() - lastDragEnd;
+      toFetch.forEach(({ layer, slot }, i) => {
+        if (isDirty(layer, slot)) return; // re-check: may have become dirty while fetching
         if (!slots[layer]) slots[layer] = {};
         const prev = slots[layer][slot];
         const next = results[i];
         const activeEl = document.activeElement?.id;
         if (activeEl === `scale-ctrl-${slot}` || activeEl === `rotate-ctrl-${slot}`) return;
-        if (sinceLastDrag < 2000) return; // skip poll update briefly after drag to prevent snap-back
+        if (sinceLastDrag < 2000) return;
         if (!next || (!next.key && !prev?.key)) return;
-        // Only update if changed
         if (JSON.stringify(prev) !== JSON.stringify(next)) {
           slots[layer][slot] = next;
           updateSlotPreview(layer, slot);
