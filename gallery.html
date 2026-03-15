@@ -2121,6 +2121,31 @@ function applyTargetBar() {
   document.querySelectorAll('.target-btn').forEach(b => b.classList.toggle('active', b.dataset.target === slotTarget));
 }
 
+// ── Shared drag-to-reorder helper for image cards ────────────────────────────
+function setupImgDrag(containerEl, itemList) {
+  itemList.forEach(img => {
+    const card = containerEl.querySelector('#card-' + img.key.replace(/[^a-z0-9]/gi,'_'));
+    if (!card) return;
+    card.setAttribute('draggable', true);
+    card.addEventListener('dragstart', e => { drag = { type: 'img', key: img.key }; card.style.opacity = '.5'; e.stopPropagation(); });
+    card.addEventListener('dragend',   () => { card.style.opacity = ''; drag = null; });
+    card.addEventListener('dragover',  e => { if (drag?.type === 'img') { e.preventDefault(); card.style.borderColor = 'var(--blue)'; } });
+    card.addEventListener('dragleave', () => { card.style.borderColor = ''; });
+    card.addEventListener('drop', async e => {
+      e.preventDefault(); card.style.borderColor = '';
+      if (!drag || drag.type !== 'img' || drag.key === img.key) return;
+      const from = images.findIndex(i => i.key === drag.key);
+      const to   = images.findIndex(i => i.key === img.key);
+      if (from < 0 || to < 0) return;
+      const moved = images.splice(from, 1)[0];
+      images.splice(to, 0, moved);
+      renderGrid(); // re-renders processedGrid + creditsGrid too
+      renderBgRefs();
+      await api('PUT', `/image-order?event=${currentEvent}`, images.map(i => i.key));
+    });
+  });
+}
+
 // ── Image Grid ───────────────────────────────────────────────────────────────
 function renderGrid() {
   const q = document.getElementById('search-input')?.value.toLowerCase() || '';
@@ -2135,28 +2160,7 @@ function renderGrid() {
   const grid = document.getElementById('image-grid');
   if (!list.length) { grid.innerHTML = '<div class="empty-state">No images found</div>'; return; }
   grid.innerHTML = list.map(img => buildImgCard(img)).join('');
-
-  // drag-to-reorder
-  list.forEach((img, idx) => {
-    const card = document.getElementById('card-' + img.key.replace(/[^a-z0-9]/gi,'_'));
-    if (!card) return;
-    card.setAttribute('draggable', true);
-    card.addEventListener('dragstart', () => { drag = { type: 'img', key: img.key }; card.style.opacity = '.5'; });
-    card.addEventListener('dragend', () => { card.style.opacity = ''; drag = null; });
-    card.addEventListener('dragover', e => { if (drag?.type === 'img') { e.preventDefault(); card.style.borderColor = 'var(--blue)'; } });
-    card.addEventListener('dragleave', () => { card.style.borderColor = ''; });
-    card.addEventListener('drop', async e => {
-      e.preventDefault(); card.style.borderColor = '';
-      if (!drag || drag.type !== 'img' || drag.key === img.key) return;
-      const from = images.findIndex(i => i.key === drag.key);
-      const to   = images.findIndex(i => i.key === img.key);
-      if (from < 0 || to < 0) return;
-      const moved = images.splice(from, 1)[0];
-      images.splice(to, 0, moved);
-      renderGrid();
-      await api('PUT', `/image-order?event=${currentEvent}`, images.map(i => i.key));
-    });
-  });
+  setupImgDrag(grid, list);
   renderProcessedGrid();
   renderCreditsGrid();
 }
@@ -2267,7 +2271,7 @@ function renderBgRefs() {
   const grid = document.getElementById('bg-ref-grid');
   if (!bgs.length) { grid.innerHTML = '<div class="empty-state">No background images uploaded</div>'; return; }
   grid.innerHTML = bgs.map(bg => `
-    <div class="bg-ref-card">
+    <div class="bg-ref-card" id="card-${bg.key.replace(/[^a-z0-9]/gi,'_')}">
       <div class="bg-ref-thumb"><img src="${WORKER}/img/${encodeURIComponent(bg.key)}" loading="lazy"></div>
       <div class="bg-ref-foot">
         <span class="bg-name">${escHtml(bg.name)}</span>
@@ -2276,6 +2280,7 @@ function renderBgRefs() {
         <button class="btn btn-red btn-sm" onclick="deleteImage('${escAttr(bg.key)}')">🗑</button>
       </div>
     </div>`).join('');
+  setupImgDrag(grid, bgs);
 }
 
 function renderProcessedGrid() {
@@ -2284,6 +2289,7 @@ function renderProcessedGrid() {
   if (!grid) return;
   if (!list.length) { grid.innerHTML = '<div class="empty-state">No processed images yet</div>'; return; }
   grid.innerHTML = list.map(img => buildImgCard(img)).join('');
+  setupImgDrag(grid, list);
 }
 
 function renderCreditsGrid() {
@@ -2292,6 +2298,7 @@ function renderCreditsGrid() {
   if (!grid) return;
   if (!list.length) { grid.innerHTML = '<div class="empty-state">No credits assets yet</div>'; return; }
   grid.innerHTML = list.map(img => buildImgCard(img)).join('');
+  setupImgDrag(grid, list);
 }
 
 // ── Select mode ──────────────────────────────────────────────────────────────
@@ -2813,6 +2820,7 @@ async function renderLayouts() {
   const grid = document.getElementById('layout-grid');
   if (!_layoutOrder.length) { grid.innerHTML = '<div class="empty-state">No layouts saved</div>'; return; }
   grid.innerHTML = _layoutOrder.map(id => buildLayoutCard(id, layouts[id])).join('');
+  setupLayoutDrag();
 }
 
 // Lightweight rebuild of layout card HTML from cache (no fetch) — used after slot state changes
@@ -2821,6 +2829,30 @@ function rebuildLayoutCards() {
   const grid = document.getElementById('layout-grid');
   if (!grid) return;
   grid.innerHTML = _layoutOrder.map(id => buildLayoutCard(id, _layoutData[id])).join('');
+  setupLayoutDrag();
+}
+
+function setupLayoutDrag() {
+  document.querySelectorAll('.layout-card').forEach((card, i) => {
+    const id = _layoutOrder[i];
+    if (!id) return;
+    card.setAttribute('draggable', true);
+    card.addEventListener('dragstart', e => { drag = { type: 'layout', id }; card.style.opacity = '.5'; e.stopPropagation(); });
+    card.addEventListener('dragend',   () => { card.style.opacity = ''; drag = null; });
+    card.addEventListener('dragover',  e => { if (drag?.type === 'layout') { e.preventDefault(); card.style.borderColor = 'var(--orange)'; } });
+    card.addEventListener('dragleave', () => { card.style.borderColor = ''; });
+    card.addEventListener('drop', async e => {
+      e.preventDefault(); card.style.borderColor = '';
+      if (!drag || drag.type !== 'layout' || drag.id === id) return;
+      const from = _layoutOrder.indexOf(drag.id);
+      const to   = _layoutOrder.indexOf(id);
+      if (from < 0 || to < 0) return;
+      const moved = _layoutOrder.splice(from, 1)[0];
+      _layoutOrder.splice(to, 0, moved);
+      rebuildLayoutCards();
+      await api('PUT', `/layout-order?event=${currentEvent}`, _layoutOrder);
+    });
+  });
 }
 
 function buildLpLayer(slotData) {
