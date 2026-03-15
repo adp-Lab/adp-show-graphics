@@ -1653,7 +1653,8 @@ function applyOpenSections() {
 let activeCtrl   = { h: null, v: null };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
-let lastDragEnd = 0; // timestamp — poll skips updates briefly after drag to prevent position snap-back
+let lastDragEnd = 0;   // timestamp — poll skips updates briefly after drag to prevent position snap-back
+let lastRecall  = 0;   // timestamp — poll skips updates briefly after layout recall to prevent KV race
 
 function renderSlots() {
   updateAllSlotPreviews();
@@ -2883,6 +2884,8 @@ async function recallLayout(id, slot = 'both') {
   if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
   if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
   await Promise.all(calls);
+  lastRecall = Date.now(); // suppress poll for 4s to prevent KV race overwriting recalled state
+  renderGrid();            // refresh tile badges to reflect new slot assignments
 }
 
 async function renameLayout(id) {
@@ -3011,7 +3014,9 @@ function startPolling() {
       const results = await Promise.all(SLOTS.map(({ layer, slot }) =>
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
-      const sinceLastDrag = Date.now() - lastDragEnd;
+      const sinceLastDrag   = Date.now() - lastDragEnd;
+      const sinceLastRecall = Date.now() - lastRecall;
+      if (sinceLastRecall < 4000) return; // skip entire poll cycle after layout recall
       SLOTS.forEach(({ layer, slot }, i) => {
         if (!slots[layer]) slots[layer] = {};
         const prev = slots[layer][slot];
