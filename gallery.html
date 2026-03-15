@@ -305,19 +305,34 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 
 /* ── Layouts ─────────────────────────────────────────────────────────────── */
-.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .layout-card {
   background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
-  overflow: hidden; cursor: pointer; transition: border-color .15s;
+  overflow: hidden; transition: border-color .15s;
 }
 .layout-card:hover { border-color: var(--blue); }
-.layout-thumb { aspect-ratio: 16/9; background: #0a0a0a; position: relative; overflow: hidden; }
-.layout-thumb .lt-h { position: absolute; inset: 0; }
-.layout-thumb .lt-h img { width: 100%; height: 100%; object-fit: contain; }
+
+/* composite H+V preview */
+.layout-preview {
+  display: flex; height: 90px; background: #0a0a0a;
+  cursor: zoom-in; overflow: hidden;
+}
+.lp-h { aspect-ratio: 16/9; height: 100%; flex-shrink: 0; position: relative; overflow: hidden; }
+.lp-v { aspect-ratio: 9/16; height: 100%; flex-shrink: 0; position: relative; overflow: hidden; border-left: 1px solid #1a1a1a; }
+.lp-h img, .lp-v img { position: absolute; width: 100%; height: 100%; }
+.lp-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2a2a2a; font-size: 18px; }
+
 .layout-name { font-size: 12px; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.layout-actions { display: flex; gap: 3px; padding: 4px 6px; border-top: 1px solid var(--border); }
-.layout-actions button { flex: 1; padding: 3px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
-.layout-actions button:hover { background: var(--blue); border-color: var(--blue); }
+.layout-actions { display: flex; gap: 3px; padding: 4px 6px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.layout-actions button { flex: 1; min-width: 0; padding: 3px 2px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; white-space: nowrap; }
+.layout-actions button:hover:not(:disabled) { background: var(--blue); border-color: var(--blue); }
+.layout-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.layout-flag { align-self: center; margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; }
+
+/* layout zoom modal */
+#lp-zoom-modal .lp-zoom-inner { background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: min(96vw, 960px); }
+#lp-zoom-modal .lp-zoom-name { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+#lp-zoom-modal .layout-preview { height: 320px; border-radius: 6px; cursor: zoom-out; }
 
 /* ── BG References ───────────────────────────────────────────────────────── */
 .bg-ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
@@ -1436,6 +1451,7 @@ let sectionsState = {};
 let previewKey = null;
 let uploadForLayer = null;
 let pendingFiles = [];
+let _layoutData = {};
 
 // Slot definitions
 const SLOTS = [
@@ -2773,26 +2789,66 @@ async function deleteImage(key) {
 async function renderLayouts() {
   const r = await api('GET', `/layouts?event=${currentEvent}`);
   const { layouts, order } = await r.json();
-  const sorted = order.length ? order.filter(id => layouts[id]) : Object.keys(layouts);
+  _layoutData = layouts || {};
+  const sorted = order?.length ? order.filter(id => layouts[id]) : Object.keys(layouts);
   const grid = document.getElementById('layout-grid');
   if (!sorted.length) { grid.innerHTML = '<div class="empty-state">No layouts saved</div>'; return; }
   grid.innerHTML = sorted.map(id => buildLayoutCard(id, layouts[id])).join('');
 }
 
+function buildLpLayer(slotData) {
+  if (!slotData?.key) return '';
+  const s = (slotData.scale || 100) / 100;
+  const r = slotData.rotate || 0;
+  if (slotData.fit === 'cover') {
+    return `<img src="${WORKER}/img/${encodeURIComponent(slotData.key)}" style="object-fit:cover;transform:scale(${Math.max(s,1)}) rotate(${r}deg)">`;
+  }
+  const x = slotData.x ?? 50, y = slotData.y ?? 50;
+  return `<img src="${WORKER}/img/${encodeURIComponent(slotData.key)}" style="object-fit:contain;left:${x}%;top:${y}%;transform:translate(-50%,-50%) scale(${s}) rotate(${r}deg)">`;
+}
+
+function buildLpSlot(gfx, bug, cls) {
+  const empty = !gfx?.key && !bug?.key;
+  return `<div class="${cls}">${empty ? '<div class="lp-empty">—</div>' : ''}${buildLpLayer(gfx)}${buildLpLayer(bug)}</div>`;
+}
+
 function buildLayoutCard(id, layout) {
-  const previewKey = layout.graphics?.h?.key;
+  const gh = layout.graphics?.h, gv = layout.graphics?.v;
+  const bh = layout.bugs?.h,     bv = layout.bugs?.v;
+  const hasH = !!(gh?.key || bh?.key);
+  const hasV = !!(gv?.key || bv?.key);
+  const sid = escAttr(id);
   return `
   <div class="layout-card">
-    <div class="layout-thumb">
-      ${previewKey ? `<div class="lt-h"><img src="${WORKER}/img/${encodeURIComponent(previewKey)}" style="width:100%;height:100%;object-fit:contain"></div>` : '<div style="color:var(--muted);font-size:11px;text-align:center;padding-top:30%">No preview</div>'}
+    <div class="layout-preview" onclick="openLpZoom('${sid}',event)">
+      ${buildLpSlot(gh, bh, 'lp-h')}
+      ${buildLpSlot(gv, bv, 'lp-v')}
     </div>
     <div class="layout-name">${escHtml(layout.name || id)}</div>
     <div class="layout-actions">
-      <button onclick="recallLayout('${escAttr(id)}')" title="Recall">↩ Recall</button>
-      <button onclick="renameLayout('${escAttr(id)}')" title="Rename">✏</button>
-      <button onclick="deleteLayout('${escAttr(id)}')" title="Delete" style="color:var(--red)">🗑</button>
+      <button ${hasH ? `onclick="recallLayout('${sid}','h')"` : 'disabled'} title="Recall H slots">⇦ H</button>
+      <button ${hasV ? `onclick="recallLayout('${sid}','v')"` : 'disabled'} title="Recall V slots">⇦ V</button>
+      <button ${hasH && hasV ? `onclick="recallLayout('${sid}','both')"` : 'disabled'} title="Recall all slots">⇦ Both</button>
+      <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
+      <button onclick="deleteLayout('${sid}')" title="Delete" style="color:var(--red)">🗑</button>
+      <span class="layout-flag">LAYOUT</span>
     </div>
   </div>`;
+}
+
+function openLpZoom(id, e) {
+  e.stopPropagation();
+  const layout = _layoutData[id];
+  if (!layout) return;
+  const gh = layout.graphics?.h, gv = layout.graphics?.v;
+  const bh = layout.bugs?.h,     bv = layout.bugs?.v;
+  document.getElementById('lp-zoom-inner').innerHTML =
+    `<div class="lp-zoom-name">${escHtml(layout.name || id)}</div>
+     <div class="layout-preview">
+       ${buildLpSlot(gh, bh, 'lp-h')}
+       ${buildLpSlot(gv, bv, 'lp-v')}
+     </div>`;
+  openModal('lp-zoom-modal');
 }
 
 async function saveLayout() {
@@ -2809,24 +2865,24 @@ async function saveLayout() {
   renderLayouts();
 }
 
-async function recallLayout(id) {
+async function recallLayout(id, slot = 'both') {
   const r = await api('GET', `/layouts?event=${currentEvent}`);
   const { layouts } = await r.json();
   const layout = layouts[id];
   if (!layout) return;
-  const setSlot = async (layer, slot, state) => {
+  const setSlot = async (layer, s, state) => {
     if (!state?.key) return;
     if (!slots[layer]) slots[layer] = {};
-    slots[layer][slot] = { ...state };
-    updateSlotPreview(layer, slot);
-    await api('PUT', `/select?event=${currentEvent}`, { layer, slot, ...state });
+    slots[layer][s] = { ...state };
+    updateSlotPreview(layer, s);
+    await api('PUT', `/select?event=${currentEvent}`, { layer, slot: s, ...state });
   };
-  await Promise.all([
-    setSlot('graphics', 'h', layout.graphics?.h),
-    setSlot('graphics', 'v', layout.graphics?.v),
-    setSlot('bugs', 'h', layout.bugs?.h),
-    setSlot('bugs', 'v', layout.bugs?.v),
-  ]);
+  const doH = slot === 'h' || slot === 'both';
+  const doV = slot === 'v' || slot === 'both';
+  const calls = [];
+  if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
+  if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
+  await Promise.all(calls);
 }
 
 async function renameLayout(id) {
@@ -2983,8 +3039,8 @@ function openHelp() { openModal('help-modal'); }
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
 });
-// Close on any click for read-only modals (mon-modal, help-modal)
-['mon-modal', 'help-modal'].forEach(id => {
+// Close on any click for read-only modals (mon-modal, help-modal, lp-zoom-modal)
+['mon-modal', 'help-modal', 'lp-zoom-modal'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => closeModal(id));
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(o => closeModal(o.id)); });
@@ -3004,6 +3060,12 @@ if (WORKER && API_KEY) {
   authenticate();
 }
 </script>
+
+<!-- ── LAYOUT ZOOM MODAL ─────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="lp-zoom-modal">
+  <div class="lp-zoom-inner" id="lp-zoom-inner"></div>
+</div>
+
 <div id="toast"></div>
 </body>
 </html>
