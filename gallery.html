@@ -2913,6 +2913,7 @@ async function saveLayout() {
 }
 
 async function recallLayout(id, slot = 'both') {
+  lastRecall = Date.now(); // suppress poll IMMEDIATELY before any async work
   const r = await api('GET', `/layouts?event=${currentEvent}`);
   const { layouts } = await r.json();
   const layout = layouts[id];
@@ -2930,8 +2931,8 @@ async function recallLayout(id, slot = 'both') {
   if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
   if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
   await Promise.all(calls);
-  lastRecall = Date.now(); // suppress poll for 4s to prevent KV race overwriting recalled state
-  renderGrid();            // refresh tile badges to reflect new slot assignments
+  lastRecall = Date.now(); // reset timer from KV write completion — starts fresh 6s window
+  renderGrid();
 }
 
 async function renameLayout(id) {
@@ -3057,12 +3058,13 @@ async function saveTagRules() {
 function startPolling() {
   setInterval(async () => {
     try {
+      if (Date.now() - lastRecall < 6000) return; // guard BEFORE fetching — prevents racing an in-flight recall
       const results = await Promise.all(SLOTS.map(({ layer, slot }) =>
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
       const sinceLastDrag   = Date.now() - lastDragEnd;
       const sinceLastRecall = Date.now() - lastRecall;
-      if (sinceLastRecall < 4000) return; // skip entire poll cycle after layout recall
+      if (sinceLastRecall < 6000) return; // guard AFTER fetch — in case recall happened while fetching
       SLOTS.forEach(({ layer, slot }, i) => {
         if (!slots[layer]) slots[layer] = {};
         const prev = slots[layer][slot];
