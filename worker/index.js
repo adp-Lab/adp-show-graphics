@@ -47,22 +47,6 @@ function cacheKey(base, event, layer, slot) {
   return `${base}${CACHE_PFX}${event}/${layer}/${slot}`;
 }
 
-async function readCache(key, origin) {
-  const hit = await caches.default.match(new Request(key));
-  if (!hit) return null;
-  const body = await hit.text();
-  return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) } });
-}
-
-async function writeCache(key, data) {
-  await caches.default.put(
-    new Request(key),
-    new Response(JSON.stringify(data), {
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=10' },
-    })
-  );
-}
-
 async function bustCache(key) {
   await caches.default.delete(new Request(key));
 }
@@ -84,17 +68,12 @@ export default {
       const slot  = url.searchParams.get('slot');
       if (!layer || !slot) return error('layer and slot required', 400, origin);
 
-      const ck = cacheKey(url.origin, event, layer, slot);
-      const cached = await readCache(ck, origin);
-      if (cached) return cached;
-
       const active   = (await env.KV.get(`active:${event}`, 'json')) || {};
       const settings = (await env.KV.get(`settings:${event}`, 'json')) || DEFAULT_SETTINGS;
       const res      = settings.resolution?.[slot] || DEFAULT_SETTINGS.resolution[slot];
       const state    = active[layer]?.[slot] || null;
       const data     = state ? { ...state, resolution: res } : { live: false, resolution: res };
 
-      await writeCache(ck, data);
       return json(data, 200, origin);
     }
 
@@ -197,12 +176,12 @@ export default {
 
     // ── Active state: select, live toggle, clear ───────────────────────────────
     if (request.method === 'PUT' && path === '/select') {
-      const { layer, slot, key, name = key, scale = 100, fit = 'contain', x = 50, y = 50, rotate = 0 } = await request.json();
+      const { layer, slot, key, name = key, scale = 100, fit = 'contain', x = 50, y = 50, rotate = 0, live } = await request.json();
       if (!layer || !slot || !key) return error('layer, slot and key required', 400, origin);
       const active = (await env.KV.get(`active:${event}`, 'json')) || {};
       if (!active[layer]) active[layer] = {};
       const existing = active[layer][slot] || {};
-      active[layer][slot] = { ...existing, key, name, x, y, scale, fit, rotate, updatedAt: new Date().toISOString() };
+      active[layer][slot] = { ...existing, key, name, x, y, scale, fit, rotate, live: live !== undefined ? Boolean(live) : (existing.live || false), updatedAt: new Date().toISOString() };
       await env.KV.put(`active:${event}`, JSON.stringify(active));
       await bustCache(cacheKey(url.origin, event, layer, slot));
       return json({ ok: true }, 200, origin);

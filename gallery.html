@@ -2899,20 +2899,11 @@ function buildLayoutCard(id, layout) {
   const hasH = !!(gh?.key || bh?.key);
   const hasV = !!(gv?.key || bv?.key);
 
-  // Color feedback: reflect current live/loaded state of each axis
-  const hIsLive = !!(slots?.graphics?.h?.live || slots?.bugs?.h?.live);
-  const hLoaded = !!(slots?.graphics?.h?.key  || slots?.bugs?.h?.key);
-  const vIsLive = !!(slots?.graphics?.v?.live || slots?.bugs?.v?.live);
-  const vLoaded = !!(slots?.graphics?.v?.key  || slots?.bugs?.v?.key);
-
-  const hCls    = !hasH ? '' : hIsLive ? 'slot-live' : hLoaded ? 'slot-ready' : 'has-content';
-  const vCls    = !hasV ? '' : vIsLive ? 'slot-live' : vLoaded ? 'slot-ready' : 'has-content';
   const bothHas = hasH && hasV;
-  const bothCls = !bothHas ? '' : (hIsLive||vIsLive) ? 'slot-live' : (hLoaded||vLoaded) ? 'slot-ready' : 'has-content';
 
   const sid = escAttr(id);
-  const rb = (has, cls, fn, lbl) => has
-    ? `<button class="layout-recall-btn ${cls}" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
+  const rb = (has, fn, lbl) => has
+    ? `<button class="layout-recall-btn" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
     : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
 
   const isActive = id === activeLayoutId;
@@ -2925,9 +2916,9 @@ function buildLayoutCard(id, layout) {
     <div class="layout-name">${escHtml(layout.name || id)}</div>
     <div class="layout-actions">
       <div class="layout-recall-row">
-        ${rb(hasH, hCls, `recallLayout('${sid}','h')`, 'H')}
-        ${rb(hasV, vCls, `recallLayout('${sid}','v')`, 'V')}
-        ${rb(bothHas, bothCls, `recallLayout('${sid}','both')`, 'Both')}
+        ${rb(hasH, `recallLayout('${sid}','h')`, 'H')}
+        ${rb(hasV, `recallLayout('${sid}','v')`, 'V')}
+        ${rb(bothHas, `recallLayout('${sid}','both')`, 'Both')}
       </div>
       <div class="layout-util-row">
         <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
