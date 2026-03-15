@@ -323,11 +323,23 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .lp-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2a2a2a; font-size: 18px; }
 
 .layout-name { font-size: 12px; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.layout-actions { display: flex; gap: 3px; padding: 4px 6px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-.layout-actions button { flex: 1; min-width: 0; padding: 3px 2px; font-size: 10px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; white-space: nowrap; }
-.layout-actions button:hover:not(:disabled) { background: var(--blue); border-color: var(--blue); }
-.layout-actions button:disabled { opacity: .35; cursor: not-allowed; }
-.layout-flag { align-self: center; margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; }
+.layout-actions { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-top: 1px solid var(--border); }
+.layout-recall-row { display: flex; gap: 4px; }
+.layout-recall-btn {
+  flex: 1; padding: 8px 4px; font-size: 12px; font-weight: 700;
+  background: var(--surf3); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 4px; cursor: default; white-space: nowrap; letter-spacing: .04em;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.layout-recall-btn:not([disabled]):hover { filter: brightness(1.2); }
+.layout-recall-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.layout-recall-btn.has-content { color: var(--text); cursor: pointer; }
+.layout-recall-btn.slot-ready { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 6px rgba(76,175,80,.35); cursor: pointer; }
+.layout-recall-btn.slot-live  { background: var(--red);   color: #fff; border-color: var(--red);   box-shadow: 0 0 8px rgba(229,57,53,.45); cursor: pointer; }
+.layout-util-row { display: flex; gap: 3px; align-items: center; }
+.layout-util-row button { padding: 3px 9px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
+.layout-util-row button:hover { background: var(--surf2); }
+.layout-flag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; align-self: center; }
 
 /* layout zoom modal */
 #lp-zoom-modal .lp-zoom-inner { background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: min(96vw, 960px); }
@@ -1427,6 +1439,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
 </div>
 
+<!-- ── LAYOUT ZOOM MODAL ─────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="lp-zoom-modal">
+  <div class="lp-zoom-inner" id="lp-zoom-inner"></div>
+</div>
+
 <!-- ── SCRIPT ─────────────────────────────────────────────────────────────── -->
 <script>
 // ── State ───────────────────────────────────────────────────────────────────
@@ -1451,7 +1468,8 @@ let sectionsState = {};
 let previewKey = null;
 let uploadForLayer = null;
 let pendingFiles = [];
-let _layoutData = {};
+let _layoutData  = {};
+let _layoutOrder = [];
 
 // Slot definitions
 const SLOTS = [
@@ -2790,11 +2808,19 @@ async function deleteImage(key) {
 async function renderLayouts() {
   const r = await api('GET', `/layouts?event=${currentEvent}`);
   const { layouts, order } = await r.json();
-  _layoutData = layouts || {};
-  const sorted = order?.length ? order.filter(id => layouts[id]) : Object.keys(layouts);
+  _layoutData  = layouts || {};
+  _layoutOrder = order?.length ? order.filter(id => layouts[id]) : Object.keys(layouts);
   const grid = document.getElementById('layout-grid');
-  if (!sorted.length) { grid.innerHTML = '<div class="empty-state">No layouts saved</div>'; return; }
-  grid.innerHTML = sorted.map(id => buildLayoutCard(id, layouts[id])).join('');
+  if (!_layoutOrder.length) { grid.innerHTML = '<div class="empty-state">No layouts saved</div>'; return; }
+  grid.innerHTML = _layoutOrder.map(id => buildLayoutCard(id, layouts[id])).join('');
+}
+
+// Lightweight rebuild of layout card HTML from cache (no fetch) — used after slot state changes
+function rebuildLayoutCards() {
+  if (!_layoutOrder.length) return;
+  const grid = document.getElementById('layout-grid');
+  if (!grid) return;
+  grid.innerHTML = _layoutOrder.map(id => buildLayoutCard(id, _layoutData[id])).join('');
 }
 
 function buildLpLayer(slotData) {
@@ -2818,7 +2844,23 @@ function buildLayoutCard(id, layout) {
   const bh = layout.bugs?.h,     bv = layout.bugs?.v;
   const hasH = !!(gh?.key || bh?.key);
   const hasV = !!(gv?.key || bv?.key);
+
+  // Color feedback: reflect current live/loaded state of each axis
+  const hIsLive = !!(slots?.graphics?.h?.live || slots?.bugs?.h?.live);
+  const hLoaded = !!(slots?.graphics?.h?.key  || slots?.bugs?.h?.key);
+  const vIsLive = !!(slots?.graphics?.v?.live || slots?.bugs?.v?.live);
+  const vLoaded = !!(slots?.graphics?.v?.key  || slots?.bugs?.v?.key);
+
+  const hCls    = !hasH ? '' : hIsLive ? 'slot-live' : hLoaded ? 'slot-ready' : 'has-content';
+  const vCls    = !hasV ? '' : vIsLive ? 'slot-live' : vLoaded ? 'slot-ready' : 'has-content';
+  const bothHas = hasH && hasV;
+  const bothCls = !bothHas ? '' : (hIsLive||vIsLive) ? 'slot-live' : (hLoaded||vLoaded) ? 'slot-ready' : 'has-content';
+
   const sid = escAttr(id);
+  const rb = (has, cls, fn, lbl) => has
+    ? `<button class="layout-recall-btn ${cls}" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
+    : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
+
   return `
   <div class="layout-card">
     <div class="layout-preview" onclick="openLpZoom('${sid}',event)">
@@ -2827,12 +2869,16 @@ function buildLayoutCard(id, layout) {
     </div>
     <div class="layout-name">${escHtml(layout.name || id)}</div>
     <div class="layout-actions">
-      <button ${hasH ? `onclick="recallLayout('${sid}','h')"` : 'disabled'} title="Recall H slots">⇦ H</button>
-      <button ${hasV ? `onclick="recallLayout('${sid}','v')"` : 'disabled'} title="Recall V slots">⇦ V</button>
-      <button ${hasH && hasV ? `onclick="recallLayout('${sid}','both')"` : 'disabled'} title="Recall all slots">⇦ Both</button>
-      <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
-      <button onclick="deleteLayout('${sid}')" title="Delete" style="color:var(--red)">🗑</button>
-      <span class="layout-flag">LAYOUT</span>
+      <div class="layout-recall-row">
+        ${rb(hasH, hCls, `recallLayout('${sid}','h')`, 'H')}
+        ${rb(hasV, vCls, `recallLayout('${sid}','v')`, 'V')}
+        ${rb(bothHas, bothCls, `recallLayout('${sid}','both')`, 'Both')}
+      </div>
+      <div class="layout-util-row">
+        <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
+        <button onclick="deleteLayout('${sid}')" title="Delete" style="color:var(--red)">🗑</button>
+        <span class="layout-flag">LAYOUT</span>
+      </div>
     </div>
   </div>`;
 }
@@ -3029,6 +3075,7 @@ function startPolling() {
         if (JSON.stringify(prev) !== JSON.stringify(next)) {
           slots[layer][slot] = next;
           updateSlotPreview(layer, slot);
+          rebuildLayoutCards();
         }
       });
     } catch(e) {}
@@ -3065,11 +3112,6 @@ if (WORKER && API_KEY) {
   authenticate();
 }
 </script>
-
-<!-- ── LAYOUT ZOOM MODAL ─────────────────────────────────────────────────── -->
-<div class="modal-overlay hidden" id="lp-zoom-modal">
-  <div class="lp-zoom-inner" id="lp-zoom-inner"></div>
-</div>
 
 <div id="toast"></div>
 </body>
