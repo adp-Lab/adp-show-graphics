@@ -66,7 +66,7 @@ The slots panel is a 4-column layout:
 - **Rotate slider** — –180° to +180°; click the ° value to reset to 0°; applied in both gallery preview and output pages
 - **Contain / Cover** mode
 - **URL bar** — output URLs for GFX and Bug per format, with ↗ open and 📋 copy
-- **Grid** — toggle, 10×/20×/40×/80× divisions, snap-to-grid
+- **Grid** — toggle, 10×10 / 20×20 / 25×25 / 40×40 / 50×40 / 80×80 divisions, snap-to-grid (50×40 snaps x/y axes independently)
 - **BG Reference** — enable toggle + opacity slider (gallery preview only)
 
 ### Center panel
