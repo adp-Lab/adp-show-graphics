@@ -2973,8 +2973,15 @@ async function recallLayout(id, slot = 'both') {
   const layout = layouts[id];
   if (!layout) return;
   const setSlot = async (layer, s, state) => {
-    if (!state?.key) return;
     if (!slots[layer]) slots[layer] = {};
+    if (!state?.key) {
+      // Slot was empty when layout was saved — clear it so output matches
+      slots[layer][s] = null;
+      markDirty(layer, s);
+      updateSlotPreview(layer, s);
+      await api('PUT', `/clear?event=${currentEvent}`, { layer, slot: s });
+      return;
+    }
     slots[layer][s] = { ...state };
     markDirty(layer, s); // lock this slot — poll will never overwrite it this session
     updateSlotPreview(layer, s);
