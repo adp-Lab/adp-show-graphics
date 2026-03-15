@@ -2588,6 +2588,7 @@ async function saveEditorCopy() {
     setStatus('Saved: ' + name, 3000);
     closeEditor();
     await loadAll();
+    setTimeout(loadAll, 1500); // KV eventual consistency — second refresh catches late-propagated entry
   } catch(e) {
     setStatus('Save failed: ' + e.message, 4000);
     btn.disabled = false; btn.textContent = 'Save as Copy';
