@@ -2989,6 +2989,26 @@ async function recallLayout(id, slot = 'both') {
   if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
   if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
   await Promise.all(calls);
+
+  // Post-recall: ensure previews visible + sliders synced + live OFF
+  const affected = [];
+  if (doH) affected.push('h');
+  if (doV) affected.push('v');
+  for (const cs of affected) {
+    // Turn on preview visibility for both layers in this column
+    for (const layer of ['graphics', 'bugs']) {
+      if (!previewVis[layer]) previewVis[layer] = {};
+      previewVis[layer][cs] = true;
+      document.getElementById(`pvtgl-${layer}-${cs}`)?.classList.add('active');
+      const imgId = layer === 'graphics' ? `sp-gfx-img-${cs}` : `sp-bug-img-${cs}`;
+      const imgEl = document.getElementById(imgId);
+      if (imgEl) imgEl.style.display = '';
+    }
+    // Sync sliders to whichever manipulation layer is active
+    syncColControls(cs);
+  }
+  localStorage.setItem('adp_prev_vis', JSON.stringify(previewVis));
+
   activeLayoutId = id;
   renderGrid();
   rebuildLayoutCards();
