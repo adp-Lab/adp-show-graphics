@@ -425,7 +425,6 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 /* ── Help modal ──────────────────────────────────────────────────────────── */
 #help-modal .modal { width: min(1440px, 96vw); }
-#help-modal #ui-guide-img { width: 100%; height: auto; image-rendering: -webkit-optimize-contrast; }
 .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
 .help-item { background: var(--surf2); border-radius: 6px; padding: 10px 12px; }
 .help-item h4 { font-size: 13px; margin-bottom: 4px; }
@@ -1189,7 +1188,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
     <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
     <h3>❓ adp-show-graphics — Quick Reference</h3>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Click anywhere to close. Scroll for full reference.</p>
-    <img id="ui-guide-img" src="ui-guide.png" alt="UI overview" style="border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block">
+    <img src="ui-guide-s1.png" alt="UI overview part 1" style="width:100%;height:auto;border-radius:6px;border:1px solid var(--border);margin-bottom:8px;display:block;image-rendering:-webkit-optimize-contrast">
+    <img src="ui-guide-s2.png" alt="UI overview part 2" style="width:100%;height:auto;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block;image-rendering:-webkit-optimize-contrast">
 
     <div class="help-section-lbl">Header</div>
     <div class="help-grid">
