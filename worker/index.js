@@ -68,13 +68,35 @@ export default {
       const slot  = url.searchParams.get('slot');
       if (!layer || !slot) return error('layer and slot required', 400, origin);
 
+      // Check worker-side cache first — zero KV reads on hit
+      const ck        = cacheKey(url.origin, event, layer, slot);
+      const cacheReq  = new Request(ck);
+      const cached    = await caches.default.match(cacheReq);
+      if (cached) {
+        const body = await cached.text();
+        return new Response(body, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsHeaders(origin) },
+        });
+      }
+
+      // Cache miss — read KV
       const active   = (await env.KV.get(`active:${event}`, 'json')) || {};
       const settings = (await env.KV.get(`settings:${event}`, 'json')) || DEFAULT_SETTINGS;
       const res      = settings.resolution?.[slot] || DEFAULT_SETTINGS.resolution[slot];
       const state    = active[layer]?.[slot] || null;
       const data     = state ? { ...state, resolution: res } : { live: false, resolution: res };
+      const body     = JSON.stringify(data);
 
-      return json(data, 200, origin);
+      // Populate cache (30 s safety TTL; busted immediately on any operator change)
+      await caches.default.put(cacheReq, new Response(body, {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30' },
+      }));
+
+      return new Response(body, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...corsHeaders(origin) },
+      });
     }
 
     // ── PUBLIC: serve image from R2 ────────────────────────────────────────────
