@@ -2,6 +2,9 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: transparent; overflow: hidden; width: 100vw; height: 100vh; }
@@ -52,7 +55,7 @@
 
   async function poll() {
     try {
-      const res = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`);
+      const res = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`, { cache: 'no-store' });
       const state = await res.json();
       if (state.resolution) applyResolution(state.resolution);
       if (!state.live || !state.key) { img.classList.add('hidden'); currentKey = null; return; }
