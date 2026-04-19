@@ -1,2 +1,5 @@
 .wrangler/
 node_modules/
+.DS_Store
+docs/complete chat.md
+conversation during development .litcoffee
