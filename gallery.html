@@ -42,6 +42,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .hdr-spacer { flex: 1; }
 #auth-status { font-size: 12px; color: var(--muted); }
 #auth-status.ok { color: var(--green); }
+#auth-status.err { color: var(--red); }
 
 /* ── Auth gate ───────────────────────────────────────────────────────────── */
 #auth-gate { max-width: 420px; margin: 80px auto; background: var(--surf); border: 1px solid var(--border); border-radius: 10px; padding: 32px; text-align: center; }
@@ -3089,6 +3090,25 @@ async function saveTagRules() {
 }
 
 // ── Polling ───────────────────────────────────────────────────────────────────
+let pollFailCount = 0;
+const POLL_FAIL_THRESHOLD = 3;
+
+function setPollStatus(ok) {
+  const el = document.getElementById('auth-status');
+  if (!el) return;
+  if (ok) {
+    pollFailCount = 0;
+    el.textContent = '●  Connected';
+    el.className = 'ok';
+  } else {
+    pollFailCount++;
+    if (pollFailCount >= POLL_FAIL_THRESHOLD) {
+      el.textContent = '●  Connection lost';
+      el.className = 'err';
+    }
+  }
+}
+
 function startPolling() {
   setInterval(async () => {
     try {
@@ -3098,6 +3118,7 @@ function startPolling() {
       const results = await Promise.all(toFetch.map(({ layer, slot }) =>
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
+      setPollStatus(true);
       const sinceLastDrag = Date.now() - lastDragEnd;
       toFetch.forEach(({ layer, slot }, i) => {
         if (isDirty(layer, slot)) return; // re-check: may have become dirty while fetching
@@ -3114,7 +3135,9 @@ function startPolling() {
           rebuildLayoutCards();
         }
       });
-    } catch(e) {}
+    } catch(e) {
+      setPollStatus(false);
+    }
   }, 3000);
 }
 
