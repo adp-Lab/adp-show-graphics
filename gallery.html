@@ -568,6 +568,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .lvbtn.live  { background: var(--red);   color: #fff; border-color: var(--red);   box-shadow: 0 0 10px rgba(229,57,53,.5); }
 .lvbtn.stub  { opacity: .35; cursor: default; }
 .lvbtn-wide  { width: 100%; margin-top: 1px; }
+/* Split state for H+V buttons: left=H, right=V */
+.lvbtn-wide.split-h-live { background: linear-gradient(90deg, var(--red) 50%, var(--green) 50%); color: #fff; border-color: var(--red); box-shadow: 0 0 10px rgba(229,57,53,.35); }
+.lvbtn-wide.split-v-live { background: linear-gradient(90deg, var(--green) 50%, var(--red) 50%); color: #000; border-color: var(--green); box-shadow: 0 0 10px rgba(76,175,80,.35); }
 
 /* URL bar */
 .url-bar { padding: 4px 6px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
@@ -788,7 +791,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
             <button class="lvbtn" id="lvb-bugs-h" onclick="toggleLive('bugs','h')">Bug H</button>
             <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
           </div>
-          <button class="lvbtn lvbtn-wide" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
+          <button class="lvbtn lvbtn-wide" id="lvb-bugs-both" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
         </div>
 
         <!-- Graphics Live -->
@@ -798,17 +801,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
             <button class="lvbtn" id="lvb-graphics-h" onclick="toggleLive('graphics','h')">GFX H</button>
             <button class="lvbtn" id="lvb-graphics-v" onclick="toggleLive('graphics','v')">GFX V</button>
           </div>
-          <button class="lvbtn lvbtn-wide" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
-        </div>
-
-        <!-- Credits Live (stub) -->
-        <div class="ctr-group" style="opacity:.4">
-          <div class="ctr-title">Credits Live</div>
-          <div class="btn2g">
-            <button class="lvbtn stub" title="Session 4">Credits H</button>
-            <button class="lvbtn stub" title="Session 4">Credits V</button>
-          </div>
-          <button class="lvbtn lvbtn-wide stub" title="Session 4">Credits H+V</button>
+          <button class="lvbtn lvbtn-wide" id="lvb-graphics-both" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
         </div>
 
         <!-- Clear -->
@@ -933,21 +926,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           </div>
         </div>
 
-        <div class="sidebar-group">
-          <div class="sidebar-title">Credits OUTPUT</div>
-          <div style="font-size:9px;color:var(--muted);font-style:italic;line-height:1.4">Click Credits windows<br>to edit Credits</div>
-          <div class="sidebar-pair">
-            <div class="mon-item mon-item-h placeholder">
-              <div class="mon-label">Credits H</div>
-              <div class="mon-iframe-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">coming soon</div>
-            </div>
-            <div class="mon-item mon-item-v placeholder">
-              <div class="mon-label">Credits V</div>
-              <div class="mon-iframe-wrap portrait" style="display:flex;align-items:center;justify-content:center;color:var(--surf3);font-size:10px">coming soon</div>
-            </div>
-          </div>
-        </div>
-
       </div><!-- /SIDEBAR -->
 
     </div><!-- /slots-panel -->
@@ -1033,20 +1011,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   </div>
 </div>
 
-<!-- CREDITS LIBRARY -->
-<div class="section">
-  <div class="sec-hdr open" onclick="toggleSection('credits-lib')">
-    <span class="chevron">›</span>
-    <h2>🎬 Credits Library</h2>
-  </div>
-  <div class="sec-body" id="sec-body-credits-lib">
-    <div class="lib-toolbar">
-      <button class="btn btn-gray btn-sm" onclick="openUpload('credits')">📤 Upload Credits Asset</button>
-    </div>
-    <div id="credits-grid" class="img-grid"></div>
-  </div>
-</div>
-
 </div><!-- #app -->
 </div><!-- #main -->
 
@@ -1077,7 +1041,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
       <div style="display:flex;gap:14px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-images" checked> Image Library</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-bg"> BG Reference</label>
-        <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ul-lib-credits"> Credits Library</label>
       </div>
     </div>
     <div class="form-row">
@@ -1274,7 +1237,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
       <div class="help-item">
         <h4>Output monitors (right column)</h4>
         <ul>
-          <li>Live iframe previews of each output page — GFX, Bug/QR, Credits for H and V</li>
+          <li>Live iframe previews of each output page — GFX and Bug/QR for H and V</li>
           <li><b>Click any monitor</b> → magnifies to full-screen modal; <b>click anywhere to close</b></li>
           <li>Monitors poll at the same 1.5 s rate as the output pages</li>
         </ul>
@@ -1297,13 +1260,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <li>Individual H / V buttons, plus <b>H+V</b> combined for Bug and GFX</li>
           <li>Click a red button to go transparent (same toggle)</li>
           <li>Selecting an image from the library only assigns it — it does not go live until SEND LIVE is clicked</li>
-        </ul>
-      </div>
-      <div class="help-item">
-        <h4>Credits LIVE</h4>
-        <ul>
-          <li>Sends Credits H / V output live (credits-h.html / credits-v.html output pages)</li>
-          <li>Credits windows are separate from GFX and Bug — open them independently in vMix</li>
         </ul>
       </div>
       <div class="help-item">
@@ -1551,7 +1507,6 @@ async function loadAll() {
   renderCatManagement();
   renderBgRefs();
   renderProcessedGrid();
-  renderCreditsGrid();
   renderLayouts();
   applyTargetBar();
   applyOpenSections();
@@ -1583,7 +1538,6 @@ async function switchEvent(id) {
   renderFilters();
   renderBgRefs();
   renderProcessedGrid();
-  renderCreditsGrid();
   renderLayouts();
 }
 
@@ -1660,7 +1614,7 @@ function toggleSection(key) {
 }
 
 function applyOpenSections() {
-  ['slots','lib','layouts','tags','bgrefs','processed','credits-lib'].forEach(key => {
+  ['slots','lib','layouts','tags','bgrefs','processed'].forEach(key => {
     const body = document.getElementById(`sec-body-${key}`);
     if (!body) return;
     const hdr = body.previousElementSibling;
@@ -1758,6 +1712,24 @@ function updateLiveBtn(layer, slot) {
   btn.classList.remove('ready','live');
   if (state?.key && state.live) btn.classList.add('live');
   else if (state?.key)          btn.classList.add('ready');
+  updateLiveBothBtn(layer);
+}
+
+function updateLiveBothBtn(layer) {
+  const btn = document.getElementById(`lvb-${layer}-both`);
+  if (!btn) return;
+  const h = slots[layer]?.h;
+  const v = slots[layer]?.v;
+  const hLive  = !!h?.live;
+  const vLive  = !!v?.live;
+  const hReady = !!h?.key && !hLive;
+  const vReady = !!v?.key && !vLive;
+  btn.classList.remove('ready', 'live', 'split-h-live', 'split-v-live');
+  if      (hLive  && vLive)  btn.classList.add('live');
+  else if (hReady && vReady) btn.classList.add('ready');
+  else if (hLive)            btn.classList.add('split-h-live');
+  else if (vLive)            btn.classList.add('split-v-live');
+  else if (hReady || vReady) btn.classList.add('ready');
 }
 
 // ── Column controls ───────────────────────────────────────────────────────────
@@ -2155,7 +2127,7 @@ function setupImgDrag(containerEl, itemList) {
       if (from < 0 || to < 0) return;
       const moved = images.splice(from, 1)[0];
       images.splice(to, 0, moved);
-      renderGrid(); // re-renders processedGrid + creditsGrid too
+      renderGrid();
       renderBgRefs();
       await api('PUT', `/image-order?event=${currentEvent}`, images.map(i => i.key));
     });
@@ -2178,7 +2150,6 @@ function renderGrid() {
   grid.innerHTML = list.map(img => buildImgCard(img)).join('');
   setupImgDrag(grid, list);
   renderProcessedGrid();
-  renderCreditsGrid();
 }
 
 function buildImgCard(img) {
@@ -2313,14 +2284,6 @@ function renderProcessedGrid() {
   setupImgDrag(grid, list);
 }
 
-function renderCreditsGrid() {
-  const list = images.filter(i => i.tags?.includes('Credits'));
-  const grid = document.getElementById('credits-grid');
-  if (!grid) return;
-  if (!list.length) { grid.innerHTML = '<div class="empty-state">No credits assets yet</div>'; return; }
-  grid.innerHTML = list.map(img => buildImgCard(img)).join('');
-  setupImgDrag(grid, list);
-}
 
 // ── Select mode ──────────────────────────────────────────────────────────────
 function toggleSelectMode() {
@@ -2359,22 +2322,18 @@ function openUpload(forLayer) {
   document.getElementById('ul-progress').textContent = '';
   populateChips();
   // Set library target checkboxes
-  const libImages  = document.getElementById('ul-lib-images');
-  const libBg      = document.getElementById('ul-lib-bg');
-  const libCredits = document.getElementById('ul-lib-credits');
-  if (libImages)  libImages.checked  = forLayer !== 'background' && forLayer !== 'credits';
-  if (libBg)      libBg.checked      = forLayer === 'background';
-  if (libCredits) libCredits.checked = forLayer === 'credits';
+  const libImages = document.getElementById('ul-lib-images');
+  const libBg     = document.getElementById('ul-lib-bg');
+  if (libImages) libImages.checked = forLayer !== 'background';
+  if (libBg)     libBg.checked     = forLayer === 'background';
   if (forLayer === 'background') {
     document.querySelectorAll('.ul-chip').forEach(c => { c.classList.toggle('on', c.dataset.cat === 'background'); });
-  } else if (forLayer === 'credits') {
-    document.querySelectorAll('.ul-chip').forEach(c => { c.classList.toggle('on', c.dataset.cat === 'Credits'); });
   }
   openModal('upload-modal');
 }
 
 function populateChips() {
-  const permanentCats = ['background', 'QR codes', 'Credits'];
+  const permanentCats = ['background', 'QR codes'];
   const all = [...new Set([...permanentCats, ...categories])].sort();
   document.getElementById('ul-chips').innerHTML = all.map(c =>
     `<span class="ul-chip" data-cat="${escAttr(c)}" onclick="this.classList.toggle('on')">${escHtml(c)}</span>`
@@ -2408,11 +2367,9 @@ async function doUpload() {
   btn.disabled = true;
   const chips = getSelectedChips();
   const extra = document.getElementById('ul-extra-tags').value.split(',').map(t => t.trim()).filter(Boolean);
-  const libBgChecked      = document.getElementById('ul-lib-bg')?.checked;
-  const libCreditsChecked = document.getElementById('ul-lib-credits')?.checked;
+  const libBgChecked = document.getElementById('ul-lib-bg')?.checked;
   const allTags = [...new Set([...chips, ...extra,
-    ...(libBgChecked      ? ['background'] : []),
-    ...(libCreditsChecked ? ['Credits']    : [])
+    ...(libBgChecked ? ['background'] : []),
   ])];
   const total = pendingFiles.length;
   let done = 0;
@@ -2433,7 +2390,6 @@ async function doUpload() {
   renderGrid();
   renderBgRefs();
   renderProcessedGrid();
-  renderCreditsGrid();
   renderFilters();
   btn.disabled = false;
   pendingFiles = [];
@@ -2759,7 +2715,7 @@ function openTagDropdown(key, btn, e) {
   const img = images.find(i => i.key === key);
   if (!img) return;
 
-  const allTags = [...new Set(['background', 'QR codes', 'Credits', 'edited', ...categories])].sort();
+  const allTags = [...new Set(['background', 'QR codes', 'edited', ...categories])].sort();
   const current = new Set(img.tags || []);
 
   const div = document.createElement('div');
@@ -2984,10 +2940,10 @@ async function recallLayout(id, slot = 'both') {
   };
   const doH = slot === 'h' || slot === 'both';
   const doV = slot === 'v' || slot === 'both';
-  const calls = [];
-  if (doH) { calls.push(setSlot('graphics', 'h', layout.graphics?.h)); calls.push(setSlot('bugs', 'h', layout.bugs?.h)); }
-  if (doV) { calls.push(setSlot('graphics', 'v', layout.graphics?.v)); calls.push(setSlot('bugs', 'v', layout.bugs?.v)); }
-  await Promise.all(calls);
+  // Sequential — each slot gets its own KV key (v3), but sequential writes also prevent
+  // any residual race on initial session load before KV changes propagate
+  if (doH) { await setSlot('graphics', 'h', layout.graphics?.h); await setSlot('bugs', 'h', layout.bugs?.h); }
+  if (doV) { await setSlot('graphics', 'v', layout.graphics?.v); await setSlot('bugs', 'v', layout.bugs?.v); }
 
   // Post-recall: ensure previews visible + sliders synced + live OFF
   const affected = [];
@@ -3056,7 +3012,7 @@ async function saveSettings() {
 
 // ── Category management ───────────────────────────────────────────────────────
 function renderCatManagement() {
-  const permanentCats = ['background', 'QR codes', 'Credits'];
+  const permanentCats = ['background', 'QR codes'];
   document.getElementById('cat-list').innerHTML = categories.sort().map(cat => {
     const isPerm = permanentCats.includes(cat);
     return `<div class="cat-row">
@@ -3095,7 +3051,7 @@ async function renameCategory(oldName) {
     await api('PUT', `/tags/${encodeURIComponent(img.key)}?event=${currentEvent}`, { tags: img.tags });
   }
   renderCatManagement(); renderFilters(); populateChips(); renderGrid();
-  renderProcessedGrid(); renderCreditsGrid();
+  renderProcessedGrid();
 }
 
 async function deleteCategory(name) {
@@ -3108,7 +3064,7 @@ async function deleteCategory(name) {
     await api('PUT', `/tags/${encodeURIComponent(img.key)}?event=${currentEvent}`, { tags: img.tags });
   }
   renderCatManagement(); renderFilters(); populateChips(); renderGrid();
-  renderProcessedGrid(); renderCreditsGrid();
+  renderProcessedGrid();
 }
 
 function renderTagRuleInputs() {
