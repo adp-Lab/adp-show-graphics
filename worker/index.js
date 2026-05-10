@@ -70,7 +70,9 @@ async function writeSlot(env, event, layer, slot, data) {
   if (data === null) {
     await env.KV.delete(slotKvKey(event, layer, slot));
   } else {
-    await env.KV.put(slotKvKey(event, layer, slot), JSON.stringify({ ...data, updatedAt: new Date().toISOString() }));
+    // Strip resolution — injected from settings at read time (/active), never stored per-slot
+    const { resolution, ...clean } = data;
+    await env.KV.put(slotKvKey(event, layer, slot), JSON.stringify({ ...clean, updatedAt: new Date().toISOString() }));
   }
 }
 
@@ -123,7 +125,18 @@ export default {
     // ── PUBLIC: status — all slots at once (Companion feedback polling) ────────
     // GET /status?event=X
     // Returns: { graphics: { h: {...}, v: {...} }, bugs: { h: {...}, v: {...} } }
+    // 3s cache — Companion feedback tolerates brief staleness, saves KV reads
     if (request.method === 'GET' && path === '/status') {
+      const ck       = `${url.origin}${CACHE_PFX}status/${event}`;
+      const cacheReq = new Request(ck);
+      const cached   = await caches.default.match(cacheReq);
+      if (cached) {
+        return new Response(await cached.text(), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+        });
+      }
+
       const settings = (await env.KV.get(`settings:${event}`, 'json')) || DEFAULT_SETTINGS;
       const result   = {};
       await Promise.all(LAYERS.flatMap(layer =>
@@ -134,7 +147,15 @@ export default {
           result[layer][slot] = state ? { ...state, resolution: res } : { live: false, resolution: res };
         })
       ));
-      return json(result, 200, origin);
+
+      const body = JSON.stringify(result);
+      await caches.default.put(cacheReq, new Response(body, {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3' },
+      }));
+      return new Response(body, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      });
     }
 
     // ── PUBLIC: serve image from R2 ────────────────────────────────────────────
@@ -213,24 +234,26 @@ export default {
 
         case 'live': {
           if (!layer) return error('layer required', 400, origin);
+          const liveSkipped = [];
           for (const s of targetSlots) {
             const existing = await readSlot(env, event, layer, s);
-            if (!existing) continue;
+            if (!existing) { liveSkipped.push(s); continue; }
             await writeSlot(env, event, layer, s, { ...existing, live: true });
             await bustCache(cacheKey(url.origin, event, layer, s));
           }
-          return json({ ok: true, action: 'live', layer, slots: targetSlots }, 200, origin);
+          return json({ ok: true, action: 'live', layer, slots: targetSlots, skipped: liveSkipped }, 200, origin);
         }
 
         case 'off': {
           if (!layer) return error('layer required', 400, origin);
+          const offSkipped = [];
           for (const s of targetSlots) {
             const existing = await readSlot(env, event, layer, s);
-            if (!existing) continue;
+            if (!existing) { offSkipped.push(s); continue; }
             await writeSlot(env, event, layer, s, { ...existing, live: false });
             await bustCache(cacheKey(url.origin, event, layer, s));
           }
-          return json({ ok: true, action: 'off', layer, slots: targetSlots }, 200, origin);
+          return json({ ok: true, action: 'off', layer, slots: targetSlots, skipped: offSkipped }, 200, origin);
         }
 
         case 'go': {
@@ -356,7 +379,8 @@ export default {
     if (request.method === 'PUT' && path === '/live') {
       const { layer, slot, live } = await request.json();
       if (!layer || !slot) return error('layer and slot required', 400, origin);
-      const existing = await readSlot(env, event, layer, slot) || {};
+      const existing = await readSlot(env, event, layer, slot);
+      if (!existing || !existing.key) return error('No image in slot', 400, origin);
       await writeSlot(env, event, layer, slot, { ...existing, live: Boolean(live) });
       await bustCache(cacheKey(url.origin, event, layer, slot));
       return json({ ok: true }, 200, origin);
@@ -494,6 +518,13 @@ export default {
     if (request.method === 'PUT' && path === '/tag-rules') {
       await env.KV.put('tag_rules', JSON.stringify(await request.json()));
       return json({ ok: true }, 200, origin);
+    }
+
+    // ── Migrate: clean up pre-v3 orphan KV keys ────────────────────────────────
+    if (request.method === 'POST' && path === '/migrate') {
+      const list = await env.KV.list({ prefix: 'active:' });
+      await Promise.all(list.keys.map(k => env.KV.delete(k.name)));
+      return json({ ok: true, cleaned: list.keys.map(k => k.name) }, 200, origin);
     }
 
     return error('Not found', 404, origin);
