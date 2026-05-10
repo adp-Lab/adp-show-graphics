@@ -2,4 +2,7 @@
 node_modules/
 .DS_Store
 docs/complete chat.md
+docs/handoffs/
 conversation during development .litcoffee
+UI Elements Explanation/
+_v1-build info/
