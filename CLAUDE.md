@@ -6,7 +6,7 @@ Browser-source graphics tool for live vMix shows. Operator panel + Cloudflare Wo
 - **Frontend:** Single-file gallery (`gallery.html`) — no build step, deployed via GitHub Pages
 - **Backend:** Cloudflare Worker (`worker/index.js`) — KV + R2 storage
 - **Output pages:** `bug-h.html`, `bug-v.html`, `graphic-h.html`, `graphic-v.html` — loaded as browser sources in vMix
-- **Deploy worker:** `cd worker && npx wrangler deploy`
+- **Deploy worker:** `npx wrangler deploy` (from project root — wrangler.toml is at root, not in worker/)
 - **Gallery URL:** https://adp-lab.github.io/adp-show-graphics/gallery.html
 - **Worker URL:** https://adp-show-graphics.mohn-edgar.workers.dev
 - **CF account:** [redacted]
@@ -31,8 +31,16 @@ Layers: `graphics`, `bugs`. Slots: `h`, `v`.
 ## Companion integration
 See `docs/companion-cheatsheet.md` for trigger URL reference.
 
+## Phase 1 — IN PROGRESS (2026-05-15)
+Moving slot state + settings from KV to R2 (strongly consistent globally — fixes 15–30s cloud vMix delay).
+Full plan: `docs/handoffs/2026-05-15-adp-show-graphics-phase1-handoff.md` (gitignored, on Maggie).
+After Phase 1: KV structure note above becomes partially obsolete — slots move to R2, rest stays in KV.
+
+## Phase 2 — PLANNED
+Maggie as primary state server (Flask/PocketBase + CF Tunnel), SSE push for instant updates,
+CasperCG AMCP integration. CF Worker stays as warm fallback with R2 state sync.
+
 ## Future scope
 - Companion config helper tab in gallery
-- CasperCG adapter (Option B — wrapper template calling /trigger)
 - UVC/webcam input layer
 - NDI input/output
