@@ -255,6 +255,15 @@ The tool can be controlled externally via HTTP GET requests (Bitfocus Companion,
 
 ---
 
+## Troubleshooting & Diagnostics
+
+If graphics are late, missing, or wrong on an output, follow the triage flow in
+`2026-06-11-diagnostics-cheatsheet-chad.md` — it covers `/health` (deployed version +
+serving edge), `/status` (current slot state), `/active` (what one output page sees),
+and `/diag` (write-path round-trip test), including the exact URLs and where to run them.
+
+---
+
 ## Tips for Live Shows
 
 - **Prep layouts before the show** — save all your graphic combinations as layouts. During the show, recall + go live is two clicks (or one Companion button).
