@@ -1,5 +1,9 @@
 name: Security Scan & Deploy
 
+# Weekly cron runs the secret scan ONLY. Deploy runs solely on push —
+# a scheduled deploy would redeploy whatever is on GitHub main, silently
+# rolling back any deployed-but-unpushed code (this happened: v4, May 2026).
+
 on:
   push:
     branches: [main]
@@ -10,7 +14,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  deploy:
+  scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +25,13 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
