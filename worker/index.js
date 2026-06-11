@@ -101,8 +101,44 @@ export default {
     }
 
     // ── PUBLIC: health — deployed-version check ────────────────────────────────
+    // colo = Cloudflare edge datacenter serving THIS request (i.e. nearest to caller)
     if (request.method === 'GET' && path === '/health') {
-      return json({ ok: true, version: VERSION }, 200, origin);
+      return json({
+        ok: true,
+        version: VERSION,
+        colo: request.cf?.colo || null,
+        now: new Date().toISOString(),
+      }, 200, origin);
+    }
+
+    // ── AUTH: diag — R2 write-path round-trip test ─────────────────────────────
+    // GET /diag?apikey=...  — writes a test object, reads it back, deletes it.
+    // Proves the write path works and measures R2 latency from the caller's edge.
+    if (request.method === 'GET' && path === '/diag') {
+      const k = url.searchParams.get('apikey') || request.headers.get('X-API-Key');
+      if (k !== env.API_KEY) return error('Unauthorized', 401, origin);
+
+      const diagKey = `state/_diag/${crypto.randomUUID()}.json`;
+      const token   = Date.now();
+      const t0 = Date.now();
+      await env.BUCKET.put(diagKey, JSON.stringify({ token }), {
+        httpMetadata: { contentType: 'application/json' },
+      });
+      const t1 = Date.now();
+      const obj  = await env.BUCKET.get(diagKey);
+      const body = obj ? await obj.json() : null;
+      const t2 = Date.now();
+      await env.BUCKET.delete(diagKey);
+
+      return json({
+        ok: true,
+        version: VERSION,
+        colo: request.cf?.colo || null,
+        now: new Date().toISOString(),
+        writeMs: t1 - t0,
+        readMs: t2 - t1,
+        consistent: body?.token === token,
+      }, 200, origin);
     }
 
     // ── PUBLIC: active state polled by output pages ────────────────────────────

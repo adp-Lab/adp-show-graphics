@@ -32,7 +32,9 @@ Never put time-critical state in KV — cross-region propagation takes up to 60s
 ## Key design decisions
 - Output pages poll `/active` every 1500ms — keep response fast
 - No Worker Cache on `/active` or `/status` (removed in v4) — R2 is consistent, caching would only reintroduce staleness
-- `GET /health` returns `{ok, version}` — first check whenever "is the right code live?" comes up
+- `GET /health` returns `{ok, version, colo, now}` — first check whenever "is the right code live?" comes up; `colo` = edge nearest the caller
+- `GET /diag?apikey=` — R2 write/read/delete round-trip with timings; proves write path from any location
+- Diagnostics guide for operators: `docs/2026-06-11-diagnostics-cheatsheet-chad.md`
 - `recallLayout` in gallery uses sequential awaits, not Promise.all — belt and braces against write races
 - `/trigger` endpoint is GET with `?apikey=` — Companion-friendly, no custom headers needed
 - `/status` endpoint is public (no auth) — Companion can poll for feedback state
