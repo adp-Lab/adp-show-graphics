@@ -70,8 +70,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .sec-hdr { display: flex; align-items: center; gap: 8px; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
 .sec-hdr h2 { font-size: 18px; font-weight: 600; flex: 1; }
 #slots-section > .sec-hdr h2 { font-size: 23px; }
-/* "Live Outputs" sits on the Preview Slots bar, pushed to the right (over the output sidebar) */
-.outputs-hdr-label { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .02em; padding-right: 4px; }
+/* "Live Outputs" sits on the Preview Slots bar; width = sidebar width + left-aligned text
+   so it lands directly over the output sidebar (above QR/BUGS OUTPUT), not at the far edge */
+.outputs-hdr-label { width: var(--canvas-h); flex-shrink: 0; text-align: left; padding-left: 12px; font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .02em; }
 .sec-hdr .chevron { color: var(--muted); transition: transform .2s; }
 .sec-hdr.open .chevron { transform: rotate(90deg); }
 .sec-body { padding: 14px; }
@@ -478,13 +479,13 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; background: var(--surf3);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
-  height: 38px;  /* locked — never grows when tabs toggle, so nothing below shifts */
+  height: 46px;  /* locked — never grows when tabs toggle, so nothing below shifts */
 }
 /* Title always one line — truncates with ellipsis before it would ever wrap */
-.slot-col-title { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; color: var(--text); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot-col-title { font-size: 17px; font-weight: 700; flex: 1; min-width: 0; color: var(--text); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ctrl-tabs { display: flex; gap: 6px; flex-shrink: 0; }
 .ctrl-tab {
-  padding: 7px 11px; font-size: 14px; font-weight: 700; border-radius: 5px;
+  padding: 8px 12px; font-size: 15px; font-weight: 700; border-radius: 5px;
   background: var(--surf2); border: 1px solid var(--border);
   color: var(--muted); cursor: pointer; white-space: nowrap; letter-spacing: .04em;
   transition: all .15s;
@@ -642,7 +643,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   display: flex; flex-direction: column; gap: 8px;
 }
 .sidebar-title {
-  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  font-size: 15px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: var(--muted); padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
