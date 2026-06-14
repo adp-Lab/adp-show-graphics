@@ -455,7 +455,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 /* panel = canvas-h × 3.34 + 325px  →  canvas-h = (100vw − 357px) / 3.34  (sidebar×1.0, centre 325px, app-padding 32px; ≈125% default zoom feel)
    Conservative fallback only — JS sizeSlots() measures the real container width (excludes scrollbar)
    and overrides this precisely so the panel fills width without ever h-scrolling. (centre 400 + padding 32 + safety) */
-:root { --canvas-h: max(240px, calc((100vw - 452px) / 3.34)); }
+:root { --canvas-h: max(240px, calc((100vw - 452px) / 3.34)); --center-w: 400px; --ui-scale: 1; }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
@@ -490,7 +490,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
 .ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
 /* Layer visibility toggles */
-.vis-tgl { background: var(--surf2); color: var(--muted); border: 2px solid var(--border); border-radius: 7px; padding: 26px 6px; font-size: 19px; font-weight: 800; cursor: pointer; letter-spacing: .08em; transition: all .2s; text-align: center; opacity: .35; }
+.vis-tgl { background: var(--surf2); color: var(--muted); border: 2px solid var(--border); border-radius: 7px; padding: calc(var(--ui-scale) * 26px) 6px; font-size: calc(var(--ui-scale) * 19px); font-weight: 800; cursor: pointer; letter-spacing: .08em; transition: all .2s; text-align: center; opacity: .35; }
 .vis-tgl.active { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 12px rgba(76,175,80,.5); opacity: 1; }
 /* Outside centre panel: remove from flow entirely */
 body.hide-gfx .layer-gfx { display: none !important; }
@@ -547,7 +547,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   display: flex; flex-direction: column;
   align-self: stretch;
   justify-content: space-evenly;  /* button groups fill the full column height */
-  flex: 0 0 400px; width: 400px; padding: 12px 18px;
+  flex: 0 0 var(--center-w); width: var(--center-w); padding: 12px 18px;
 }
 .ctr-group {
   display: flex; flex-direction: column; gap: 7px;
@@ -555,7 +555,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   border: 1px solid var(--border); border-radius: 7px;
 }
 .ctr-title {
-  font-size: 14px; font-weight: 700; text-transform: uppercase;
+  font-size: calc(var(--ui-scale) * 14px); font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: var(--text); margin-bottom: 8px;
 }
 .btn2g { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -572,7 +572,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 
 /* LIVE buttons */
 .lvbtn {
-  padding: 14px 6px; font-size: 14px; font-weight: 800; border-radius: 6px;
+  padding: calc(var(--ui-scale) * 14px) 6px; font-size: calc(var(--ui-scale) * 14px); font-weight: 800; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg); color: var(--muted);
   cursor: pointer; transition: all .15s; letter-spacing: .05em; text-align: center; white-space: nowrap;
   line-height: 1.2;
@@ -584,7 +584,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 .lvbtn-wide  { width: 100%; margin-top: 9px; }
 
 /* Clear buttons — bigger hit area + clearly visible outline so they don't blur together */
-.center-panel .btn-sm { padding: 11px 8px; font-size: 13px; }
+.center-panel .btn-sm { padding: calc(var(--ui-scale) * 11px) 8px; font-size: calc(var(--ui-scale) * 13px); }
 .center-panel .ctr-group .btn-gray {
   background: var(--surf2); border: 1px solid #555; border-radius: 6px;
 }
@@ -2154,10 +2154,15 @@ function sizeSlots() {
   if (!sb) return;
   const avail = sb.clientWidth;
   if (avail < 50) return;                       // not visible yet (behind auth gate)
-  const CENTER = 400;                           // .center-panel fixed width — keep in sync with CSS
-  // panel = canvas*(16/9 + 9/16 + 1.0) + CENTER = canvas*3.34 + CENTER
-  const canvas = Math.max(240, (avail - CENTER - 2) / 3.34);
-  document.documentElement.style.setProperty('--canvas-h', canvas + 'px');
+  // Centre panel scales WITH the window (~21% of available width, clamped to a sane range)
+  // so it keeps a relative size instead of staying a fixed 400px as columns shrink/grow.
+  const center = Math.max(320, Math.min(520, avail * 0.212));
+  // panel = canvas*(16/9 + 9/16 + 1.0) + centre = canvas*3.34 + centre  →  fills width, no h-scroll
+  const canvas = Math.max(240, (avail - center - 2) / 3.34);
+  const root = document.documentElement.style;
+  root.setProperty('--center-w', Math.round(center) + 'px');
+  root.setProperty('--ui-scale', (center / 400).toFixed(3));  // 1.0 at the 400px reference → button text/padding scale too
+  root.setProperty('--canvas-h', Math.round(canvas) + 'px');
 }
 let _slotsRO;
 function initSlotsSizing() {
