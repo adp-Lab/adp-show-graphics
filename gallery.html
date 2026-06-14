@@ -486,10 +486,14 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
 .ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
 /* Layer visibility toggles */
-.vis-tgl { background: var(--surf3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: .04em; transition: color .15s, border-color .15s; }
-.vis-tgl.active { color: var(--text); border-color: var(--blue); }
+.vis-tgl { background: var(--surf2); color: var(--muted); border: 2px solid var(--border); border-radius: 6px; padding: 20px 4px; font-size: 15px; font-weight: 800; cursor: pointer; letter-spacing: .08em; transition: all .2s; text-align: center; opacity: .35; }
+.vis-tgl.active { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 12px rgba(76,175,80,.5); opacity: 1; }
+/* Outside centre panel: remove from flow entirely */
 body.hide-gfx .layer-gfx { display: none !important; }
 body.hide-bug .layer-bug { display: none !important; }
+/* Inside centre panel: stay in flow so column never shifts */
+body.hide-gfx .center-panel .layer-gfx { display: flex !important; visibility: hidden; }
+body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: hidden; }
 .slot-controls.ctrl-disabled { opacity: .35; pointer-events: none; }
 /* GFX mode — red accent */
 .slot-controls.ctrl-gfx input[type=range] { accent-color: var(--red); }
