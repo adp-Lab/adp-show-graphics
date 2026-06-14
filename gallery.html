@@ -70,6 +70,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .sec-hdr { display: flex; align-items: center; gap: 8px; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
 .sec-hdr h2 { font-size: 18px; font-weight: 600; flex: 1; }
 #slots-section > .sec-hdr h2 { font-size: 23px; }
+/* "Live Outputs" sits on the Preview Slots bar, pushed to the right (over the output sidebar) */
+.outputs-hdr-label { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .02em; padding-right: 4px; }
 .sec-hdr .chevron { color: var(--muted); transition: transform .2s; }
 .sec-hdr.open .chevron { transform: rotate(90deg); }
 .sec-body { padding: 14px; }
@@ -112,9 +114,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .slot-controls { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .scale-row { display: flex; align-items: center; gap: 6px; }
 .scale-row input[type=range] { flex: 1; accent-color: var(--blue); }
-.scale-val { font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
+.scale-val { font-size: 13px; color: var(--muted); width: 42px; text-align: right; }
 .fit-row { display: flex; gap: 4px; }
-.fit-btn { flex: 1; padding: 4px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); border-radius: 4px; cursor: pointer; text-align: center; }
+.fit-btn { flex: 1; padding: 7px; font-size: 14px; background: var(--surf3); border: 1px solid var(--border); color: var(--muted); border-radius: 4px; cursor: pointer; text-align: center; }
 .fit-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 .slot-action-row { display: flex; gap: 4px; }
 .slot-action-row .btn { flex: 1; justify-content: center; }
@@ -479,10 +481,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   height: 38px;  /* locked — never grows when tabs toggle, so nothing below shifts */
 }
 /* Title always one line — truncates with ellipsis before it would ever wrap */
-.slot-col-title { font-size: 11px; font-weight: 700; flex: 1; min-width: 0; color: var(--text); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot-col-title { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; color: var(--text); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ctrl-tabs { display: flex; gap: 6px; flex-shrink: 0; }
 .ctrl-tab {
-  padding: 5px 9px; font-size: 12px; font-weight: 700; border-radius: 5px;
+  padding: 7px 11px; font-size: 14px; font-weight: 700; border-radius: 5px;
   background: var(--surf2); border: 1px solid var(--border);
   color: var(--muted); cursor: pointer; white-space: nowrap; letter-spacing: .04em;
   transition: all .15s;
@@ -590,6 +592,11 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   background: var(--surf2); border: 1px solid #555; border-radius: 6px;
 }
 .center-panel .ctr-group .btn-gray:hover { border-color: var(--muted); background: var(--surf3); }
+/* Prominent Save-Layout button pinned at the top of the centre column */
+.center-panel .save-layout-top {
+  width: 100%; justify-content: center; font-weight: 700; flex-shrink: 0;
+  font-size: calc(var(--ui-scale) * 15px); padding: calc(var(--ui-scale) * 13px) 8px;
+}
 /* Split state for H+V buttons: left=H, right=V */
 .lvbtn-wide.split-h-live { background: linear-gradient(90deg, var(--red) 50%, var(--green) 50%); color: #fff; border-color: var(--red); box-shadow: 0 0 10px rgba(229,57,53,.35); }
 .lvbtn-wide.split-v-live { background: linear-gradient(90deg, var(--green) 50%, var(--red) 50%); color: #000; border-color: var(--green); box-shadow: 0 0 10px rgba(76,175,80,.35); }
@@ -601,9 +608,9 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.04);
 }
 .url-bar-row:last-child { border-bottom: none; }
-.url-label { font-size: 9px; color: var(--muted); width: 34px; flex-shrink: 0; }
+.url-label { font-size: 12px; color: var(--muted); width: 42px; flex-shrink: 0; }
 .url-code {
-  flex: 1; font-size: 9px; color: var(--muted); overflow: hidden;
+  flex: 1; font-size: 11px; color: var(--muted); overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; cursor: pointer; font-family: monospace;
 }
 .url-code:hover { color: var(--text); }
@@ -626,13 +633,6 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   flex: 0 0 calc(var(--canvas-h) * 1.0);
   border-left: 1px solid var(--border);
 }
-/* Header row — same height/look as the H/V column headers so it lines up */
-.sidebar-hdr {
-  display: flex; align-items: center; height: 38px; flex-shrink: 0;
-  padding: 6px 12px; background: var(--surf3);
-  border-bottom: 1px solid var(--border);
-}
-.sidebar-hdr .slot-col-title { font-size: 12px; }
 /* Body holds the output groups and distributes them in the remaining height */
 .sidebar-body {
   flex: 1 1 auto; min-height: 0; padding: 10px;
@@ -642,7 +642,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   display: flex; flex-direction: column; gap: 8px;
 }
 .sidebar-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: var(--muted); padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
@@ -680,7 +680,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 .mon-item:hover .mon-iframe-wrap { outline: 1px solid var(--blue); }
 .mon-item.placeholder { cursor: default; opacity: .45; }
 .mon-item.placeholder:hover .mon-iframe-wrap { outline: none; }
-.mon-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.mon-label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .mon-iframe-wrap {
   position: relative; overflow: hidden; background: #0a0a0a;
   aspect-ratio: 16/9; width: 100%; border-radius: 0;
@@ -752,6 +752,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 <div class="section" id="slots-section">
   <div class="sec-hdr open" style="cursor:default">
     <h2>🎛 Preview Slots</h2>
+    <span class="outputs-hdr-label">📺 Live Outputs</span>
   </div>
   <div class="sec-body" id="sec-body-slots">
 
@@ -790,12 +791,12 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
         </div>
         <div class="slot-controls ctrl-disabled" id="slot-controls-h">
           <div class="scale-row">
-            <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
+            <span style="font-size:13px;color:var(--muted);width:38px">Scale</span>
             <input type="range" id="scale-ctrl-h" min="10" max="300" value="100" oninput="onScaleInput('h',this.value)">
             <span class="scale-val" id="scale-val-ctrl-h" onclick="resetScale('h')" title="Click to reset">100%</span>
           </div>
           <div class="rotate-row">
-            <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
+            <span style="font-size:13px;color:var(--muted);width:38px">Rot</span>
             <input type="range" id="rotate-ctrl-h" min="-180" max="180" value="0" oninput="onRotateInput('h',this.value)">
             <span class="scale-val" id="rotate-val-ctrl-h" onclick="resetRotate('h')" title="Click to reset">0°</span>
           </div>
@@ -805,10 +806,10 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
           </div>
         </div>
         <div class="grid-ctrl-row">
-          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:4px">
             <input type="checkbox" id="grid-on-h" onchange="applyGrid('h')"> Grid
           </label>
-          <select id="grid-size-h" onchange="applyGrid('h')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
+          <select id="grid-size-h" onchange="applyGrid('h')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:13px;padding:2px 5px">
             <option value="10">10×10</option>
             <option value="20" selected>20×20</option>
             <option value="25">25×25</option>
@@ -816,20 +817,22 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
             <option value="50x40">50×40</option>
             <option value="80">80×80</option>
           </select>
-          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
             <input type="checkbox" id="snap-on-h"> Snap
           </label>
         </div>
         <div class="bgref-ctrl-row">
           <label class="tgl"><input type="checkbox" id="bgref-on-h" onchange="updateBgRefDisplay('h')"><span class="tgl-track"></span></label>
-          <span style="font-size:11px;color:var(--muted)">BG Ref</span>
+          <span style="font-size:13px;color:var(--muted)">BG Ref</span>
           <input type="range" id="bgref-opacity-h" min="0" max="100" value="30" oninput="updateBgRefOpacity('h',this.value/100)" style="flex:1;accent-color:var(--blue)">
-          <span id="bgref-val-h" style="font-size:11px;color:var(--muted);width:30px">30%</span>
+          <span id="bgref-val-h" style="font-size:13px;color:var(--muted);width:36px">30%</span>
         </div>
       </div><!-- /H COL -->
 
       <!-- ── CENTER PANEL ── -->
       <div class="center-panel">
+
+        <button class="btn btn-blue save-layout-top" onclick="saveLayout()">+ Save Current Layout</button>
 
         <!-- Layer visibility -->
         <div class="ctr-group">
@@ -907,12 +910,12 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
         </div>
         <div class="slot-controls ctrl-disabled" id="slot-controls-v">
           <div class="scale-row">
-            <span style="font-size:10px;color:var(--muted);width:30px">Scale</span>
+            <span style="font-size:13px;color:var(--muted);width:38px">Scale</span>
             <input type="range" id="scale-ctrl-v" min="10" max="300" value="100" oninput="onScaleInput('v',this.value)">
             <span class="scale-val" id="scale-val-ctrl-v" onclick="resetScale('v')" title="Click to reset">100%</span>
           </div>
           <div class="rotate-row">
-            <span style="font-size:10px;color:var(--muted);width:30px">Rot</span>
+            <span style="font-size:13px;color:var(--muted);width:38px">Rot</span>
             <input type="range" id="rotate-ctrl-v" min="-180" max="180" value="0" oninput="onRotateInput('v',this.value)">
             <span class="scale-val" id="rotate-val-ctrl-v" onclick="resetRotate('v')" title="Click to reset">0°</span>
           </div>
@@ -922,10 +925,10 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
           </div>
         </div>
         <div class="grid-ctrl-row">
-          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px">
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:4px">
             <input type="checkbox" id="grid-on-v" onchange="applyGrid('v')"> Grid
           </label>
-          <select id="grid-size-v" onchange="applyGrid('v')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:11px;padding:1px 4px">
+          <select id="grid-size-v" onchange="applyGrid('v')" style="background:var(--surf3);color:var(--text);border:1px solid var(--border);border-radius:3px;font-size:13px;padding:2px 5px">
             <option value="10">10×10</option>
             <option value="20" selected>20×20</option>
             <option value="25">25×25</option>
@@ -933,28 +936,27 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
             <option value="50x40">50×40</option>
             <option value="80">80×80</option>
           </select>
-          <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-left:4px">
             <input type="checkbox" id="snap-on-v"> Snap
           </label>
         </div>
         <div class="bgref-ctrl-row">
           <label class="tgl"><input type="checkbox" id="bgref-on-v" onchange="updateBgRefDisplay('v')"><span class="tgl-track"></span></label>
-          <span style="font-size:11px;color:var(--muted)">BG Ref</span>
+          <span style="font-size:13px;color:var(--muted)">BG Ref</span>
           <input type="range" id="bgref-opacity-v" min="0" max="100" value="30" oninput="updateBgRefOpacity('v',this.value/100)" style="flex:1;accent-color:var(--blue)">
-          <span id="bgref-val-v" style="font-size:11px;color:var(--muted);width:30px">30%</span>
+          <span id="bgref-val-v" style="font-size:13px;color:var(--muted);width:36px">30%</span>
         </div>
       </div><!-- /V COL -->
 
       <!-- ── SIDEBAR MONITORS ── -->
       <div class="sidebar-col">
-        <div class="sidebar-hdr"><span class="slot-col-title">Live Outputs</span></div>
         <div class="sidebar-body">
 
         <div class="sidebar-group layer-gfx">
           <div class="sidebar-title">Graphics OUTPUT</div>
           <div class="sidebar-pair">
             <div class="mon-item mon-item-h" onclick="magnifyMonitor('graphics','h')">
-              <div class="mon-label">GFX H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
+              <div class="mon-label">GFX H <span style="font-size:11px;color:var(--muted)">— click to magnify</span></div>
               <div class="mon-iframe-wrap" id="mon-wrap-graphics-h">
                 <iframe id="mon-iframe-graphics-h" scrolling="no" frameborder="0"></iframe>
               </div>
@@ -972,7 +974,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
           <div class="sidebar-title">QR / Bugs OUTPUT</div>
           <div class="sidebar-pair">
             <div class="mon-item mon-item-h" onclick="magnifyMonitor('bugs','h')">
-              <div class="mon-label">Bug H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
+              <div class="mon-label">Bug H <span style="font-size:11px;color:var(--muted)">— click to magnify</span></div>
               <div class="mon-iframe-wrap" id="mon-wrap-bugs-h">
                 <iframe id="mon-iframe-bugs-h" scrolling="no" frameborder="0"></iframe>
               </div>
@@ -1002,7 +1004,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   </div>
   <div class="sec-body" id="sec-body-layouts">
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button class="btn btn-blue btn-sm" onclick="saveLayout()">+ Save Current</button>
+      <button class="btn btn-blue btn-sm" onclick="saveLayout()">+ Save Current Layout</button>
     </div>
     <div class="layout-grid" id="layout-grid"></div>
   </div>
@@ -1384,7 +1386,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
       <div class="help-item">
         <h4>Layouts</h4>
         <ul>
-          <li><b>+ Save Current</b> → saves all 4 slots (GFX H/V, Bug H/V) and live state as a named layout</li>
+          <li><b>+ Save Current Layout</b> → saves all 4 slots (GFX H/V, Bug H/V) and live state as a named layout</li>
           <li>Click a layout card to recall — restores all slots and live state instantly</li>
           <li>Delete → removes the layout (does not affect images)</li>
         </ul>
