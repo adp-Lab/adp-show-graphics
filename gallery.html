@@ -486,7 +486,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
 .ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
 /* Layer visibility toggles */
-.layer-vis-row { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .vis-tgl { background: var(--surf3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: .04em; transition: color .15s, border-color .15s; }
 .vis-tgl.active { color: var(--text); border-color: var(--blue); }
 body.hide-gfx .layer-gfx { display: none !important; }
@@ -549,7 +548,7 @@ body.hide-bug .layer-bug { display: none !important; }
 }
 .ctr-title {
   font-size: 9px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 4px;
+  letter-spacing: .1em; color: var(--text); margin-bottom: 4px;
 }
 .btn2g { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
@@ -701,11 +700,6 @@ body.hide-bug .layer-bug { display: none !important; }
 <div class="section" id="slots-section">
   <div class="sec-hdr open" style="cursor:default">
     <h2>🎛 Live Slots</h2>
-    <div class="layer-vis-row">
-      <span style="font-size:11px;color:var(--muted)">Show:</span>
-      <button class="vis-tgl active" id="vistgl-bug" onclick="toggleLayerVis('bug')">BUG</button>
-      <button class="vis-tgl active" id="vistgl-gfx" onclick="toggleLayerVis('gfx')">GFX</button>
-    </div>
   </div>
   <div class="sec-body" id="sec-body-slots">
 
@@ -737,8 +731,8 @@ body.hide-bug .layer-bug { display: none !important; }
         </div>
         <div class="sp-composite" id="sp-comp-h">
           <div class="sp-bg-layer" id="sp-bg-comp-h"></div>
-          <img class="sp-layer-img" id="sp-gfx-img-h" style="z-index:1" src="" data-key="">
-          <img class="sp-layer-img" id="sp-bug-img-h" style="z-index:2" src="" data-key="">
+          <img class="sp-layer-img layer-gfx" id="sp-gfx-img-h" style="z-index:1" src="" data-key="">
+          <img class="sp-layer-img layer-bug" id="sp-bug-img-h" style="z-index:2" src="" data-key="">
           <div class="sp-empty" id="sp-empty-comp-h">empty</div>
           <div class="sp-grid-overlay" id="sp-grid-h"></div>
         </div>
@@ -785,16 +779,25 @@ body.hide-bug .layer-bug { display: none !important; }
       <!-- ── CENTER PANEL ── -->
       <div class="center-panel">
 
-        <!-- Preview toggles -->
+        <!-- Layer visibility -->
         <div class="ctr-group">
-          <div class="ctr-title">Preview</div>
+          <div class="ctr-title">Show</div>
+          <div class="btn2g">
+            <button class="vis-tgl active" id="vistgl-bug" onclick="toggleLayerVis('bug')">BUG</button>
+            <button class="vis-tgl active" id="vistgl-gfx" onclick="toggleLayerVis('gfx')">GFX</button>
+          </div>
+        </div>
+
+        <!-- Clear -->
+        <div class="ctr-group">
+          <div class="ctr-title">Clear</div>
           <div class="btn2g layer-gfx">
-            <button class="pvtgl active" id="pvtgl-graphics-h" onclick="togglePreview('graphics','h')">GFX H</button>
-            <button class="pvtgl active" id="pvtgl-graphics-v" onclick="togglePreview('graphics','v')">GFX V</button>
+            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','h')">GFX H ✕</button>
+            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','v')">GFX V ✕</button>
           </div>
           <div class="btn2g layer-bug">
-            <button class="pvtgl active" id="pvtgl-bugs-h" onclick="togglePreview('bugs','h')">Bug H</button>
-            <button class="pvtgl active" id="pvtgl-bugs-v" onclick="togglePreview('bugs','v')">Bug V</button>
+            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','h')">Bug H ✕</button>
+            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','v')">Bug V ✕</button>
           </div>
         </div>
 
@@ -816,19 +819,6 @@ body.hide-bug .layer-bug { display: none !important; }
             <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
           </div>
           <button class="lvbtn lvbtn-wide" id="lvb-bugs-both" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
-        </div>
-
-        <!-- Clear -->
-        <div class="ctr-group">
-          <div class="ctr-title">Clear</div>
-          <div class="btn2g layer-gfx">
-            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','h')">GFX H ✕</button>
-            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','v')">GFX V ✕</button>
-          </div>
-          <div class="btn2g layer-bug">
-            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','h')">Bug H ✕</button>
-            <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','v')">Bug V ✕</button>
-          </div>
         </div>
 
       </div><!-- /CENTER -->
@@ -858,8 +848,8 @@ body.hide-bug .layer-bug { display: none !important; }
         </div>
         <div class="sp-composite portrait" id="sp-comp-v">
           <div class="sp-bg-layer" id="sp-bg-comp-v"></div>
-          <img class="sp-layer-img" id="sp-gfx-img-v" style="z-index:1" src="" data-key="">
-          <img class="sp-layer-img" id="sp-bug-img-v" style="z-index:2" src="" data-key="">
+          <img class="sp-layer-img layer-gfx" id="sp-gfx-img-v" style="z-index:1" src="" data-key="">
+          <img class="sp-layer-img layer-bug" id="sp-bug-img-v" style="z-index:2" src="" data-key="">
           <div class="sp-empty" id="sp-empty-comp-v">empty</div>
           <div class="sp-grid-overlay" id="sp-grid-v"></div>
         </div>
