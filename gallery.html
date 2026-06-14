@@ -452,8 +452,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-/* panel = canvas-h × 3.34 + 325px  →  canvas-h = (100vw − 357px) / 3.34  (sidebar×1.0, centre 325px, app-padding 32px; ≈125% default zoom feel) */
-:root { --canvas-h: clamp(240px, calc((100vw - 357px) / 3.34), 520px); }
+/* panel = canvas-h × 3.34 + 325px  →  canvas-h = (100vw − 357px) / 3.34  (sidebar×1.0, centre 325px, app-padding 32px; ≈125% default zoom feel)
+   No upper cap → top section always fills full browser width at any resolution; floor 240px (h-scroll only on very narrow windows). */
+:root { --canvas-h: max(240px, calc((100vw - 357px) / 3.34)); }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
@@ -473,11 +474,13 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; background: var(--surf3);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
+  height: 38px;  /* locked — never grows when tabs toggle, so nothing below shifts */
 }
-.slot-col-title { font-size: 11px; font-weight: 700; flex: 1; color: var(--text); text-transform: uppercase; letter-spacing: .05em; }
-.ctrl-tabs { display: flex; gap: 6px; }
+/* Title always one line — truncates with ellipsis before it would ever wrap */
+.slot-col-title { font-size: 11px; font-weight: 700; flex: 1; min-width: 0; color: var(--text); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctrl-tabs { display: flex; gap: 6px; flex-shrink: 0; }
 .ctrl-tab {
-  padding: 5px 12px; font-size: 12px; font-weight: 700; border-radius: 5px;
+  padding: 5px 9px; font-size: 12px; font-weight: 700; border-radius: 5px;
   background: var(--surf2); border: 1px solid var(--border);
   color: var(--muted); cursor: pointer; white-space: nowrap; letter-spacing: .04em;
   transition: all .15s;
