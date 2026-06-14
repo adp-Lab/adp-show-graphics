@@ -452,8 +452,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-/* panel width = canvas-h × 3.04 + 193px  →  canvas-h = (100vw − 240px) / 3.04 */
-:root { --canvas-h: clamp(240px, calc((100vw - 240px) / 3.04), 600px); }
+/* panel = canvas-h × 3.34 + 260px  →  canvas-h = (100vw − 292px) / 3.34  (sidebar×1.0, centre 260px, app-padding 32px) */
+:root { --canvas-h: clamp(240px, calc((100vw - 292px) / 3.34), 520px); }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
@@ -543,7 +543,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   display: flex; flex-direction: column;
   align-self: stretch;
   justify-content: space-evenly;  /* button groups fill the full column height */
-  flex: 0 0 240px; width: 240px;
+  flex: 0 0 260px; width: 260px; padding: 10px 14px;
 }
 .ctr-group {
   display: flex; flex-direction: column; gap: 3px;
@@ -607,19 +607,19 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 
 /* Sidebar — stretches to full column height, groups distributed evenly */
 .sidebar-col {
-  background: var(--surf3); overflow-y: auto; padding: 8px 6px;
+  background: var(--surf3); overflow-y: auto; padding: 10px 10px;
   display: flex; flex-direction: column;
-  justify-content: space-evenly;   /* 3 groups fill the full height */
+  justify-content: space-evenly;
   align-self: stretch;
-  flex: 0 0 calc(var(--canvas-h) * 0.7);  /* narrower sidebar — more space for canvases */
+  flex: 0 0 calc(var(--canvas-h) * 1.0);
   border-left: 1px solid var(--border);
 }
 .sidebar-group {
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 8px;
 }
 .sidebar-title {
-  font-size: 9px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .08em; color: var(--muted); padding-bottom: 4px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
 /* Sidebar pair row: H + V side-by-side; equal-height: V_width/total ≈ 28% */
@@ -632,7 +632,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 .mon-item:hover .mon-iframe-wrap { outline: 1px solid var(--blue); }
 .mon-item.placeholder { cursor: default; opacity: .45; }
 .mon-item.placeholder:hover .mon-iframe-wrap { outline: none; }
-.mon-label { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
+.mon-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
 .mon-iframe-wrap {
   position: relative; overflow: hidden; background: #0a0a0a;
   aspect-ratio: 16/9; width: 100%; border-radius: 0;
