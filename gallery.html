@@ -485,6 +485,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 .ctrl-tab:hover { color: var(--text); }
 .ctrl-tab.active-gfx { background: var(--red);  color: #fff; border-color: var(--red);  box-shadow: 0 0 8px rgba(229,57,53,.4); }
 .ctrl-tab.active-bug { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 8px rgba(74,158,255,.4); }
+/* Layer visibility toggles */
+.layer-vis-row { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.vis-tgl { background: var(--surf3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: .04em; transition: color .15s, border-color .15s; }
+.vis-tgl.active { color: var(--text); border-color: var(--blue); }
+body.hide-gfx .layer-gfx { display: none !important; }
+body.hide-bug .layer-bug { display: none !important; }
 .slot-controls.ctrl-disabled { opacity: .35; pointer-events: none; }
 /* GFX mode — red accent */
 .slot-controls.ctrl-gfx input[type=range] { accent-color: var(--red); }
@@ -695,6 +701,11 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
 <div class="section" id="slots-section">
   <div class="sec-hdr open" style="cursor:default">
     <h2>🎛 Live Slots</h2>
+    <div class="layer-vis-row">
+      <span style="font-size:11px;color:var(--muted)">Show:</span>
+      <button class="vis-tgl active" id="vistgl-bug" onclick="toggleLayerVis('bug')">BUG</button>
+      <button class="vis-tgl active" id="vistgl-gfx" onclick="toggleLayerVis('gfx')">GFX</button>
+    </div>
   </div>
   <div class="sec-body" id="sec-body-slots">
 
@@ -706,18 +717,18 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <div class="slot-col-hdr">
           <span class="slot-col-title">H — Landscape</span>
           <div class="ctrl-tabs">
-            <button class="ctrl-tab active" id="ctab-h-graphics" onclick="setActiveCtrl('h','graphics')">Manip. GFX</button>
-            <button class="ctrl-tab" id="ctab-h-bugs" onclick="setActiveCtrl('h','bugs')">Manip. Bug</button>
+            <button class="ctrl-tab layer-gfx" id="ctab-h-graphics" onclick="setActiveCtrl('h','graphics')">Manip. GFX</button>
+            <button class="ctrl-tab layer-bug" id="ctab-h-bugs" onclick="setActiveCtrl('h','bugs')">Manip. Bug</button>
           </div>
         </div>
         <div class="url-bar">
-          <div class="url-bar-row">
+          <div class="url-bar-row layer-gfx">
             <span class="url-label">GFX H</span>
             <span class="url-code" id="url-code-graphics-h" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-graphics-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
             <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','h')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
-          <div class="url-bar-row">
+          <div class="url-bar-row layer-bug">
             <span class="url-label">Bug H</span>
             <span class="url-code" id="url-code-bugs-h" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-bugs-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
@@ -777,26 +788,18 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <!-- Preview toggles -->
         <div class="ctr-group">
           <div class="ctr-title">Preview</div>
-          <div class="btn2g">
-            <button class="pvtgl active" id="pvtgl-bugs-h" onclick="togglePreview('bugs','h')">Bug H</button>
-            <button class="pvtgl active" id="pvtgl-bugs-v" onclick="togglePreview('bugs','v')">Bug V</button>
+          <div class="btn2g layer-gfx">
             <button class="pvtgl active" id="pvtgl-graphics-h" onclick="togglePreview('graphics','h')">GFX H</button>
             <button class="pvtgl active" id="pvtgl-graphics-v" onclick="togglePreview('graphics','v')">GFX V</button>
           </div>
-        </div>
-
-        <!-- Bug / QR Live -->
-        <div class="ctr-group">
-          <div class="ctr-title">Bug / QR Live</div>
-          <div class="btn2g">
-            <button class="lvbtn" id="lvb-bugs-h" onclick="toggleLive('bugs','h')">Bug H</button>
-            <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
+          <div class="btn2g layer-bug">
+            <button class="pvtgl active" id="pvtgl-bugs-h" onclick="togglePreview('bugs','h')">Bug H</button>
+            <button class="pvtgl active" id="pvtgl-bugs-v" onclick="togglePreview('bugs','v')">Bug V</button>
           </div>
-          <button class="lvbtn lvbtn-wide" id="lvb-bugs-both" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
         </div>
 
         <!-- Graphics Live -->
-        <div class="ctr-group">
+        <div class="ctr-group layer-gfx">
           <div class="ctr-title">Graphics Live</div>
           <div class="btn2g">
             <button class="lvbtn" id="lvb-graphics-h" onclick="toggleLive('graphics','h')">GFX H</button>
@@ -805,12 +808,24 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
           <button class="lvbtn lvbtn-wide" id="lvb-graphics-both" onclick="toggleLiveBoth('graphics')">GFX H+V</button>
         </div>
 
+        <!-- Bug / QR Live -->
+        <div class="ctr-group layer-bug">
+          <div class="ctr-title">Bug / QR Live</div>
+          <div class="btn2g">
+            <button class="lvbtn" id="lvb-bugs-h" onclick="toggleLive('bugs','h')">Bug H</button>
+            <button class="lvbtn" id="lvb-bugs-v" onclick="toggleLive('bugs','v')">Bug V</button>
+          </div>
+          <button class="lvbtn lvbtn-wide" id="lvb-bugs-both" onclick="toggleLiveBoth('bugs')">Bug H+V</button>
+        </div>
+
         <!-- Clear -->
         <div class="ctr-group">
           <div class="ctr-title">Clear</div>
-          <div class="btn2g">
+          <div class="btn2g layer-gfx">
             <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','h')">GFX H ✕</button>
             <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('graphics','v')">GFX V ✕</button>
+          </div>
+          <div class="btn2g layer-bug">
             <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','h')">Bug H ✕</button>
             <button class="btn btn-gray btn-sm" style="justify-content:center" onclick="clearSlot('bugs','v')">Bug V ✕</button>
           </div>
@@ -823,18 +838,18 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
         <div class="slot-col-hdr">
           <span class="slot-col-title">V — Portrait</span>
           <div class="ctrl-tabs">
-            <button class="ctrl-tab active" id="ctab-v-graphics" onclick="setActiveCtrl('v','graphics')">Manip. GFX</button>
-            <button class="ctrl-tab" id="ctab-v-bugs" onclick="setActiveCtrl('v','bugs')">Manip. Bug</button>
+            <button class="ctrl-tab layer-gfx" id="ctab-v-graphics" onclick="setActiveCtrl('v','graphics')">Manip. GFX</button>
+            <button class="ctrl-tab layer-bug" id="ctab-v-bugs" onclick="setActiveCtrl('v','bugs')">Manip. Bug</button>
           </div>
         </div>
         <div class="url-bar">
-          <div class="url-bar-row">
+          <div class="url-bar-row layer-gfx">
             <span class="url-label">GFX V</span>
             <span class="url-code" id="url-code-graphics-v" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-graphics-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
             <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','v')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
-          <div class="url-bar-row">
+          <div class="url-bar-row layer-bug">
             <span class="url-label">Bug V</span>
             <span class="url-code" id="url-code-bugs-v" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-bugs-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
@@ -891,25 +906,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
       <!-- ── SIDEBAR MONITORS ── -->
       <div class="sidebar-col">
 
-        <div class="sidebar-group">
-          <div class="sidebar-title">QR / Bugs OUTPUT</div>
-          <div class="sidebar-pair">
-            <div class="mon-item mon-item-h" onclick="magnifyMonitor('bugs','h')">
-              <div class="mon-label">Bug H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
-              <div class="mon-iframe-wrap" id="mon-wrap-bugs-h">
-                <iframe id="mon-iframe-bugs-h" scrolling="no" frameborder="0"></iframe>
-              </div>
-            </div>
-            <div class="mon-item mon-item-v" onclick="magnifyMonitor('bugs','v')">
-              <div class="mon-label">Bug V</div>
-              <div class="mon-iframe-wrap portrait" id="mon-wrap-bugs-v">
-                <iframe id="mon-iframe-bugs-v" scrolling="no" frameborder="0"></iframe>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sidebar-group">
+        <div class="sidebar-group layer-gfx">
           <div class="sidebar-title">Graphics OUTPUT</div>
           <div class="sidebar-pair">
             <div class="mon-item mon-item-h" onclick="magnifyMonitor('graphics','h')">
@@ -922,6 +919,24 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; 
               <div class="mon-label">GFX V</div>
               <div class="mon-iframe-wrap portrait" id="mon-wrap-graphics-v">
                 <iframe id="mon-iframe-graphics-v" scrolling="no" frameborder="0"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-group layer-bug">
+          <div class="sidebar-title">QR / Bugs OUTPUT</div>
+          <div class="sidebar-pair">
+            <div class="mon-item mon-item-h" onclick="magnifyMonitor('bugs','h')">
+              <div class="mon-label">Bug H <span style="font-size:8px;color:var(--muted)">— click to magnify</span></div>
+              <div class="mon-iframe-wrap" id="mon-wrap-bugs-h">
+                <iframe id="mon-iframe-bugs-h" scrolling="no" frameborder="0"></iframe>
+              </div>
+            </div>
+            <div class="mon-item mon-item-v" onclick="magnifyMonitor('bugs','v')">
+              <div class="mon-label">Bug V</div>
+              <div class="mon-iframe-wrap portrait" id="mon-wrap-bugs-v">
+                <iframe id="mon-iframe-bugs-v" scrolling="no" frameborder="0"></iframe>
               </div>
             </div>
           </div>
@@ -1627,7 +1642,7 @@ function applyOpenSections() {
 }
 
 // ── Slots — new composite-canvas implementation ──────────────────────────────
-let activeCtrl   = { h: null, v: null };
+let activeCtrl   = { h: 'bugs', v: 'bugs' };
 let previewVis   = { graphics: { h: true, v: true }, bugs: { h: true, v: true } };
 let compositeDragInit = false;
 let lastDragEnd = 0;   // timestamp — poll skips updates briefly after drag to prevent position snap-back
@@ -1741,6 +1756,18 @@ function setActiveCtrl(colSlot, layer) {
   restoreActiveCtrl(colSlot);
   applyColDisabled(colSlot);
   syncColControls(colSlot);
+}
+
+function toggleLayerVis(layer) {
+  const layerKey = layer === 'gfx' ? 'graphics' : 'bugs';
+  const isHiding = !document.body.classList.contains(`hide-${layer}`);
+  document.body.classList.toggle(`hide-${layer}`);
+  document.getElementById(`vistgl-${layer}`).classList.toggle('active');
+  if (isHiding) {
+    ['h','v'].forEach(cs => {
+      if (activeCtrl[cs] === layerKey) setActiveCtrl(cs, layerKey);
+    });
+  }
 }
 
 function restoreActiveCtrl(colSlot) {
