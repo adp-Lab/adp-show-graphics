@@ -67,8 +67,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 /* ── Sections ────────────────────────────────────────────────────────────── */
 .section { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; margin-top: 16px; overflow: hidden; }
-.sec-hdr { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
-.sec-hdr h2 { font-size: 14px; font-weight: 600; flex: 1; }
+.sec-hdr { display: flex; align-items: center; gap: 8px; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); }
+.sec-hdr h2 { font-size: 18px; font-weight: 600; flex: 1; }
+#slots-section > .sec-hdr h2 { font-size: 23px; }
 .sec-hdr .chevron { color: var(--muted); transition: transform .2s; }
 .sec-hdr.open .chevron { transform: rotate(90deg); }
 .sec-body { padding: 14px; }
@@ -127,7 +128,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .flt-btn:hover { color: var(--text); }
 .flt-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 14px; }
 
 /* Card container */
 .img-card {
@@ -145,7 +146,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 /* Thumbnail — fixed height, contain, dark bg */
 .img-card .thumb-wrap {
-  height: 143px; background: #2d2d2d; overflow: hidden; position: relative;
+  height: 235px; background: #2d2d2d; overflow: hidden; position: relative;
   border-radius: 5px 5px 0 0; cursor: pointer; flex-shrink: 0;
 }
 .img-card .thumb-wrap img {
@@ -166,12 +167,12 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .img-card .slot-badge.bv { background: #78350f; color: #fcd34d; }
 
 /* Card foot */
-.img-card .card-foot { padding: 5px 7px 6px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.img-card .card-foot { padding: 8px 10px 9px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
 
 /* Name with hover tooltip */
 .img-card .card-name-wrap { position: relative; }
 .img-card .card-name {
-  font-size: 11px; font-weight: 500; white-space: nowrap;
+  font-size: 14px; font-weight: 500; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; display: block;
   cursor: text; outline: none; border-radius: 3px;
   padding: 1px 3px; margin: -1px -3px;
@@ -193,7 +194,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 /* Tag chips — blue style */
 .img-card .card-tags { display: flex; flex-wrap: wrap; gap: 3px; min-height: 0; }
 .img-card .tag-chip {
-  font-size: 9px; padding: 2px 5px; border-radius: 8px;
+  font-size: 11px; padding: 3px 7px; border-radius: 8px;
   background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb44;
   display: inline-flex; align-items: center; gap: 3px; line-height: 1;
 }
@@ -211,7 +212,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
 }
 .img-card .slt-btn {
-  padding: 3px 2px; font-size: 9px; font-weight: 700; border-radius: 3px;
+  padding: 6px 2px; font-size: 12px; font-weight: 700; border-radius: 3px;
   border: 1px solid var(--border); background: var(--surf3); color: var(--muted);
   cursor: pointer; text-align: center; transition: all .15s; white-space: nowrap;
 }
@@ -224,7 +225,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 /* Card utility actions */
 .img-card .card-utils { display: flex; gap: 3px; }
 .img-card .card-utils button {
-  flex: 1; padding: 3px; font-size: 11px; background: var(--surf3);
+  flex: 1; padding: 6px; font-size: 14px; background: var(--surf3);
   border: 1px solid var(--border); color: var(--muted); border-radius: 3px; cursor: pointer;
 }
 .img-card .card-utils button:hover { background: var(--surf2); color: var(--text); border-color: var(--text); }
@@ -306,7 +307,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 
 /* ── Layouts ─────────────────────────────────────────────────────────────── */
-.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
 .layout-card {
   background: var(--surf2); border: 1px solid var(--border); border-radius: 7px;
   overflow: hidden; transition: border-color .15s;
@@ -315,7 +316,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 
 /* composite H+V preview */
 .layout-preview {
-  display: flex; height: 90px; background: #0a0a0a;
+  display: flex; height: 150px; background: #0a0a0a;
   cursor: zoom-in; overflow: hidden;
 }
 .lp-h { aspect-ratio: 16/9; height: 100%; flex-shrink: 0; position: relative; overflow: hidden; }
@@ -323,11 +324,11 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .lp-h img, .lp-v img { position: absolute; width: 100%; height: 100%; }
 .lp-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2a2a2a; font-size: 18px; }
 
-.layout-name { font-size: 12px; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layout-name { font-size: 15px; padding: 7px 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .layout-actions { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-top: 1px solid var(--border); }
 .layout-recall-row { display: flex; gap: 4px; }
 .layout-recall-btn {
-  flex: 1; padding: 8px 4px; font-size: 12px; font-weight: 700;
+  flex: 1; padding: 11px 6px; font-size: 15px; font-weight: 700;
   background: var(--surf3); border: 1px solid var(--border); color: var(--muted);
   border-radius: 4px; cursor: default; white-space: nowrap; letter-spacing: .04em;
   transition: background .15s, color .15s, border-color .15s;
@@ -338,7 +339,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .layout-recall-btn.slot-ready { background: var(--green); color: #000; border-color: var(--green); box-shadow: 0 0 6px rgba(76,175,80,.35); cursor: pointer; }
 .layout-recall-btn.slot-live  { background: var(--red);   color: #fff; border-color: var(--red);   box-shadow: 0 0 8px rgba(229,57,53,.45); cursor: pointer; }
 .layout-util-row { display: flex; gap: 3px; align-items: center; }
-.layout-util-row button { padding: 3px 9px; font-size: 11px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
+.layout-util-row button { padding: 5px 12px; font-size: 14px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
 .layout-util-row button:hover { background: var(--surf2); }
 .layout-flag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; align-self: center; }
 .layout-card.active-layout { border-color: var(--live); box-shadow: 0 0 10px rgba(0,230,118,.3); }
@@ -351,7 +352,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #lp-zoom-modal .layout-preview { height: 320px; border-radius: 6px; cursor: zoom-out; }
 
 /* ── BG References ───────────────────────────────────────────────────────── */
-.bg-ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.bg-ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
 .bg-ref-card { background: var(--surf2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
 .bg-ref-thumb { aspect-ratio: 16/9; background: #0a0a0a; overflow: hidden; }
 .bg-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -618,12 +619,24 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 
 /* Sidebar — stretches to full column height, groups distributed evenly */
 .sidebar-col {
-  background: var(--surf3); overflow-y: auto; padding: 10px 10px;
+  background: var(--surf3); overflow-y: auto; padding: 0;
   display: flex; flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: flex-start;
   align-self: stretch;
   flex: 0 0 calc(var(--canvas-h) * 1.0);
   border-left: 1px solid var(--border);
+}
+/* Header row — same height/look as the H/V column headers so it lines up */
+.sidebar-hdr {
+  display: flex; align-items: center; height: 38px; flex-shrink: 0;
+  padding: 6px 12px; background: var(--surf3);
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-hdr .slot-col-title { font-size: 12px; }
+/* Body holds the output groups and distributes them in the remaining height */
+.sidebar-body {
+  flex: 1 1 auto; min-height: 0; padding: 10px;
+  display: flex; flex-direction: column; justify-content: space-evenly;
 }
 .sidebar-group {
   display: flex; flex-direction: column; gap: 8px;
@@ -643,8 +656,8 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
    height. H goes full sidebar width; V grows (stacked below) to fill the rest.
    Boxes are sized by CSS; initOutputMonitors() re-runs on toggle so the scaled
    iframes inside match the new box dimensions exactly (correct auto-scaling). ── */
-body.hide-gfx .sidebar-col,
-body.hide-bug .sidebar-col { justify-content: flex-start; gap: 12px; }
+body.hide-gfx .sidebar-body,
+body.hide-bug .sidebar-body { justify-content: flex-start; gap: 12px; }
 body.hide-gfx .sidebar-group.layer-bug,
 body.hide-bug .sidebar-group.layer-gfx { flex: 1 1 auto; min-height: 0; }
 body.hide-gfx .sidebar-group.layer-bug .sidebar-pair,
@@ -738,7 +751,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 <!-- SLOT SECTION -->
 <div class="section" id="slots-section">
   <div class="sec-hdr open" style="cursor:default">
-    <h2>🎛 Live Slots</h2>
+    <h2>🎛 Preview Slots</h2>
   </div>
   <div class="sec-body" id="sec-body-slots">
 
@@ -934,6 +947,8 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 
       <!-- ── SIDEBAR MONITORS ── -->
       <div class="sidebar-col">
+        <div class="sidebar-hdr"><span class="slot-col-title">Live Outputs</span></div>
+        <div class="sidebar-body">
 
         <div class="sidebar-group layer-gfx">
           <div class="sidebar-title">Graphics OUTPUT</div>
@@ -971,6 +986,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
           </div>
         </div>
 
+        </div><!-- /sidebar-body -->
       </div><!-- /SIDEBAR -->
 
     </div><!-- /slots-panel -->
