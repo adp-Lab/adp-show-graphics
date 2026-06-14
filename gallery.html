@@ -631,6 +631,30 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
 .sidebar-pair .mon-item-v { flex: 0 0 28%; }
 .sidebar-pair .mon-item-v .mon-iframe-wrap.portrait { width: 100%; margin: 0; }
 
+/* ── Single-active-mode: the one visible OUTPUT group fills the freed sidebar
+   height. H goes full sidebar width; V grows (stacked below) to fill the rest.
+   Boxes are sized by CSS; initOutputMonitors() re-runs on toggle so the scaled
+   iframes inside match the new box dimensions exactly (correct auto-scaling). ── */
+body.hide-gfx .sidebar-col,
+body.hide-bug .sidebar-col { justify-content: flex-start; gap: 12px; }
+body.hide-gfx .sidebar-group.layer-bug,
+body.hide-bug .sidebar-group.layer-gfx { flex: 1 1 auto; min-height: 0; }
+body.hide-gfx .sidebar-group.layer-bug .sidebar-pair,
+body.hide-bug .sidebar-group.layer-gfx .sidebar-pair {
+  flex-direction: column; flex: 1 1 auto; min-height: 0; gap: 12px; align-items: stretch;
+}
+body.hide-gfx .sidebar-group.layer-bug .mon-item-h,
+body.hide-bug .sidebar-group.layer-gfx .mon-item-h { flex: 0 0 auto; }
+body.hide-gfx .sidebar-group.layer-bug .mon-item-v,
+body.hide-bug .sidebar-group.layer-gfx .mon-item-v {
+  flex: 1 1 0; min-height: 0; display: flex; flex-direction: column;
+}
+/* V box: height driven by remaining flex space, width derived from 9:16 aspect, centred */
+body.hide-gfx .sidebar-group.layer-bug .mon-item-v .mon-iframe-wrap.portrait,
+body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
+  flex: 1 1 0; min-height: 0; width: auto; height: auto; margin: 0 auto;
+}
+
 .mon-item { cursor: pointer; }
 .mon-item:hover .mon-iframe-wrap { outline: 1px solid var(--blue); }
 .mon-item.placeholder { cursor: default; opacity: .45; }
@@ -1765,6 +1789,8 @@ function toggleLayerVis(layer) {
       if (activeCtrl[cs] === layerKey) setActiveCtrl(cs, layerKey);
     });
   }
+  // Output boxes resize when a group is hidden/shown — rescale the iframes to match
+  initOutputMonitors();
 }
 
 function restoreActiveCtrl(colSlot) {
