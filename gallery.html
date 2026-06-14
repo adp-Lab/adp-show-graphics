@@ -452,8 +452,8 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
 /* ── New Slots Panel ─────────────────────────────────────────────────────── */
-/* panel = canvas-h × 3.34 + 260px  →  canvas-h = (100vw − 292px) / 3.34  (sidebar×1.0, centre 260px, app-padding 32px) */
-:root { --canvas-h: clamp(240px, calc((100vw - 292px) / 3.34), 520px); }
+/* panel = canvas-h × 3.34 + 325px  →  canvas-h = (100vw − 357px) / 3.34  (sidebar×1.0, centre 325px, app-padding 32px; ≈125% default zoom feel) */
+:root { --canvas-h: clamp(240px, calc((100vw - 357px) / 3.34), 520px); }
 .slots-panel {
   display: flex;
   align-items: stretch;  /* all 4 columns same height — unified block */
@@ -543,7 +543,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   display: flex; flex-direction: column;
   align-self: stretch;
   justify-content: space-evenly;  /* button groups fill the full column height */
-  flex: 0 0 260px; width: 260px; padding: 10px 14px;
+  flex: 0 0 325px; width: 325px; padding: 10px 16px;
 }
 .ctr-group {
   display: flex; flex-direction: column; gap: 3px;
@@ -720,13 +720,13 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
           </div>
         </div>
         <div class="url-bar">
-          <div class="url-bar-row layer-gfx">
+          <div class="url-bar-row">
             <span class="url-label">GFX H</span>
             <span class="url-code" id="url-code-graphics-h" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-graphics-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
             <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','h')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
-          <div class="url-bar-row layer-bug">
+          <div class="url-bar-row">
             <span class="url-label">Bug H</span>
             <span class="url-code" id="url-code-bugs-h" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-bugs-h" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
@@ -837,13 +837,13 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
           </div>
         </div>
         <div class="url-bar">
-          <div class="url-bar-row layer-gfx">
+          <div class="url-bar-row">
             <span class="url-label">GFX V</span>
             <span class="url-code" id="url-code-graphics-v" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-graphics-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
             <button class="btn btn-blue btn-sm" onclick="copyUrl('graphics','v')" style="padding:2px 5px;font-size:10px">Copy</button>
           </div>
-          <div class="url-bar-row layer-bug">
+          <div class="url-bar-row">
             <span class="url-label">Bug V</span>
             <span class="url-code" id="url-code-bugs-v" title=""></span>
             <a class="btn btn-gray btn-sm" id="url-open-bugs-v" href="#" target="_blank" style="padding:2px 5px;font-size:10px;text-decoration:none">Open</a>
