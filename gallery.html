@@ -2145,6 +2145,8 @@ function scaleMonitorIframe(layer, slot) {
 
 const _monRO = {};
 function initOutputMonitors() {
+  // Free-tier request saver: never start monitor polling in a hidden tab (see pauseMonitors below).
+  if (document.hidden) { pauseMonitors(); return; }
   const pageMap = { graphics: { h: 'graphic-h.html', v: 'graphic-v.html' }, bugs: { h: 'bug-h.html', v: 'bug-v.html' } };
   SLOTS.forEach(({ layer, slot }) => {
     const base   = location.pathname.replace('gallery.html','');
@@ -2164,6 +2166,35 @@ function initOutputMonitors() {
     }
   });
 }
+
+// ── Free-tier request saver ────────────────────────────────────────────────────
+// While THIS gallery tab is hidden (backgrounded, minimised, another tab), stop all
+// of its polling so a forgotten / background gallery costs ~0 requests. Several
+// background gallery windows therefore poll nothing.
+//
+// This affects ONLY this control panel's own polling. The vMix output pages
+// (bug-*.html, graphic-*.html) are SEPARATE documents loaded directly as browser
+// sources in vMix — not touched here — so the live on-air output keeps updating
+// regardless of any gallery's visibility. Live state lives in R2 server-side.
+let _monitorsPaused = false;
+function pauseMonitors() {
+  if (_monitorsPaused) return;
+  _monitorsPaused = true;
+  SLOTS.forEach(({ layer, slot }) => {
+    const iframe = document.getElementById(`mon-iframe-${layer}-${slot}`);
+    if (iframe && iframe.src && iframe.src !== 'about:blank') iframe.src = 'about:blank';
+  });
+  console.debug('[gallery] polling paused — tab hidden');
+}
+function resumeMonitors() {
+  if (!_monitorsPaused) return;
+  _monitorsPaused = false;
+  initOutputMonitors();   // re-points each iframe src → reload → polling + scaling resume
+  console.debug('[gallery] polling resumed — tab visible');
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseMonitors(); else resumeMonitors();
+});
 
 // Fit the Live Slots panel to the REAL available width so it never h-scrolls.
 // canvas-h drives all three columns + sidebar; the centre panel is a fixed 400px.
@@ -3232,6 +3263,7 @@ function setPollStatus(ok) {
 
 function startPolling() {
   setInterval(async () => {
+    if (document.hidden) return;   // free-tier saver: no status polling while tab hidden
     try {
       // Only fetch slots that are not locally dirty
       const toFetch = SLOTS.filter(({ layer, slot }) => !isDirty(layer, slot));
