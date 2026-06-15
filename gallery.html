@@ -224,6 +224,10 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .img-card .slt-btn.gv.on { background: #3b1d6e; color: #c4b5fd; border-color: #7c3aed; }
 .img-card .slt-btn.bh.on { background: #134e4a; color: #5eead4; border-color: #0d9488; }
 .img-card .slt-btn.bv.on { background: #78350f; color: #fcd34d; border-color: #f59e0b; }
+/* Tally state mirrors the centre SEND LIVE buttons, per slot, for THIS asset:
+   green = assigned/preview (not on air), red = on air/program. Unassigned = unchanged. */
+.img-card .slt-btn.preview { background: var(--live); color: #04210f; border-color: var(--live); }
+.img-card .slt-btn.live    { background: var(--red);  color: #fff;     border-color: var(--red); }
 
 /* Card utility actions */
 .img-card .card-utils { display: flex; gap: 3px; }
@@ -348,6 +352,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .layout-card.active-layout { border-color: var(--live); box-shadow: 0 0 10px rgba(0,230,118,.3); }
 .layout-card.active-layout:hover { border-color: var(--live); }
 .active-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #000; background: var(--live); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
+.layout-card.live-layout { border-color: var(--red); box-shadow: 0 0 10px rgba(229,57,53,.4); }
+.layout-card.live-layout:hover { border-color: var(--red); }
+.live-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #fff; background: var(--red); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
 
 /* layout zoom modal */
 #lp-zoom-modal .lp-zoom-inner { background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; max-width: min(96vw, 960px); }
@@ -1968,6 +1975,8 @@ async function toggleLive(layer, slot) {
   slots[layer][slot].live = !slots[layer][slot].live;
   markDirty(layer, slot);
   updateLiveBtn(layer, slot);
+  renderGrid();          // mirror live state onto asset slot-buttons
+  rebuildLayoutCards();  // mirror live state onto layout cards
   await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: slots[layer][slot].live });
 }
 
@@ -1983,6 +1992,8 @@ async function toggleLiveBoth(layer) {
     updateLiveBtn(layer, slot);
     await api('PUT', `/live?event=${currentEvent}`, { layer, slot, live: newLive });
   }
+  renderGrid();          // mirror live state onto asset slot-buttons
+  rebuildLayoutCards();  // mirror live state onto layout cards
 }
 
 async function clearSlot(layer, slot) {
@@ -2318,6 +2329,13 @@ function buildImgCard(img) {
   const inBV = slots.bugs?.v?.key     === img.key;
   const borderClass = inGH ? 'in-gfx-h' : inGV ? 'in-gfx-v' : inBH ? 'in-bug-h' : inBV ? 'in-bug-v' : '';
 
+  // Per-slot tally for the slot buttons: '' (unassigned) | 'preview' (assigned, not live) | 'live' (on air)
+  const tallyCls = (inSlot, st) => inSlot ? (st?.live ? 'live' : 'preview') : '';
+  const tGH = tallyCls(inGH, slots.graphics?.h);
+  const tGV = tallyCls(inGV, slots.graphics?.v);
+  const tBH = tallyCls(inBH, slots.bugs?.h);
+  const tBV = tallyCls(inBV, slots.bugs?.v);
+
   // Slot badges (thumbnail overlay)
   const badges = [
     inGH ? '<span class="slot-badge gh">GFX H</span>' : '',
@@ -2351,10 +2369,10 @@ function buildImgCard(img) {
       ${isEdited ? '<span class="edited-badge">EDITED</span>' : ''}
       <div class="card-tags" id="ctags-${cardId}">${tagChips}</div>
       <div class="slot-btns">
-        <button class="slt-btn gh ${inGH?'on':''}" onclick="toggleSlot('${safeKey}','graphics','h',event)">GFX H</button>
-        <button class="slt-btn gv ${inGV?'on':''}" onclick="toggleSlot('${safeKey}','graphics','v',event)">GFX V</button>
-        <button class="slt-btn bh ${inBH?'on':''}" onclick="toggleSlot('${safeKey}','bugs','h',event)">Bug H</button>
-        <button class="slt-btn bv ${inBV?'on':''}" onclick="toggleSlot('${safeKey}','bugs','v',event)">Bug V</button>
+        <button class="slt-btn gh ${tGH}" onclick="toggleSlot('${safeKey}','graphics','h',event)">GFX H</button>
+        <button class="slt-btn gv ${tGV}" onclick="toggleSlot('${safeKey}','graphics','v',event)">GFX V</button>
+        <button class="slt-btn bh ${tBH}" onclick="toggleSlot('${safeKey}','bugs','h',event)">Bug H</button>
+        <button class="slt-btn bv ${tBV}" onclick="toggleSlot('${safeKey}','bugs','v',event)">Bug V</button>
       </div>
       <div class="card-utils">
         <button title="Edit tags" onclick="openTagDropdown('${safeKey}',this,event)">🏷</button>
@@ -3001,6 +3019,22 @@ function buildLpSlot(gfx, bug, cls) {
   return `<div class="${cls}">${empty ? '<div class="lp-empty">—</div>' : ''}${buildLpLayer(gfx)}${buildLpLayer(bug)}</div>`;
 }
 
+// Is this layout currently loaded on air? Matches the saved image key per slot against the
+// current slot state (ignores position/scale tweaks). 'live' = matched + something on air,
+// 'active' = matched but nothing live, 'none' = current assignments differ.
+function layoutLiveState(layout) {
+  const pairs = [['graphics','h'], ['graphics','v'], ['bugs','h'], ['bugs','v']];
+  let anyContent = false, anyLive = false;
+  for (const [layer, slot] of pairs) {
+    const lk = layout[layer]?.[slot]?.key || null;
+    const ck = slots[layer]?.[slot]?.key || null;
+    if (lk !== ck) return 'none';
+    if (lk) { anyContent = true; if (slots[layer]?.[slot]?.live) anyLive = true; }
+  }
+  if (!anyContent) return 'none';
+  return anyLive ? 'live' : 'active';
+}
+
 function buildLayoutCard(id, layout) {
   const gh = layout.graphics?.h, gv = layout.graphics?.v;
   const bh = layout.bugs?.h,     bv = layout.bugs?.v;
@@ -3014,9 +3048,10 @@ function buildLayoutCard(id, layout) {
     ? `<button class="layout-recall-btn" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
     : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
 
-  const isActive = id === activeLayoutId;
+  const lstate = layoutLiveState(layout);
+  const cardCls = lstate === 'live' ? ' live-layout' : lstate === 'active' ? ' active-layout' : '';
   return `
-  <div class="layout-card${isActive ? ' active-layout' : ''}">
+  <div class="layout-card${cardCls}">
     <div class="layout-preview" onclick="openLpZoom('${sid}',event)">
       ${buildLpSlot(gh, bh, 'lp-h')}
       ${buildLpSlot(gv, bv, 'lp-v')}
@@ -3031,7 +3066,9 @@ function buildLayoutCard(id, layout) {
       <div class="layout-util-row">
         <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
         <button onclick="deleteLayout('${sid}')" title="Delete" style="color:var(--red)">🗑</button>
-        ${isActive ? '<span class="active-layout-badge">ACTIVE</span>' : '<span class="layout-flag">LAYOUT</span>'}
+        ${lstate === 'live' ? '<span class="live-layout-badge">ON AIR</span>'
+          : lstate === 'active' ? '<span class="active-layout-badge">ACTIVE</span>'
+          : '<span class="layout-flag">LAYOUT</span>'}
       </div>
     </div>
   </div>`;
@@ -3286,6 +3323,7 @@ function startPolling() {
           slots[layer][slot] = next;
           updateSlotPreview(layer, slot);
           rebuildLayoutCards();
+          renderGrid();   // mirror live/assign changes onto asset slot-buttons
         }
       });
     } catch(e) {
