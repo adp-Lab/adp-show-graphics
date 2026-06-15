@@ -22,7 +22,10 @@
   --yellow:   #ffeb3b;
   --live:     #00e676;
 }
-body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans-serif; min-height: 100vh; }
+/* Render the whole tool as if browser zoom were 90% — tighter, more pleasing proportions.
+   Chrome-native; sizeSlots() still measures the (zoom-adjusted) width so the slots fill
+   without horizontal scroll. Set to 1 to disable. */
+body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans-serif; min-height: 100vh; zoom: 0.9; }
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 #app { max-width: none; padding: 0 16px 80px; }
