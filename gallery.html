@@ -226,7 +226,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .img-card .slt-btn.bv.on { background: #78350f; color: #fcd34d; border-color: #f59e0b; }
 /* Tally state mirrors the centre SEND LIVE buttons, per slot, for THIS asset:
    green = assigned/preview (not on air), red = on air/program. Unassigned = unchanged. */
-.img-card .slt-btn.preview { background: var(--live); color: #04210f; border-color: var(--live); }
+.img-card .slt-btn.preview { background: var(--green); color: #000; border-color: var(--green); }
 .img-card .slt-btn.live    { background: var(--red);  color: #fff;     border-color: var(--red); }
 
 /* Card utility actions */
@@ -349,9 +349,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 .layout-util-row button { padding: 5px 12px; font-size: 14px; background: var(--surf3); border: 1px solid var(--border); color: var(--text); border-radius: 3px; cursor: pointer; }
 .layout-util-row button:hover { background: var(--surf2); }
 .layout-flag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); padding: 1px 5px; border: 1px solid var(--orange); border-radius: 3px; white-space: nowrap; align-self: center; }
-.layout-card.active-layout { border-color: var(--live); box-shadow: 0 0 10px rgba(0,230,118,.3); }
-.layout-card.active-layout:hover { border-color: var(--live); }
-.active-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #000; background: var(--live); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
+.layout-card.active-layout { border-color: var(--green); box-shadow: 0 0 10px rgba(76,175,80,.35); }
+.layout-card.active-layout:hover { border-color: var(--green); }
+.active-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #000; background: var(--green); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
 .layout-card.live-layout { border-color: var(--red); box-shadow: 0 0 10px rgba(229,57,53,.4); }
 .layout-card.live-layout:hover { border-color: var(--red); }
 .live-layout-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #fff; background: var(--red); padding: 1px 5px; border-radius: 3px; white-space: nowrap; align-self: center; }
@@ -3048,23 +3048,28 @@ function buildLayoutCard(id, layout) {
     ? `<button class="layout-recall-btn ${tally}" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
     : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
 
-  // Per-orientation tally on the recall buttons: green (slot-ready) = this layout has content
-  // for that orientation; red (slot-live) = that content is currently live on air. Both → red
-  // only when H AND V are both on air.
-  const slotOnAir = (layer, slot) => {
-    const k = layout[layer]?.[slot]?.key;
-    if (!k) return null;                                  // orientation has no content in this layer
-    const cur = slots[layer]?.[slot];
-    return !!(cur && cur.key === k && cur.live);          // this exact content currently live?
-  };
+  // Per-orientation tally on the recall buttons. Lights ONLY when THIS layout's content for that
+  // orientation is actually loaded into the slots right now: green (slot-ready) = loaded/preview,
+  // red (slot-live) = loaded and live on air. Not currently loaded → dark default (like before).
+  // Both → red only when H and V are both on air.
   const orientCls = (slot, has) => {
-    if (!has) return '';                                  // disabled button, no tally
-    const parts = [slotOnAir('graphics', slot), slotOnAir('bugs', slot)].filter(v => v !== null);
-    return (parts.length && parts.every(Boolean)) ? 'slot-live' : 'slot-ready';
+    if (!has) return '';                                  // layout has no content for this orientation
+    const live = [];
+    for (const layer of ['graphics', 'bugs']) {
+      const k = layout[layer]?.[slot]?.key;
+      if (!k) continue;                                   // layout empty in this layer for the orientation
+      const cur = slots[layer]?.[slot];
+      if (!cur || cur.key !== k) return '';               // layout's content NOT currently loaded → dark
+      live.push(!!cur.live);
+    }
+    if (!live.length) return '';
+    return live.every(Boolean) ? 'slot-live' : 'slot-ready';   // loaded: red if live, else green
   };
   const clsH = orientCls('h', hasH);
   const clsV = orientCls('v', hasV);
-  const clsBoth = bothHas ? ((clsH === 'slot-live' && clsV === 'slot-live') ? 'slot-live' : 'slot-ready') : '';
+  const clsBoth = (clsH && clsV)
+    ? ((clsH === 'slot-live' && clsV === 'slot-live') ? 'slot-live' : 'slot-ready')
+    : '';
 
   const lstate = layoutLiveState(layout);
   const cardCls = lstate === 'live' ? ' live-layout' : lstate === 'active' ? ' active-layout' : '';
