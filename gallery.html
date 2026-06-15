@@ -1226,7 +1226,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
     <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
     <h3>❓ adp-show-graphics — Quick Reference</h3>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Click anywhere to close. Scroll for full reference.</p>
-    <img src="ui-guide.png" alt="UI overview" style="width:100%;height:auto;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block;image-rendering:-webkit-optimize-contrast">
+    <img src="ui-guide-v2.png" alt="UI overview" style="width:100%;height:auto;border-radius:6px;border:1px solid var(--border);margin-bottom:14px;display:block;image-rendering:-webkit-optimize-contrast">
 
     <div class="help-section-lbl">Header</div>
     <div class="help-grid">
@@ -1241,7 +1241,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
         <h4>⚙ Settings</h4>
         <ul>
           <li>Set canvas resolution for H and V independently per event (presets: 4K / 1440p / 1080p / 720p or custom)</li>
-          <li>vMix V vertical: use <b>1215 × 2160</b> (crops 4K canvas to practical pixel area)</li>
+          <li>Defaults: <b>H 3840 × 2160</b>, <b>V 2160 × 3840</b> — match these in your vMix Browser Input</li>
           <li>Also shows Worker URL and API key entry on first run</li>
         </ul>
       </div>
@@ -1252,9 +1252,10 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
       <div class="help-item">
         <h4>Manip. GFX / Manip. Bug tabs</h4>
         <ul>
-          <li><b>Manip. GFX</b> → controls affect the Graphics layer; buttons &amp; sliders highlighted <span style="color:var(--red)">red</span></li>
+          <li><b>Bug is the default active layer</b> on both H and V columns (the GFX section sits above Bug in each column)</li>
           <li><b>Manip. Bug</b> → controls affect the Bug/QR layer; highlighted <span style="color:var(--blue)">blue</span></li>
-          <li>Both layers always visible in the composite canvas preview; inactive controls are dimmed</li>
+          <li><b>Manip. GFX</b> → controls affect the Graphics layer; highlighted <span style="color:var(--red)">red</span></li>
+          <li>Both layers stay visible in the composite canvas preview; inactive controls are dimmed</li>
           <li>Click the active tab again to deactivate (all controls dimmed)</li>
         </ul>
       </div>
@@ -1306,15 +1307,16 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
           <li>Shows the GFX and Bug output URLs for this slot (H or V)</li>
           <li>↗ Open — opens the output page in a new tab</li>
           <li>📋 Copy — copies URL to clipboard</li>
-          <li>Add as Browser Input in vMix at the matching resolution (H: 3840×2160, V: 1215×2160)</li>
+          <li>Add as Browser Input in vMix at the matching resolution (defaults H: 3840×2160, V: 2160×3840 — match ⚙ Settings)</li>
         </ul>
       </div>
       <div class="help-item">
-        <h4>Output monitors (right column)</h4>
+        <h4>Output monitors (📺 Live Outputs)</h4>
         <ul>
-          <li>Live iframe previews of each output page — GFX and Bug/QR for H and V</li>
+          <li>Live iframe previews of each output page — GFX and Bug/QR for H and V — under the <b>📺 Live Outputs</b> header on the Preview Slots bar</li>
           <li><b>Click any monitor</b> → magnifies to full-screen modal; <b>click anywhere to close</b></li>
-          <li>Monitors poll at the same 1.5 s rate as the output pages</li>
+          <li>In single-layer mode (one of <b>Show BUG | GFX</b> off) the surviving monitor <b>enlarges</b></li>
+          <li>Monitors poll at 1.5 s; polling <b>pauses automatically when this gallery tab is hidden</b> (saves Worker requests) and resumes on focus — the live output is unaffected</li>
         </ul>
       </div>
     </div>
@@ -1322,9 +1324,21 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
     <div class="help-section-lbl">Buttons Section (center)</div>
     <div class="help-grid">
       <div class="help-item">
-        <h4>Preview toggles</h4>
+        <h4>Show BUG | GFX — switch view modes</h4>
         <ul>
-          <li><b>Bug H / Bug V / GFX H / GFX V</b> — show or hide each layer in the canvas preview independently</li>
+          <li>The two big green toggles at the top of the centre panel switch between three modes:</li>
+          <li><b>Both on</b> → Bug and GFX shown side-by-side (default)</li>
+          <li><b>BUG only</b> (GFX off) → hides the entire GFX UI; the Bug output monitor <b>enlarges</b> to fill the freed space</li>
+          <li><b>GFX only</b> (BUG off) → hides the entire Bug UI; the GFX output monitor enlarges</li>
+          <li>Each toggle hides/reveals that layer's <b>whole</b> UI — Manip tab, URL row, preview buttons, Send Live, Clear, sidebar monitor and the composite layer</li>
+          <li>View-only — does <b>not</b> change what is on air</li>
+        </ul>
+      </div>
+      <div class="help-item">
+        <h4>Canvas preview toggles (per slot)</h4>
+        <ul>
+          <li><b>Bug H / Bug V / GFX H / GFX V</b> — show or hide each layer in the <b>composite canvas preview</b> only, per slot</li>
+          <li>Distinct from <b>Show BUG | GFX</b> above — these affect only the preview image, not the panel layout or output monitors</li>
           <li>Does not affect output — preview-only</li>
         </ul>
       </div>
