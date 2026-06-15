@@ -2143,18 +2143,29 @@ function copyUrl(layer, slot) {
 
 // ── Output monitors ───────────────────────────────────────────────────────────
 // Scale one monitor iframe to exactly fill its CURRENT wrap box.
-function scaleMonitorIframe(layer, slot) {
+function scaleMonitorIframe(layer, slot, attempt = 0) {
   const iframe = document.getElementById(`mon-iframe-${layer}-${slot}`);
   const wrap   = document.getElementById(`mon-wrap-${layer}-${slot}`);
   if (!iframe || !wrap) return;
-  const ww = wrap.offsetWidth;
-  if (!ww) return;  // box hidden / zero-width — observer will fire again once it has real size
+  const ww = wrap.offsetWidth, wh = wrap.offsetHeight;
+  if (!ww || !wh) {
+    // Measured mid-relayout — a transient zero during a zoom/resize cascade. Retry next frame,
+    // but ONLY while the box is actually rendered and within a bounded number of frames, so a
+    // genuinely hidden monitor (single-mode/paused) never loops. This is the fix that stops the
+    // smallest/last monitor (Bug V) from being measured at 0 and left unscaled = blank.
+    if (wrap.offsetParent !== null && attempt < 30) {
+      requestAnimationFrame(() => scaleMonitorIframe(layer, slot, attempt + 1));
+    }
+    return;
+  }
   const isV  = slot === 'v';
   const resW = isV ? (settings.resolution?.v?.w || 2160) : (settings.resolution?.h?.w || 3840);
   const resH = isV ? (settings.resolution?.v?.h || 3840) : (settings.resolution?.h?.h || 2160);
   iframe.style.width     = resW + 'px';
   iframe.style.height    = resH + 'px';
-  iframe.style.transform = `scale(${ww / resW})`;
+  // Scale to fit BOTH axes (contain) — correct in dual mode (aspects match) and robust in
+  // single-layer mode where the wrap aspect can differ, so the iframe never overflows its box.
+  iframe.style.transform = `scale(${Math.min(ww / resW, wh / resH)})`;
 }
 
 const _monRO = {};
@@ -2175,7 +2186,8 @@ function initOutputMonitors() {
     // This (not a one-shot timeout) is what keeps every output correctly scaled, incl. Bug V.
     const key = `${layer}-${slot}`;
     if (!_monRO[key] && window.ResizeObserver) {
-      _monRO[key] = new ResizeObserver(() => scaleMonitorIframe(layer, slot));
+      // Defer to rAF so we measure AFTER the relayout commits, not mid-cascade (the zoom race).
+      _monRO[key] = new ResizeObserver(() => requestAnimationFrame(() => scaleMonitorIframe(layer, slot)));
       _monRO[key].observe(wrap);
     }
   });
