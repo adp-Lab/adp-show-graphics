@@ -3044,9 +3044,27 @@ function buildLayoutCard(id, layout) {
   const bothHas = hasH && hasV;
 
   const sid = escAttr(id);
-  const rb = (has, fn, lbl) => has
-    ? `<button class="layout-recall-btn" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
+  const rb = (has, fn, lbl, tally) => has
+    ? `<button class="layout-recall-btn ${tally}" onclick="${fn}" title="Recall ${lbl} slots">⇦ ${lbl}</button>`
     : `<button class="layout-recall-btn" disabled>⇦ ${lbl}</button>`;
+
+  // Per-orientation tally on the recall buttons: green (slot-ready) = this layout has content
+  // for that orientation; red (slot-live) = that content is currently live on air. Both → red
+  // only when H AND V are both on air.
+  const slotOnAir = (layer, slot) => {
+    const k = layout[layer]?.[slot]?.key;
+    if (!k) return null;                                  // orientation has no content in this layer
+    const cur = slots[layer]?.[slot];
+    return !!(cur && cur.key === k && cur.live);          // this exact content currently live?
+  };
+  const orientCls = (slot, has) => {
+    if (!has) return '';                                  // disabled button, no tally
+    const parts = [slotOnAir('graphics', slot), slotOnAir('bugs', slot)].filter(v => v !== null);
+    return (parts.length && parts.every(Boolean)) ? 'slot-live' : 'slot-ready';
+  };
+  const clsH = orientCls('h', hasH);
+  const clsV = orientCls('v', hasV);
+  const clsBoth = bothHas ? ((clsH === 'slot-live' && clsV === 'slot-live') ? 'slot-live' : 'slot-ready') : '';
 
   const lstate = layoutLiveState(layout);
   const cardCls = lstate === 'live' ? ' live-layout' : lstate === 'active' ? ' active-layout' : '';
@@ -3059,9 +3077,9 @@ function buildLayoutCard(id, layout) {
     <div class="layout-name">${escHtml(layout.name || id)}</div>
     <div class="layout-actions">
       <div class="layout-recall-row">
-        ${rb(hasH, `recallLayout('${sid}','h')`, 'H')}
-        ${rb(hasV, `recallLayout('${sid}','v')`, 'V')}
-        ${rb(bothHas, `recallLayout('${sid}','both')`, 'Both')}
+        ${rb(hasH, `recallLayout('${sid}','h')`, 'H', clsH)}
+        ${rb(hasV, `recallLayout('${sid}','v')`, 'V', clsV)}
+        ${rb(bothHas, `recallLayout('${sid}','both')`, 'Both', clsBoth)}
       </div>
       <div class="layout-util-row">
         <button onclick="renameLayout('${sid}')" title="Rename">✏</button>
