@@ -727,6 +727,13 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   white-space: nowrap;
 }
 #toast.visible { opacity: 1; }
+/* Idle-pause indicator — the GALLERY's polling is paused to save quota; on-air outputs are unaffected. */
+#idle-badge {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  background: #f5b301; color: #1a1200; font-weight: 700; font-size: 14px;
+  padding: 8px 16px; border-radius: 7px; z-index: 9999;
+  box-shadow: 0 2px 12px rgba(0,0,0,.5); white-space: nowrap; cursor: default;
+}
 </style>
 </head>
 <body>
@@ -2234,8 +2241,43 @@ function resumeMonitors() {
   console.debug('[gallery] polling resumed — tab visible');
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pauseMonitors(); else resumeMonitors();
+  if (document.hidden) pauseMonitors(); else markActive();
 });
+
+// ── Idle-pause ──────────────────────────────────────────────────────────────
+// After IDLE_MS with no interaction in THIS gallery window, pause ALL of its polling
+// (monitors + status loop) and show a badge — so a forgotten/idle tab (even one left
+// with something LIVE) costs ~0 requests. Resumes on any interaction. The vMix output
+// pages are separate documents and are NEVER affected — on-air keeps running.
+let _lastActivity = Date.now();
+let _idlePaused   = false;
+let _idleBadge    = null;
+const IDLE_MS = 5 * 60 * 1000;   // 5 minutes
+function showIdleBadge() {
+  if (!_idleBadge) {
+    _idleBadge = document.createElement('div');
+    _idleBadge.id = 'idle-badge';
+    _idleBadge.textContent = '⏸ Paused (idle) — outputs still live · move the mouse to resume';
+    document.body.appendChild(_idleBadge);
+  }
+  _idleBadge.style.display = 'block';
+}
+function hideIdleBadge() { if (_idleBadge) _idleBadge.style.display = 'none'; }
+function markActive() {
+  _lastActivity = Date.now();
+  if (_idlePaused) { _idlePaused = false; hideIdleBadge(); console.debug('[gallery] idle-resumed'); }
+  if (!document.hidden && _monitorsPaused) resumeMonitors();
+}
+['mousemove','mousedown','keydown','wheel','touchstart','scroll'].forEach(ev =>
+  document.addEventListener(ev, markActive, { passive: true }));
+setInterval(() => {
+  // Only when logged in (main UI visible), tab not already hidden/idle, and truly idle.
+  if (!document.hidden && !_idlePaused && !document.getElementById('main')?.hidden &&
+      Date.now() - _lastActivity > IDLE_MS) {
+    _idlePaused = true; pauseMonitors(); showIdleBadge();
+    console.debug('[gallery] idle-paused — no interaction for 5 min');
+  }
+}, 30000);
 
 // Fit the Live Slots panel to the REAL available width so it never h-scrolls.
 // canvas-h drives all three columns + sidebar; the centre panel is a fixed 400px.
@@ -3353,7 +3395,7 @@ function setPollStatus(ok) {
 
 function startPolling() {
   setInterval(async () => {
-    if (document.hidden) return;   // free-tier saver: no status polling while tab hidden
+    if (document.hidden || _idlePaused) return;   // free-tier saver: no status polling while tab hidden or idle
     try {
       // Only fetch slots that are not locally dirty
       const toFetch = SLOTS.filter(({ layer, slot }) => !isDirty(layer, slot));
@@ -3382,7 +3424,7 @@ function startPolling() {
     } catch(e) {
       setPollStatus(false);
     }
-  }, 3000);
+  }, 15000);   // status/tally reconciliation — slow (your own clicks update buttons instantly)
 }
 
 // ── Modals ────────────────────────────────────────────────────────────────────
