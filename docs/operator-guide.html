@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Office Hours Graphics — Operator Guide</title>
+<style>
+  :root{--bg:#0d1b2a;--panel:#13263b;--line:#24405c;--text:#e3e9f0;--muted:#9fb3c8;
+    --straw:#e8c547;--ice:#8fc3e8;--green:#4caf50;--red:#e53935;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif;padding:32px 18px}
+  main{max-width:880px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px;color:var(--straw)}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+  h2{font-size:19px;margin:30px 0 10px;color:var(--ice);border-bottom:1px solid var(--line);padding-bottom:6px}
+  h3{font-size:15px;margin:18px 0 6px;color:var(--straw)}
+  a{color:var(--ice)} code{background:#0a1622;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px 20px;margin:14px 0}
+  .rule{border-left:4px solid var(--straw)}
+  .g{color:var(--green);font-weight:700}.r{color:var(--red);font-weight:700}
+  b.btn{color:var(--text);background:#0a1622;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:14px}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:#0a1622;color:var(--ice)}
+  figure{margin:16px 0} figure img{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;display:block}
+  figcaption{color:var(--muted);font-size:13px;margin-top:6px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <h1>Office Hours Graphics — Operator Guide</h1>
+  <div class="sub">Full reference for the show-graphics tool. For the 30-second version see the Quick Reference; for a labelled screenshot of every control, click <b>❓ How it works</b> in the gallery.</div>
+  <div class="panel"><b>Gallery:</b> <a href="https://adp-lab.github.io/adp-show-graphics/gallery.html">adp-lab.github.io/adp-show-graphics/gallery.html</a></div>
+
+  <figure>
+    <img src="../ui-guide-v2.png" alt="Annotated operator UI guide">
+    <figcaption>The whole interface at a glance — the same image is in the in-tool "❓ How it works".</figcaption>
+  </figure>
+
+  <h2>1. Before you start</h2>
+  <ol>
+    <li><b>Open the gallery</b> and <b>Connect to Worker</b> (first time only, remembered after): <b>Worker URL</b> <code>https://adp-show-graphics.mohn-edgar.workers.dev</code> and the <b>API key</b> (shared separately by André — not in this doc).</li>
+    <li><b>Pick the Event</b> (top-left dropdown). Each event has its own library, layouts, and output URLs. Wrong event = "nothing shows up".</li>
+  </ol>
+  <div class="panel rule">
+    <b>Preview → Live (the key concept):</b> loading an image into a slot is <b>PREVIEW</b> — local only, shown in your preview slots + monitors, <b>not on air</b>. Pressing <b>SEND LIVE</b> puts it <b>on air</b> (into the vMix outputs). Set up invisibly, then air with one click.
+  </div>
+  <p><b>Colours:</b> <span class="g">● green</span> = loaded/preview · <span class="r">● red</span> = on air · ● dark = not loaded.
+     <b>H</b> = landscape, <b>V</b> = portrait — independent; <b>H+V</b> acts on both.</p>
+
+  <h2>2. Preview Slots (left = H Landscape, right = V Portrait)</h2>
+  <p>Each slot shows both layers — <b>GFX</b> (full graphics) and <b>Bug / QR</b> (overlay). All controls here are <b>local preview</b>; they never reach air on their own.</p>
+  <ul>
+    <li><b>Manip. GFX / Manip. Bug tabs</b> — pick which layer the controls affect (<b>Bug is default</b>; GFX tinted red, Bug blue). Click the active tab again to deactivate.</li>
+    <li><b>Drag</b> the image to position it (can go off-frame). <b>Scale</b> 10–300% and <b>Rotate</b> ±180° sliders — click the value to reset.</li>
+    <li><b>Contain</b> = whole image (transparent edges possible); <b>Cover</b> = fills frame (crops).</li>
+    <li><b>Grid</b>+<b>Snap</b> and <b>BG Ref</b> are preview-only alignment aids — never on air.</li>
+    <li>The <b>output URL row</b> (Open / Copy) is what vMix loads as a browser source.</li>
+  </ul>
+
+  <h2>3. Sending to air (centre panel)</h2>
+  <ul>
+    <li><b>GRAPHICS LIVE:</b> <b class="btn">GFX H</b> <b class="btn">GFX V</b> <b class="btn">GFX H+V</b></li>
+    <li><b>BUG / QR LIVE:</b> <b class="btn">Bug H</b> <b class="btn">Bug V</b> <b class="btn">Bug H+V</b></li>
+  </ul>
+  <p>A SEND LIVE button is <b>dark</b> (empty slot), <span class="g">● green</span> (loaded, not aired), or <span class="r">● red</span> (on air). Press a red button to take it off air. <b>CLEAR</b> (GFX/Bug H/V) removes the image and goes transparent.</p>
+
+  <h2>4. Show BUG | GFX — view modes</h2>
+  <p>The two big <b>SHOW: BUG | GFX</b> toggles focus the workspace: <b>both on</b> (default), <b>BUG only</b> (hides GFX, enlarges the Bug monitor), <b>GFX only</b> (hides Bug, enlarges GFX). <b>View-only — does not change what's on air.</b></p>
+
+  <h2>5. Live Outputs (confidence monitors, right)</h2>
+  <p>Live previews of the <b>actual output pages</b> (GFX H/V, Bug H/V) exactly as vMix sees them. <b>Glance here to confirm what's really on air.</b> Click a monitor to magnify; click again to close.</p>
+
+  <h2>6. Saved Layouts</h2>
+  <ul>
+    <li><b>+ Save Current Layout</b> saves all four slots under a name.</li>
+    <li><b>H / V / Both</b> recall that layout. Tally: <span class="g">● green</span> = its content is loaded (preview), <span class="r">● red</span> = on air (Both red only when H and V both live), dark = not loaded.</li>
+    <li>Card border/badge = <span class="g">ACTIVE</span> (matches what's loaded) / <span class="r">ON AIR</span> (live). Rename (✏) / Delete (🗑); drag to reorder.</li>
+  </ul>
+
+  <h2>7. Image Library</h2>
+  <ul>
+    <li><b>Upload</b> (📤 or drag from Finder); tag on upload (categories + free tags; auto-tag by filename).</li>
+    <li><b>Slot buttons</b> (GFX H/V, Bug H/V) on each tile assign to a slot — colour = tally (🟢 loaded, 🔴 on air, dark = not assigned). Click an assigned button to clear it.</li>
+    <li><b>🏷 Tags · ✏ Editor · 🗑 Delete</b> per tile; click a thumbnail to magnify.</li>
+    <li><b>Image Editor</b> — rotate, crop/trim, background knock-out (colour + tolerance → transparent). <b>Save as Copy</b> makes a new <i>edited</i> image; original untouched.</li>
+    <li><b>Categories / Background References / Tag Management</b> — expandable organising sections.</li>
+  </ul>
+
+  <h2>8. Adding outputs to vMix</h2>
+  <p>Use each slot's <b>output URL</b> as a vMix <b>Browser Input</b> at the matching resolution — <b>H</b> 3840×2160, <b>V</b> 2160×3840 (defaults; check <b>⚙ Settings</b> for the event). A graphic appears on air ~1–2 s after SEND LIVE — that's normal.</p>
+
+  <h2>9. Troubleshooting</h2>
+  <table>
+    <tr><th>Symptom</th><th>Check</th></tr>
+    <tr><td>Graphic not on air</td><td>Is its <b>SEND LIVE</b> button <span class="r">red</span>? Green/dark = preview only — press it.</td></tr>
+    <tr><td>Wrong/old graphic showing</td><td>Right <b>Event</b>? Check the Live Outputs monitor.</td></tr>
+    <tr><td>Nothing in a slot</td><td>Load an image from the library (its GFX/Bug H/V button).</td></tr>
+    <tr><td>Vertical bug looks empty</td><td>Use a <b>portrait/square</b> QR for V — a landscape image in portrait shows only a thin strip.</td></tr>
+    <tr><td>Preview stale after switching tabs</td><td>Polling pauses while the gallery tab is hidden (saves quota) and resumes on return — give it a second.</td></tr>
+  </table>
+
+  <p style="color:var(--muted);font-size:14px"><i>Tip: keep one gallery tab open during a show and close idle ones — every open gallery polls the server continuously.</i></p>
+</main>
+</body>
+</html>

@@ -1,209 +1,140 @@
 # adp-show-graphics
 
-Browser-source graphics system for live event production. Built for vMix, OBS, and any software that accepts browser sources.
+Browser-source graphics system for live event production. Built for vMix, OBS, and anything that accepts browser sources — full-screen graphics and bug/QR overlays on horizontal (H) and vertical (V) outputs simultaneously.
 
 **Live gallery:** https://adp-lab.github.io/adp-show-graphics/gallery.html
+
+> **Operators:** start with the **[Quick Reference](docs/operator-quickref.md)** or the full **[Operator Guide](docs/operator-guide.md)** — or click **❓ How it works** inside the gallery for a labelled screenshot of every control.
 
 ---
 
 ## Architecture
 
 ```
-Cloudflare Worker  ←→  KV (state)
-                   ←→  R2 (images)
+Cloudflare Worker  ←→  R2  (live state + settings + images — strongly consistent)
+                   ←→  KV  (gallery metadata only — eventually consistent)
                    ↑
 GitHub Pages (gallery + output pages)
 ```
 
-- **Gallery** — operator control panel (browser, any device)
-- **Output pages** — transparent browser sources added to vMix/OBS
-- **Worker** — REST API, image storage, live state
-- **KV** — active slot state, layouts, categories, events
-- **R2** — image storage
+- **Gallery** (`gallery.html`) — operator control panel, runs in any browser
+- **Output pages** (`bug-*.html`, `graphic-*.html`) — transparent browser sources added to vMix/OBS; poll the Worker ~1×/second
+- **Worker** (`worker/index.js`) — REST API, image storage, live state
+- **R2** — all time-critical live state (slot state + resolution settings) **and** images. Strongly consistent globally — this is what keeps cloud/NA vMix latency to ~1–2 s.
+- **KV** — gallery-operated metadata only (image index, layouts, events, categories, tag rules). Eventually consistent; never holds time-critical state.
 
 ---
 
-## Output URLs
+## Deploy — commit + push (non-negotiable)
 
-Add these as browser sources in vMix. Append `?event=ID` to target a specific event.
+**Deploy = commit + push to `main`.** GitHub Actions deploys `main` on every push.
 
-| Layer | Format | URL |
-|---|---|---|
-| Graphics | H (landscape) | `…/graphic-h.html?event=default` |
-| Graphics | V (portrait)  | `…/graphic-v.html?event=default` |
-| Bug / QR | H (landscape) | `…/bug-h.html?event=default`     |
-| Bug / QR | V (portrait)  | `…/bug-v.html?event=default`     |
+> ⚠️ **Never run a bare `npx wrangler deploy`.** A manually-deployed-but-unpushed build was silently rolled back by the scheduled workflow once and reintroduced a multi-week latency regression. `main` is the single source of truth. Bump `VERSION` in `worker/index.js` whenever Worker behaviour changes.
+
+Check what's actually live at any time:
+
+```
+GET /health   → { ok, version, colo, now }     # is the right code live? colo = nearest edge
+GET /diag?apikey=KEY                            # R2 write/read/delete round-trip with timings
+```
+
+---
+
+## Output URLs (add as vMix Browser Inputs)
+
+Append `?event=ID` to target a specific event. Match the resolution to ⚙ Settings (defaults below).
+
+| Layer | Format | URL | Default resolution |
+|---|---|---|---|
+| Graphics | H (landscape) | `…/graphic-h.html?event=…` | 3840 × 2160 |
+| Graphics | V (portrait)  | `…/graphic-v.html?event=…` | 2160 × 3840 |
+| Bug / QR | H (landscape) | `…/bug-h.html?event=…`     | 3840 × 2160 |
+| Bug / QR | V (portrait)  | `…/bug-v.html?event=…`     | 2160 × 3840 |
 
 **Base URL:** `https://adp-lab.github.io/adp-show-graphics/`
 
 ---
 
-## Layer concept
+## Operator model (the essentials)
 
-```
-Layer 0 — Background reference  (gallery preview only, never in output)
-Layer 1 — Bug / QR codes        → bug-h.html / bug-v.html
-Layer 2 — Graphics              → graphic-h.html / graphic-v.html
-```
+- **Loading an image into a slot = PREVIEW only** (local — shows in the gallery + monitors). It is **not on air** until a **SEND LIVE** button is pressed.
+- **Colours = state**, everywhere (image-tile slot buttons, SEND LIVE buttons, layout H/V/Both buttons): 🟢 green = loaded/preview · 🔴 red = on air · dark = not loaded.
+- **H** = landscape output, **V** = portrait output — independent; `H+V` acts on both.
+- **Show BUG | GFX** toggles focus the workspace on one layer (view-only, never changes air); the surviving output monitor enlarges.
+- **Saved Layouts** snapshot all four slots; recall H / V / Both. **Live Outputs** monitors are your on-air confidence feeds.
 
-Each layer is independently controlled. Output is always transparent until **SEND LIVE** is active.
-
----
-
-## Gallery — Live Slots panel
-
-The slots panel is a 4-column layout:
-
-```
-[ H column ] [ Center panel ] [ V column ] [ Output monitors ]
-```
-
-### H / V columns
-- **Composite preview canvas** — both Graphics and Bug layers visible simultaneously; drag to reposition, content can be moved out of frame
-- **Active control tabs** (GFX / Bug) — select which layer the drag, scale, rotate and fit controls affect; both layers remain visible
-  - GFX mode: controls highlighted **red** · Bug mode: controls highlighted **blue** · inactive: grey
-- **Scale slider** — 10–300%; click the % value to reset to 100%
-- **Rotate slider** — –180° to +180°; click the ° value to reset to 0°; applied in both gallery preview and output pages
-- **Contain / Cover** mode
-- **URL bar** — output URLs for GFX and Bug per format, with ↗ open and 📋 copy
-- **Grid** — toggle, 10×10 / 20×20 / 25×25 / 40×40 / 50×40 / 80×80 divisions, snap-to-grid (50×40 snaps x/y axes independently)
-- **BG Reference** — enable toggle + opacity slider (gallery preview only)
-
-### Center panel
-- **Preview toggles** (Bug H · Bug V · GFX H · GFX V) — show/hide each layer in the canvas independently
-- **SEND LIVE buttons** — 4 individual + 2 combined (H+V per layer)
-  - Grey = empty slot · Green = content loaded, not live · Red = on air
-- **Send image to →** — target selector, determines which slot GFX H/V / Bug H/V buttons on image tiles send to
-- **Clear slot** — 4 individual clear buttons
-
-### Output monitors sidebar
-- 4 live scaled iframes (GFX H/V, Bug H/V) + 2 Credits placeholders
-- Click any monitor to magnify to ~60% screen
+Full details: **[Operator Guide](docs/operator-guide.md)** · 30-second version: **[Quick Reference](docs/operator-quickref.md)**.
 
 ---
 
-## Workflow
+## Worker endpoints
 
-1. Open gallery → enter Worker URL + API key
-2. Select event from dropdown (or create one)
-3. Upload images via 📤 or drag from Finder onto the window
-4. In the image library, click **GFX H / GFX V / Bug H / Bug V** on any tile to send it to that slot
-   - Button highlights when the image is active in that slot — click again to clear
-5. Drag image in the slot preview canvas to reposition; use Scale / Rotate / Fit controls
-6. Click **SEND LIVE** in the center panel → image goes live on the output URL
-7. Click **SEND LIVE** again → output goes transparent
-8. Save layouts to recall full slot states instantly
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `GET /active?event=&layer=&slot=` | public | current slot state (output pages poll this) |
+| `GET /status?event=` | public | all slots at once (Companion feedback) |
+| `GET /health` | public | version / edge / time |
+| `GET /img/{key}` | public | serve an image from R2 |
+| `GET /go?apikey=&event=&layer=&slot=&key=…` | key | set + go live in one call (vMix scripts) |
+| `GET /trigger?apikey=…` | key | Companion-friendly trigger (no custom headers) |
+| `GET /diag?apikey=` | key | R2 round-trip diagnostic |
+| `PUT /select /live /clear`, `POST /events`, upload, … | key | gallery write operations |
 
----
-
-## Image tiles
-
-Each image card shows:
-- Thumbnail (fixed height, dark background, preserves aspect ratio for both H and V images)
-- Name — click ✏️ to open rename/edit modal
-- Tag chips (blue) — click × to remove; 🏷 button opens tag dropdown
-- **GFX H · GFX V · Bug H · Bug V** — slot toggle buttons (highlighted = currently in that slot)
-- ✏️ Edit · 🗑 Delete
+Read endpoints are intentionally public (output pages need them with no auth). All writes require the API key. There is **no Worker cache** on `/active` or `/status` — R2 is consistent, caching would only reintroduce staleness.
 
 ---
 
-## Events
+## Storage layout
 
-Each event has isolated images and layouts. Switch from the top dropdown.
-Output pages pick up the event from the URL querystring: `?event=eventID`
+**R2 (strongly consistent — all time-critical live state):**
+
+| Key | Content |
+|---|---|
+| `state/{event}/slot/{layer}/{slot}.json` | slot state. Layers: `graphics`, `bugs`. Slots: `h`, `v`. |
+| `state/{event}/settings.json` | resolution settings |
+| `{event}/…` | uploaded images |
+
+**KV (eventually consistent — gallery metadata only):**
+`image_index:{event}`, `layouts:{event}`, `layouts_order:{event}`, `events`, `image_categories`, `tag_rules`.
+
+> Do **not** move slot state or settings back to KV — eventual consistency caused the original 15–60 s NA delay.
+
+### Slot object
+
+```json
+{
+  "key": "default/1234567_image_name.png",
+  "name": "Image Name",
+  "x": 50, "y": 50, "scale": 100, "rotate": 0,
+  "fit": "contain",
+  "live": false,
+  "updatedAt": "2026-06-16T00:00:00Z"
+}
+```
 
 ---
 
 ## Resolution
 
-Set per-event, per-format (H and V independently) in ⚙ Settings.
-Presets: 4K (3840×2160), 1440p, 1080p, 720p — or enter custom values.
-Output pages read resolution from the Worker and set canvas size dynamically.
-
-**vMix vertical note:** vMix vertical video production crops a 1215×2160 column from the 4K canvas. Set V resolution to `1215 × 2160` (custom) for vMix vertical sources.
-
----
-
-## vMix quick trigger
-
-Set an image live from a vMix script or title template without opening the gallery:
-
-```
-GET https://adp-show-graphics.mohn-edgar.workers.dev/go
-  ?apikey=YOUR_KEY
-  &event=default
-  &layer=graphics
-  &slot=h
-  &key=IMAGE_KEY
-  &x=50&y=50&scale=100&fit=contain&rotate=0
-```
-
-`slot=both` sets H and V simultaneously.
+Set per-event, per-format (H and V independently) in ⚙ Settings. Presets 4K / 1440p / 1080p / 720p, or custom. Defaults: **H 3840 × 2160**, **V 2160 × 3840**. Output pages read resolution from the Worker and size their canvas to match.
 
 ---
 
 ## Setup (first time)
 
 ```bash
-# 1. Install Wrangler
 npm install -g wrangler
-
-# 2. Create KV namespace
-npx wrangler kv namespace create adp-show-graphics
-# → paste the id into wrangler.toml
-
-# 3. Create R2 bucket
+npx wrangler kv namespace create adp-show-graphics      # → id into wrangler.toml
 npx wrangler r2 bucket create adp-show-graphics
-
-# 4. Deploy Worker
-npx wrangler deploy
-
-# 5. Set API key
 npx wrangler secret put API_KEY
-
-# 6. Enable GitHub Pages
-# → repo Settings → Pages → Source: main / root
+# Deploy: commit + push to main (GitHub Actions deploys) — NOT a bare wrangler deploy.
+# Enable GitHub Pages: repo Settings → Pages → Source: main / root
 ```
 
----
-
-## Rotate API key
+## Rotate the API key
 
 ```bash
 npx wrangler secret put API_KEY
-```
-
----
-
-## KV structure
-
-| Key | Content |
-|---|---|
-| `events` | `[{id, name, created}]` |
-| `active:{eventId}` | `{graphics:{h,v}, bugs:{h,v}}` — slot states |
-| `image_index:{eventId}` | `[{key, name, tags, uploadedAt}]` |
-| `layouts:{eventId}` | `{id: {name, graphics, bugs}}` |
-| `layouts_order:{eventId}` | `[id, …]` |
-| `settings:{eventId}` | `{resolution:{h:{w,h}, v:{w,h}}}` |
-| `image_categories` | `[string, …]` — global |
-| `tag_rules` | `{category:[keyword,…]}` — global |
-
----
-
-## Slot object
-
-```json
-{
-  "key": "default/1234567_image_name.png",
-  "name": "Image Name",
-  "x": 50,
-  "y": 50,
-  "scale": 100,
-  "rotate": 0,
-  "fit": "contain",
-  "live": false,
-  "updatedAt": "2026-03-11T00:00:00Z"
-}
 ```
 
 ---
@@ -213,21 +144,12 @@ npx wrangler secret put API_KEY
 | File | Purpose |
 |---|---|
 | `gallery.html` | Operator control panel |
-| `graphic-h.html` | Graphics output — landscape |
-| `graphic-v.html` | Graphics output — portrait |
-| `bug-h.html` | Bug/QR output — landscape |
-| `bug-v.html` | Bug/QR output — portrait |
+| `graphic-h.html` / `graphic-v.html` | Graphics output — landscape / portrait |
+| `bug-h.html` / `bug-v.html` | Bug/QR output — landscape / portrait |
 | `worker/index.js` | Cloudflare Worker |
 | `wrangler.toml` | Worker deployment config |
+| `docs/operator-quickref.md` · `docs/operator-guide.md` | Operator documentation |
 
 ---
 
----
-
-## Operator quick-start
-
-→ See [CHAD.md](CHAD.md) for a plain-language vMix setup guide.
-
----
-
-*Built by André Doelle (adp-Lab) · v2*
+*Built by André Doelle (adp-Lab)*

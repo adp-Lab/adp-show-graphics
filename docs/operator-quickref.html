@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Office Hours Graphics — Operator Quick Reference</title>
+<style>
+  :root{--bg:#0d1b2a;--panel:#13263b;--line:#24405c;--text:#e3e9f0;--muted:#9fb3c8;
+    --straw:#e8c547;--ice:#8fc3e8;--green:#4caf50;--red:#e53935;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif;padding:32px 18px}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:25px;margin:0 0 16px;color:var(--straw)}
+  h2{font-size:18px;margin:26px 0 10px;color:var(--ice);border-bottom:1px solid var(--line);padding-bottom:5px}
+  a{color:var(--ice)} code{background:#0a1622;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px 20px;margin:14px 0}
+  .rule{border-left:4px solid var(--straw)}
+  .g{color:var(--green);font-weight:700}.r{color:var(--red);font-weight:700}
+  b.btn{color:var(--text);background:#0a1622;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:14px}
+  .legend span{display:inline-block;margin-right:18px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Office Hours Graphics — Operator Quick Reference</h1>
+
+  <div class="panel">
+    Open the gallery → <a href="https://adp-lab.github.io/adp-show-graphics/gallery.html">adp-lab.github.io/adp-show-graphics/gallery.html</a>
+    <div style="margin-top:10px"><b>First time — Connect to Worker.</b> Enter:</div>
+    <ul style="margin:4px 0">
+      <li><b>Worker URL:</b> <code>https://adp-show-graphics.mohn-edgar.workers.dev</code></li>
+      <li><b>API key:</b> shared separately by André (not in this doc)</li>
+    </ul>
+    (Remembered after the first connect.) Then pick your show's <b>Event</b> from the dropdown (top-left) before anything else.
+  </div>
+
+  <div class="panel rule">
+    <b>The one rule:</b> loading an image into a slot is <b>PREVIEW only</b>. It shows in your preview slots and the Live Outputs monitors — but it's <b>NOT on air</b> until you press a <b>SEND LIVE</b> button.
+  </div>
+
+  <h2>Colours = state (the same everywhere)</h2>
+  <p class="legend"><span><span class="g">●</span> <b>Green</b> = loaded / preview (not on air)</span>
+     <span><span class="r">●</span> <b>Red</b> = ON AIR</span>
+     <span>● <b>Dark</b> = not loaded</span></p>
+  <p>On the image-tile slot buttons, the SEND LIVE buttons, and the Saved-Layout H / V / Both buttons.</p>
+  <p><b>H</b> = landscape output, <b>V</b> = portrait output — separate slots, aired independently.</p>
+
+  <h2>Put a bug / QR live (≈30 s)</h2>
+  <ol>
+    <li>On the tile in the <b>Image Library</b>, click <b class="btn">Bug H</b> or <b class="btn">Bug V</b> → loads into the slot (<span class="g">●</span>).</li>
+    <li>Position / scale it in the preview if needed.</li>
+    <li>Under <b>BUG / QR LIVE</b>, press <b class="btn">Bug H</b> / <b class="btn">Bug V</b> / <b class="btn">Bug H+V</b> → on air (<span class="r">●</span>).</li>
+    <li>Confirm in the <b>Live Outputs</b> monitors (right).</li>
+  </ol>
+
+  <h2>Put a graphic live</h2>
+  <p>Same flow: click <b class="btn">GFX H</b> / <b class="btn">GFX V</b> on the tile, then press <b class="btn">GFX H</b> / <b class="btn">GFX V</b> / <b class="btn">GFX H+V</b> under <b>GRAPHICS LIVE</b>.</p>
+
+  <h2>Take it off air / swap</h2>
+  <ul>
+    <li>Press the <b>red</b> SEND LIVE button again (toggles off), or use <b>CLEAR</b> to remove it.</li>
+    <li>To swap: load the new image into the slot (goes <span class="g">●</span>), then press its SEND LIVE.</li>
+  </ul>
+
+  <h2>Layouts</h2>
+  <ul>
+    <li><b>+ Save Current Layout</b> stores your whole setup.</li>
+    <li>In <b>Saved Layouts</b>, click <b>H / V / Both</b> to recall. Colours: <span class="g">●</span> loaded, <span class="r">●</span> on air, dark = not loaded.</li>
+  </ul>
+
+  <h2>If something isn't on air</h2>
+  <ol>
+    <li>Is the <b>SEND LIVE</b> button <span class="r">red</span>? If green/dark it's only preview — press it.</li>
+    <li>Check the <b>Live Outputs</b> monitor for that slot.</li>
+    <li>Right <b>Event</b> selected?</li>
+  </ol>
+
+  <div class="panel">Full picture → <b style="color:var(--straw)">❓ How it works</b> in the gallery header (labelled screenshot of every control), or the full written <i>Operator Guide</i>.</div>
+</main>
+</body>
+</html>
