@@ -55,5 +55,7 @@ Load the new image into the slot (it goes 🟢 in preview), then press its SEND 
 
 ---
 
+**Saw a ⏸ Paused (idle) badge?** The gallery paused its previews after ~5 min idle to save requests — **your outputs are still live.** Move the mouse to resume.
+
 ## Need the full picture?
 Click **❓ How it works** in the gallery header — it has every control explained on a labelled screenshot. The full written guide is `oh-graphics-operator-guide`.

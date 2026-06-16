@@ -115,6 +115,7 @@ The output pages poll the server about once a second, so a graphic appears on ai
 | Nothing in a slot | Load an image from the library (click its GFX/Bug H/V button). |
 | Vertical bug looks empty | Use a **portrait/square** QR for the V slot — a landscape image in portrait shows only a thin strip. |
 | Preview looks stale after switching tabs | Polling pauses when the gallery tab is hidden (to save server quota) and resumes when you return — give it a second. |
+| **⏸ Paused (idle)** badge | The gallery paused its own previews after ~5 min of no activity (saves requests). **Your outputs are still live.** Move the mouse or press a key to resume. |
 
 ---
 
