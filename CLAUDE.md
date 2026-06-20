@@ -44,6 +44,8 @@ Never put time-critical state in KV — cross-region propagation takes up to 60s
 - Do NOT add caching in front of slot-state reads — staleness directly delays live graphics in cloud vMix
 - Do NOT move slot state or settings back to KV — eventual consistency caused the original 15–60s NA delay
 - Bump `VERSION` in `worker/index.js` whenever Worker behaviour changes
+- **Output pages (`bug-*.html`, `graphic-*.html`) are SEPARATE documents** loaded directly as vMix browser sources. They must NEVER depend on the gallery's polling/visibility/pause logic. The gallery's free-tier savers (visibility-pause, idle-pause, slowed status loop) only touch `gallery.html`'s own polling — on-air must keep updating @1.5s regardless of any gallery state. Don't couple them.
+- **State-indicator colours** (slot-button tally, layout cards, SEND LIVE) use `--green`/`--red` consistently — match these, don't introduce `--live` or new tones for live/preview state.
 
 ## Companion integration
 See `docs/companion-cheatsheet.md` for trigger URL reference.
