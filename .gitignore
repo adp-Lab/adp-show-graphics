@@ -1,6 +1,9 @@
 .wrangler/
 node_modules/
 .DS_Store
+.env
+.env.*
+!.env.example
 docs/complete chat.md
 docs/handoffs/
 docs/2026-05-16-show-day-preliminaries.md
