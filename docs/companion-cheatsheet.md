@@ -95,11 +95,31 @@ In Companion: use HTTP polling on this URL, then read `.bugs.h.live` etc. to dri
 
 ---
 
-## Typical one-button workflow (load layout + go live)
+## One-shot: layout straight to live (recommended for QR/bug buttons)
+For a single Companion button that recalls a saved layout **and** takes it live
+immediately — one HTTP call, no staged preview step:
+```
+GET .../trigger?apikey=123456&action=layout&layout=join_ohg&slot=both&live=true
+```
+Goes live for whichever layers the layout actually contains (for a QR-only layout,
+that's just `bugs`). This is the pattern for the four QR/bug buttons (JOIN OHG, ASK
+OHG, VOLUNTEER OHG, DONATE OHG, ...) — press once, the QR is on air in the URL
+outputs immediately. It bypasses the local-preview staging step entirely (no
+"confirm on monitor before it's live" pause) — if you want that pause back for a
+given button, use the older two-action stack below instead.
+
+Note: this only drives the graphics/bug **content** inside the browser sources.
+Activating the Bug input as an overlay in vMix itself stays on its own separate
+Companion button (vMix TCP), unchanged.
+
+## Older pattern: load layout to preview, then take live as separate steps
 Stack these two actions on a single Companion button:
-1. `action=layout&layout=panel_intro&slot=both` → loads to preview
+1. `action=layout&layout=panel_intro&slot=both` → loads to preview only
 2. `action=live&layer=bugs&slot=both` → takes bugs live
 3. `action=live&layer=graphics&slot=both` → takes graphics live
+
+Two HTTP round-trips instead of one — keep this pattern only where you deliberately
+want the local-preview pause before airing.
 
 ---
 
@@ -116,6 +136,7 @@ Default event is `default` (no parameter needed for single-event setups).
 
 | What you want | URL suffix |
 |---|---|
+| Layout X → **live** immediately, both (one-shot QR button) | `&action=layout&layout=X&slot=both&live=true` |
 | Layout X → preview both | `&action=layout&layout=X&slot=both` |
 | Layout X → preview H only | `&action=layout&layout=X&slot=h` |
 | Bugs live (both) | `&action=live&layer=bugs&slot=both` |

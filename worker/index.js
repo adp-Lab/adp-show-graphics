@@ -3,7 +3,7 @@
 // v4: slot state + settings migrated from KV to R2 (globally strongly consistent)
 //     Worker Cache on /active and /status removed — no longer needed
 
-const VERSION    = 'v4';
+const VERSION    = 'v4.1';
 const LAYERS     = ['graphics', 'bugs'];
 const SLOTS_LIST = ['h', 'v'];
 
@@ -217,6 +217,9 @@ export default {
     //   go       — set image + go live immediately (?layer= &slot= &key=)
     //   clear    — clear slot(s)                   (?layer= &slot=)  layer optional = both layers
     //   layout   — recall saved layout to preview  (?layout= &slot=)
+    //              add &live=true to go straight to live in the same call (one-shot for
+    //              Companion buttons — writes the layout's slots with live=true instead of
+    //              false, for whichever layers the layout actually contains)
     //
     // slot accepts: h | v | both (default: both)
     if (request.method === 'GET' && path === '/trigger') {
@@ -228,6 +231,7 @@ export default {
       const slot     = url.searchParams.get('slot') || 'both';
       const key      = url.searchParams.get('key');
       const layoutId = url.searchParams.get('layout');
+      const goLive   = url.searchParams.get('live') === 'true';
       const name     = url.searchParams.get('name') || key || '';
       const scale    = parseFloat(url.searchParams.get('scale') || '100');
       const fit      = url.searchParams.get('fit') || 'contain';
@@ -296,11 +300,11 @@ export default {
           const doV = slot === 'v' || slot === 'both';
           const writes = [];
           for (const l of LAYERS) {
-            if (doH && layout[l]?.h) writes.push(writeSlot(env, event, l, 'h', { ...layout[l].h, live: false }));
-            if (doV && layout[l]?.v) writes.push(writeSlot(env, event, l, 'v', { ...layout[l].v, live: false }));
+            if (doH && layout[l]?.h) writes.push(writeSlot(env, event, l, 'h', { ...layout[l].h, live: goLive }));
+            if (doV && layout[l]?.v) writes.push(writeSlot(env, event, l, 'v', { ...layout[l].v, live: goLive }));
           }
           await Promise.all(writes);
-          return json({ ok: true, action: 'layout', id: layoutId, slots: [doH && 'h', doV && 'v'].filter(Boolean) }, 200, origin);
+          return json({ ok: true, action: 'layout', id: layoutId, live: goLive, slots: [doH && 'h', doV && 'v'].filter(Boolean) }, 200, origin);
         }
 
         default:
