@@ -3,7 +3,7 @@
 // v4: slot state + settings migrated from KV to R2 (globally strongly consistent)
 //     Worker Cache on /active and /status removed — no longer needed
 
-const VERSION    = 'v4.1';
+const VERSION    = 'v4.2';
 const LAYERS     = ['graphics', 'bugs'];
 const SLOTS_LIST = ['h', 'v'];
 
@@ -172,6 +172,41 @@ export default {
           result[layer][slot] = state ? { ...state, resolution: res } : { live: false, resolution: res };
         })
       ));
+      return json(result, 200, origin);
+    }
+
+    // ── PUBLIC: layouts-status — per-saved-layout on-air state (Companion feedback) ──
+    // GET /layouts-status?event=X
+    // Returns: { [layoutId]: { h: bool, v: bool } }. A slot is true only when EVERY
+    // layer that layout actually contains for that slot is both loaded AND live with
+    // a matching key right now — mirrors gallery.html's own per-layout tally logic
+    // (orientCls), just computed server-side so Companion feedback never needs a
+    // hardcoded R2 key that goes stale if the underlying image is swapped later.
+    if (request.method === 'GET' && path === '/layouts-status') {
+      const layoutsData = (await env.KV.get(`layouts:${event}`, 'json')) || {};
+      const current = {};
+      await Promise.all(LAYERS.flatMap(layer =>
+        SLOTS_LIST.map(async slot => {
+          if (!current[layer]) current[layer] = {};
+          current[layer][slot] = await readSlot(env, event, layer, slot);
+        })
+      ));
+
+      const result = {};
+      for (const [id, layout] of Object.entries(layoutsData)) {
+        const onAir = (slot) => {
+          let hasAny = false;
+          for (const layer of LAYERS) {
+            const want = layout[layer]?.[slot]?.key;
+            if (!want) continue;
+            hasAny = true;
+            const cur = current[layer]?.[slot];
+            if (!cur || cur.key !== want || !cur.live) return false;
+          }
+          return hasAny;
+        };
+        result[id] = { h: onAir('h'), v: onAir('v') };
+      }
       return json(result, 200, origin);
     }
 
