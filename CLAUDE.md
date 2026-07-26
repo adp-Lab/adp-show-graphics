@@ -49,6 +49,16 @@ Never put time-critical state in KV — cross-region propagation takes up to 60s
 
 ## Companion integration
 See `docs/companion-cheatsheet.md` for trigger URL reference.
+- `/trigger`'s `layout` action takes `&live=true` (v4.1) — recalls a saved layout and
+  takes it live in one atomic call, for one-press Companion buttons. Default (omitted)
+  behaviour unchanged.
+- `GET /layouts-status?event=X` (v4.2, public) — per-saved-layout on-air state
+  (`{h,v}` booleans), computed server-side from current slot state vs. each layout's
+  stored keys. Exists so Companion feedback never needs a hardcoded R2 image key that
+  goes stale if the image behind a layout is swapped later.
+- Companion supports native "duration groups" (press vs. hold-past-threshold actions
+  on one button) — documented in the cheatsheet as an alternate button-wiring pattern
+  for when the vMix overlay is left on-air permanently instead of toggled separately.
 
 ## Phase 1 — DONE (built 2026-05-15, committed + pipeline fixed 2026-06-11)
 Slot state + settings moved from KV to R2 (strongly consistent globally — fixes 15–60s cloud vMix delay).
@@ -59,6 +69,8 @@ Maggie as primary state server (Flask/PocketBase + CF Tunnel), SSE push for inst
 CasperCG AMCP integration. CF Worker stays as warm fallback with R2 state sync.
 
 ## Future scope
-- Companion config helper tab in gallery
+- Companion config helper tab in gallery — partially covered: layout IDs are now shown
+  as plain text on each Saved Layout card (v4.2-era gallery change), so a dedicated tab
+  may no longer be necessary
 - UVC/webcam input layer
 - NDI input/output
