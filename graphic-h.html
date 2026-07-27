@@ -53,37 +53,51 @@
     requestAnimationFrame(() => fitStage(res.w, res.h));
   }
 
+  // Poll rate self-adjusts on the power switch (state.power, from /active): fast while
+  // the show is on, slow while off — a forgotten open tab costs ~0 instead of ~57.6k
+  // requests/day. On a fetch error, retry at the fast interval rather than get stuck
+  // slow — a transient blip should never delay recovery.
+  const POLL_ON_MS  = 1500;
+  const POLL_OFF_MS = 30000;
+
   async function poll() {
+    let nextDelay = POLL_ON_MS;
     try {
       const res = await fetch(`${WORKER}/active?event=${EVENT}&layer=${LAYER}&slot=${SLOT}`, { cache: 'no-store' });
       const state = await res.json();
       if (state.resolution) applyResolution(state.resolution);
-      if (!state.live || !state.key) { img.classList.add('hidden'); currentKey = null; return; }
-      if (state.key !== currentKey) {
-        currentKey = state.key;
-        img.classList.add('hidden');
-        img.onload = () => img.classList.remove('hidden');
-        img.onerror = () => { currentKey = null; }; // retry on next poll if load fails
-        img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
-      }
-      const s = (state.scale || 100) / 100;
-      const r = state.rotate || 0;
-      if (state.fit === 'cover') {
-        img.style.objectFit = 'cover';
-        img.style.transform = `scale(${Math.max(s, 1)}) rotate(${r}deg)`;
-        img.style.left = '0'; img.style.top = '0';
+      if (state.power === false) {
+        img.classList.add('hidden'); currentKey = null;
+        nextDelay = POLL_OFF_MS;
+      } else if (!state.live || !state.key) {
+        img.classList.add('hidden'); currentKey = null;
       } else {
-        img.style.objectFit = 'contain';
-        img.style.transform = `translate(-50%, -50%) scale(${s}) rotate(${r}deg)`;
-        img.style.left = (state.x || 50) + '%';
-        img.style.top  = (state.y || 50) + '%';
+        if (state.key !== currentKey) {
+          currentKey = state.key;
+          img.classList.add('hidden');
+          img.onload = () => img.classList.remove('hidden');
+          img.onerror = () => { currentKey = null; }; // retry on next poll if load fails
+          img.src = `${WORKER}/img/${encodeURIComponent(state.key)}`;
+        }
+        const s = (state.scale || 100) / 100;
+        const r = state.rotate || 0;
+        if (state.fit === 'cover') {
+          img.style.objectFit = 'cover';
+          img.style.transform = `scale(${Math.max(s, 1)}) rotate(${r}deg)`;
+          img.style.left = '0'; img.style.top = '0';
+        } else {
+          img.style.objectFit = 'contain';
+          img.style.transform = `translate(-50%, -50%) scale(${s}) rotate(${r}deg)`;
+          img.style.left = (state.x || 50) + '%';
+          img.style.top  = (state.y || 50) + '%';
+        }
       }
     } catch(e) {}
+    setTimeout(poll, nextDelay);
   }
 
   window.addEventListener('resize', () => { if (currentRes) fitStage(currentRes.w, currentRes.h); });
   poll();
-  setInterval(poll, 1500);
 </script>
 </body>
 </html>

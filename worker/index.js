@@ -3,7 +3,7 @@
 // v4: slot state + settings migrated from KV to R2 (globally strongly consistent)
 //     Worker Cache on /active and /status removed — no longer needed
 
-const VERSION    = 'v4.2';
+const VERSION    = 'v4.3';
 const LAYERS     = ['graphics', 'bugs'];
 const SLOTS_LIST = ['h', 'v'];
 
@@ -89,6 +89,26 @@ async function writeSettings(env, event, data) {
   );
 }
 
+// Power switch — defaults OFF when never set, so a fresh event never silently
+// polls at full rate. Output pages fall back to a slow dark-poll when off,
+// keeping a forgotten tab cheap regardless of anyone remembering to close it.
+function powerR2Key(event) {
+  return `state/${event}/power.json`;
+}
+
+async function readPower(env, event) {
+  const obj = await env.BUCKET.get(powerR2Key(event));
+  return obj ? await obj.json() : { on: false };
+}
+
+async function writePower(env, event, on) {
+  await env.BUCKET.put(
+    powerR2Key(event),
+    JSON.stringify({ on, updatedAt: new Date().toISOString() }),
+    { httpMetadata: { contentType: 'application/json' } }
+  );
+}
+
 export default {
   async fetch(request, env) {
     const origin = getOrigin(request, env);
@@ -150,7 +170,8 @@ export default {
       const settings = await readSettings(env, event);
       const res      = settings.resolution?.[slot] || DEFAULT_SETTINGS.resolution[slot];
       const state    = await readSlot(env, event, layer, slot);
-      const data     = state ? { ...state, resolution: res } : { live: false, resolution: res };
+      const power    = await readPower(env, event);
+      const data     = { ...(state ? { ...state, resolution: res } : { live: false, resolution: res }), power: power.on };
 
       return new Response(JSON.stringify(data), {
         status: 200,
@@ -160,10 +181,11 @@ export default {
 
     // ── PUBLIC: status — all slots at once (Companion feedback polling) ────────
     // GET /status?event=X
-    // Returns: { graphics: { h: {...}, v: {...} }, bugs: { h: {...}, v: {...} } }
+    // Returns: { power: bool, graphics: { h: {...}, v: {...} }, bugs: { h: {...}, v: {...} } }
     if (request.method === 'GET' && path === '/status') {
       const settings = await readSettings(env, event);
-      const result   = {};
+      const power    = await readPower(env, event);
+      const result   = { power: power.on };
       await Promise.all(LAYERS.flatMap(layer =>
         SLOTS_LIST.map(async slot => {
           const res   = settings.resolution?.[slot] || DEFAULT_SETTINGS.resolution[slot];
@@ -255,6 +277,10 @@ export default {
     //              add &live=true to go straight to live in the same call (one-shot for
     //              Companion buttons — writes the layout's slots with live=true instead of
     //              false, for whichever layers the layout actually contains)
+    //   power    — switch the event's power state    (?on=true|false)  no layer/slot needed
+    //              defaults to OFF when never set. Output pages read this from /active and
+    //              slow their own poll rate to ~30s (from 1.5s) while off, and hide any
+    //              content — a forgotten open tab costs ~0 instead of ~57.6k requests/day.
     //
     // slot accepts: h | v | both (default: both)
     if (request.method === 'GET' && path === '/trigger') {
@@ -342,8 +368,15 @@ export default {
           return json({ ok: true, action: 'layout', id: layoutId, live: goLive, slots: [doH && 'h', doV && 'v'].filter(Boolean) }, 200, origin);
         }
 
+        case 'power': {
+          const onParam = url.searchParams.get('on');
+          if (onParam !== 'true' && onParam !== 'false') return error('on=true or on=false required', 400, origin);
+          await writePower(env, event, onParam === 'true');
+          return json({ ok: true, action: 'power', on: onParam === 'true' }, 200, origin);
+        }
+
         default:
-          return error('Unknown action. Valid: preview, live, off, go, clear, layout', 400, origin);
+          return error('Unknown action. Valid: preview, live, off, go, clear, layout, power', 400, origin);
       }
     }
 

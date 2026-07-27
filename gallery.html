@@ -48,6 +48,18 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #auth-status.ok { color: var(--green); }
 #auth-status.err { color: var(--red); }
 
+/* Power switch — OFF is the standard/default state between shows. Unmissable on
+   purpose: a forgotten-open output tab costs ~0 while off, but only if the operator
+   remembers to switch on before a show — hence the blink. */
+#power-toggle {
+  padding: 6px 14px; border-radius: 5px; border: 1px solid; cursor: pointer;
+  font-size: 14px; font-weight: 700; letter-spacing: .03em;
+}
+#power-toggle:hover { opacity: .85; }
+#power-toggle.on  { background: var(--green); border-color: var(--green); color: #000; }
+#power-toggle.off { background: var(--red); border-color: var(--red); color: #fff; animation: power-blink 1.4s ease-in-out infinite; }
+@keyframes power-blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
 /* ── Auth gate ───────────────────────────────────────────────────────────── */
 #auth-gate { max-width: 420px; margin: 80px auto; background: var(--surf); border: 1px solid var(--border); border-radius: 10px; padding: 32px; text-align: center; }
 #auth-gate h2 { margin-bottom: 8px; }
@@ -741,6 +753,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
   <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
   <button id="how-it-works-btn" onclick="openHelp()" title="How it works">❓ How it works</button>
+  <button id="power-toggle" class="off" onclick="togglePower()" title="System is OFF — outputs poll slowly; click to switch on before a show">⏻ OFF</button>
   <div class="hdr-spacer"></div>
   <button class="btn btn-gray btn-sm" onclick="loadAll()">↺ Refresh</button>
   <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
@@ -1573,6 +1586,39 @@ async function authenticate() {
   }
 }
 
+// ── Power switch ──────────────────────────────────────────────────────────────
+let _powerOn = false;
+function updatePowerUI(on) {
+  _powerOn = !!on;
+  const el = document.getElementById('power-toggle');
+  if (!el) return;
+  el.textContent = _powerOn ? '⏻ ON' : '⏻ OFF';
+  el.className = _powerOn ? 'on' : 'off';
+  el.title = _powerOn
+    ? 'System is ON — outputs poll at full speed. Click to switch off after the show.'
+    : 'System is OFF — outputs poll slowly (~30s). Click to switch on before a show.';
+}
+async function togglePower() {
+  const next = !_powerOn;
+  if (!next && !confirm('Switch the system OFF? Outputs will stop updating quickly until switched back on.')) return;
+  try {
+    const r = await api('GET', `/trigger?action=power&on=${next}&event=${currentEvent}`);
+    if (!r.ok) throw new Error('request failed');
+    updatePowerUI(next);
+    if (next) {
+      // This gallery's OWN monitor iframes are the same output-page code — without
+      // forcing a reload they'd stay asleep at the ~30s dark rate for up to 30s after
+      // switching on. initOutputMonitors() alone won't do it (skips reassigning src
+      // when the URL hasn't changed), so blank-then-reload to force a fresh poll now.
+      pauseMonitors();
+      resumeMonitors();
+    }
+    setStatus(next ? 'System switched ON' : 'System switched OFF');
+  } catch(e) {
+    setStatus('Power toggle failed — check connection');
+  }
+}
+
 function showAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
 function clearWorker() { localStorage.removeItem('adp_worker'); document.getElementById('worker-url-input').value = ''; WORKER = ''; }
 
@@ -1586,13 +1632,16 @@ function setStatus(msg, ms = 3000) {
 }
 
 async function loadAll() {
-  [events, images, categories, tagRules, settings] = await Promise.all([
+  let power;
+  [events, images, categories, tagRules, settings, power] = await Promise.all([
     api('GET', '/events').then(r => r.json()),
     api('GET', `/list?event=${currentEvent}`).then(r => r.json()),
     api('GET', '/categories').then(r => r.json()),
     api('GET', '/tag-rules').then(r => r.json()),
     api('GET', `/settings?event=${currentEvent}`).then(r => r.json()),
+    fetch(`${WORKER}/status?event=${currentEvent}`).then(r => r.json()).catch(() => null),
   ]);
+  if (power) updatePowerUI(power.power);
   renderEventSel();
   renderSlots();
   renderGrid();
@@ -3402,6 +3451,7 @@ function startPolling() {
         fetch(`${WORKER}/active?event=${currentEvent}&layer=${layer}&slot=${slot}`).then(r => r.json())
       ));
       setPollStatus(true);
+      if (results.length) updatePowerUI(results[0].power);
       const sinceLastDrag = Date.now() - lastDragEnd;
       toFetch.forEach(({ layer, slot }, i) => {
         if (isDirty(layer, slot)) return; // re-check: may have become dirty while fetching

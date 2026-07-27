@@ -30,7 +30,9 @@ If an emergency mid-show manual deploy ever happens, push the same code immediat
 Never put time-critical state in KV — cross-region propagation takes up to 60s.
 
 ## Key design decisions
-- Output pages poll `/active` every 1500ms — keep response fast
+- Output pages poll `/active` every 1500ms while the event's power switch is ON —
+  keep response fast. While OFF (the default/standard state between shows), they
+  self-throttle to ~30s and hide their content; see `## Power switch` below.
 - No Worker Cache on `/active` or `/status` (removed in v4) — R2 is consistent, caching would only reintroduce staleness
 - `GET /health` returns `{ok, version, colo, now}` — first check whenever "is the right code live?" comes up; `colo` = edge nearest the caller
 - `GET /diag?apikey=` — R2 write/read/delete round-trip with timings; proves write path from any location
@@ -44,7 +46,7 @@ Never put time-critical state in KV — cross-region propagation takes up to 60s
 - Do NOT add caching in front of slot-state reads — staleness directly delays live graphics in cloud vMix
 - Do NOT move slot state or settings back to KV — eventual consistency caused the original 15–60s NA delay
 - Bump `VERSION` in `worker/index.js` whenever Worker behaviour changes
-- **Output pages (`bug-*.html`, `graphic-*.html`) are SEPARATE documents** loaded directly as vMix browser sources. They must NEVER depend on the gallery's polling/visibility/pause logic. The gallery's free-tier savers (visibility-pause, idle-pause, slowed status loop) only touch `gallery.html`'s own polling — on-air must keep updating @1.5s regardless of any gallery state. Don't couple them.
+- **Output pages (`bug-*.html`, `graphic-*.html`) are SEPARATE documents** loaded directly as vMix browser sources. They must NEVER depend on the gallery's polling/visibility/pause logic. The gallery's free-tier savers (visibility-pause, idle-pause, slowed status loop) only touch `gallery.html`'s own polling — on-air must keep updating @1.5s regardless of any gallery state. Don't couple them. (The one exception, added deliberately in v4.3: they DO read the server-side `power` flag from `/active` and slow to ~30s while off — this is independent of the gallery, driven by explicit Companion/gallery trigger calls, not gallery visibility/idle state. Don't conflate the two.)
 - **State-indicator colours** (slot-button tally, layout cards, SEND LIVE) use `--green`/`--red` consistently — match these, don't introduce `--live` or new tones for live/preview state.
 
 ## Companion integration
@@ -59,6 +61,25 @@ See `docs/companion-cheatsheet.md` for trigger URL reference.
 - Companion supports native "duration groups" (press vs. hold-past-threshold actions
   on one button) — documented in the cheatsheet as an alternate button-wiring pattern
   for when the vMix overlay is left on-air permanently instead of toggled separately.
+- Chad's preferred button layout (2026-07-26): keep the vMix Bug-overlay button as-is,
+  separate from 4 buttons that each set which QR is active — i.e. "Pattern 1" in the
+  cheatsheet. Treat that as the primary recommendation.
+
+## Power switch (v4.3)
+Free-tier safety net: a single forgotten output-page tab (anywhere, not just vMix)
+polling at 1.5s for a full day is enough on its own to blow the account's shared
+100k/day Workers request cap — this happened 2026-07-26/27. Fix: `state/{event}/power.json`
+in R2, defaults to `{on: false}` when never set (off = standard state between shows).
+- `/trigger?action=power&on=true|false&event=X` — toggle, Companion-friendly
+- `power` field bundled into `/active` and `/status` responses (no extra request)
+- Output pages (`bug-*.html`, `graphic-*.html`) read it each poll and self-schedule
+  their own next check via `setTimeout` (not `setInterval`) — 1.5s while on, ~30s
+  and hidden while off. A fetch error always falls back to the fast retry, never
+  the slow one, so a network blip can't get stuck slow.
+- Gallery header has a manual toggle + blinking red indicator when off (`#power-toggle`).
+- Trade-off, by design: switching on doesn't take effect on an already-sleeping
+  output page until its next scheduled ~30s check — "switch on" is a pre-show step
+  with a beat of lead time, not an instant broadcast to every open tab.
 
 ## Phase 1 — DONE (built 2026-05-15, committed + pipeline fixed 2026-06-11)
 Slot state + settings moved from KV to R2 (strongly consistent globally — fixes 15–60s cloud vMix delay).

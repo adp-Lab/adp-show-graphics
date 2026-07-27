@@ -60,6 +60,57 @@ button and one vMix-side action per QR, at the cost of the overlay channel
 being on-air full time — worth testing live before committing the whole rig to it.
 ([Companion duration-group docs](https://companion.free/user-guide/v4.2/config/buttons/creating/actions/))
 
+Chad's take (2026-07-26): keep separate clicks — the existing vMix Bug-overlay
+button unchanged, plus 4 buttons that each set which QR is active, optionally
+with a clear-on-long-press per button (same duration-group trick as above, but
+firing `action=clear&layer=bugs&slot=both&event=officehours` instead of `off`).
+That's **Pattern 1** — treat it as the primary path; Pattern 2 stays documented
+as an option, not the default.
+
+---
+
+## ⭐ Power switch — first action of the show / last action of the show
+
+The output pages (the browser sources vMix loads) poll the Worker every 1.5s
+whenever they're open — that's necessary for a live show, but it means a
+forgotten-open tab (anyone's, anywhere, doesn't have to be vMix) burns through
+the free-tier daily request cap on its own. The power switch fixes this: while
+"off", output pages poll every ~30s instead of 1.5s and show nothing — a
+forgotten tab costs almost nothing. **Off is the standard/default state** —
+switch on right before a show, off right after.
+
+```
+GET .../trigger?apikey=123456&action=power&on=true&event=officehours    ← first action of the show
+GET .../trigger?apikey=123456&action=power&on=false&event=officehours   ← last action of the show
+```
+
+New events default to **off** until switched on for the first time. There's
+also a manual on/off toggle in the gallery itself (header bar, next to "How it
+works") with a blinking red indicator whenever the system is off — hard to miss.
+
+**Companion feedback for the power state:** it's now in `/status` at the top
+level:
+```
+GET https://adp-show-graphics.mohn-edgar.workers.dev/status?event=officehours
+```
+```json
+{ "power": true, "graphics": {...}, "bugs": {...} }
+```
+Same shared-poll-one-variable pattern as the per-layout feedback above — read
+`.power` from the same stored variable, drive one Companion button's color off it.
+
+**One trade-off to know:** switching "on" doesn't make things visible instantly
+everywhere — any output page that's already open and sleeping at the ~30s dark
+rate only notices the change on its next scheduled check (so up to ~30s after
+you flip the switch). Treat "switch on" as a pre-show step done with a beat of
+lead time, not something to press and expect an immediate result from.
+
+**Power is separate from content** — switching off hides the outputs and slows
+polling, but doesn't clear whatever's loaded/live. If a QR is left live from
+testing and you later switch power back on without clearing it first, it'll
+reappear immediately. If you want a guaranteed-blank start next time, clear the
+bug/graphics slots as its own step (`action=clear`), independent of power.
+
 ---
 
 ## One-shot: layout straight to live (general pattern)
@@ -217,9 +268,11 @@ likely reason a trigger silently does nothing.
 | Clear everything | `&action=clear&slot=both&event=officehours` |
 | Image X → preview bugs H | `&action=preview&layer=bugs&slot=h&key=X&event=officehours` |
 | Image X → live bugs H | `&action=go&layer=bugs&slot=h&key=X&event=officehours` |
+| Power ON (first action of the show) | `&action=power&on=true&event=officehours` |
+| Power OFF (last action of the show) | `&action=power&on=false&event=officehours` |
 
 All URLs start with: `https://adp-show-graphics.mohn-edgar.workers.dev/trigger?apikey=123456`
 
 Feedback endpoints (no `/trigger`, no action, GET-only, public — no apikey needed):
 - `https://adp-show-graphics.mohn-edgar.workers.dev/layouts-status?event=officehours` — precise per-layout on-air state
-- `https://adp-show-graphics.mohn-edgar.workers.dev/status?event=officehours` — simple per-layer on-air state
+- `https://adp-show-graphics.mohn-edgar.workers.dev/status?event=officehours` — simple per-layer on-air state + top-level `power` (on/off)
