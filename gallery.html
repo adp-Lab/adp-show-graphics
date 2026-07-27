@@ -1219,6 +1219,19 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   </div>
 </div>
 
+<!-- ── POWER-OFF MODAL ────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="power-modal">
+  <div class="modal" style="width:420px;text-align:center;border-color:var(--red)">
+    <h3 style="color:var(--red);font-size:22px;margin-bottom:10px">⏻ SYSTEM IS OFF</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.5">
+      Outputs are dark and polling slowly — nothing will show on air until you
+      switch on. First action of the show.
+    </p>
+    <button class="btn btn-green" style="width:100%;padding:14px;font-size:16px;font-weight:700;margin-bottom:10px" onclick="closeModal('power-modal'); togglePower();">⏻ Switch ON now</button>
+    <button class="btn btn-gray" style="width:100%" onclick="closeModal('power-modal')">Continue without switching on</button>
+  </div>
+</div>
+
 <!-- ── EVENT MODAL ────────────────────────────────────────────────────────── -->
 <div class="modal-overlay hidden" id="event-modal">
   <div class="modal" style="width:360px">
@@ -1580,6 +1593,7 @@ async function authenticate() {
     document.getElementById('auth-status').textContent = '●  Connected';
     document.getElementById('auth-status').className = 'ok';
     await loadAll();
+    if (!_powerOn) openModal('power-modal');   // unmissable at page-open — not re-shown on Refresh/reconciliation
     startPolling();
   } catch(e) {
     showAuthError('Connection failed: ' + e.message);
