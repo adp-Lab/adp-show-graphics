@@ -1221,14 +1221,14 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 
 <!-- ── POWER-OFF MODAL ────────────────────────────────────────────────────── -->
 <div class="modal-overlay hidden" id="power-modal">
-  <div class="modal" style="width:420px;text-align:center;border-color:var(--red)">
-    <h3 style="color:var(--red);font-size:22px;margin-bottom:10px">⏻ SYSTEM IS OFF</h3>
-    <p style="color:var(--muted);font-size:14px;margin-bottom:20px;line-height:1.5">
+  <div class="modal" style="width:640px;max-width:95vw;text-align:center;border:2px solid var(--red);padding:44px">
+    <h3 style="color:var(--red);font-size:40px;margin-bottom:18px">⏻ SYSTEM IS OFF</h3>
+    <p style="color:var(--text);font-size:20px;margin-bottom:30px;line-height:1.5">
       Outputs are dark and polling slowly — nothing will show on air until you
       switch on. First action of the show.
     </p>
-    <button class="btn btn-green" style="width:100%;padding:14px;font-size:16px;font-weight:700;margin-bottom:10px" onclick="closeModal('power-modal'); togglePower();">⏻ Switch ON now</button>
-    <button class="btn btn-gray" style="width:100%" onclick="closeModal('power-modal')">Continue without switching on</button>
+    <button class="btn btn-green" style="width:100%;padding:20px;font-size:24px;font-weight:700;margin-bottom:14px" onclick="closeModal('power-modal'); togglePower();">⏻ Switch ON now</button>
+    <button class="btn btn-gray" style="width:100%;padding:12px;font-size:15px" onclick="closeModal('power-modal')">Continue without switching on</button>
   </div>
 </div>
 
@@ -2300,8 +2300,25 @@ function resumeMonitors() {
   initOutputMonitors();   // re-points each iframe src → reload → polling + scaling resume
   console.debug('[gallery] polling resumed — tab visible');
 }
+// Re-show the power-off warning every time the operator comes back to this tab (not
+// on every interaction — markActive() fires on mousemove etc. too, which would be a
+// non-stop popup instead of a "you just returned" reminder). Fetches fresh rather
+// than trusting the cached _powerOn flag: the reconciliation loop is fully paused
+// while the tab is hidden, so that flag can be stale by the time it's visible again.
+async function checkPowerAndMaybeWarn() {
+  try {
+    const d = await fetch(`${WORKER}/status?event=${currentEvent}`).then(r => r.json());
+    updatePowerUI(d.power);
+    if (!d.power) openModal('power-modal');
+  } catch(e) {}
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pauseMonitors(); else markActive();
+  if (document.hidden) {
+    pauseMonitors();
+  } else {
+    markActive();
+    checkPowerAndMaybeWarn();
+  }
 });
 
 // ── Idle-pause ──────────────────────────────────────────────────────────────
