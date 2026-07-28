@@ -6,6 +6,22 @@ Replace `123456` with your real API key before use.
 
 ---
 
+## 📣 What's new for Chad (2026-07-28) — answers to your Discord questions
+
+> **"Any chance there's also an endpoint that only tells you which bug is active... IF it would allow hundreds of hits?"**
+> Yes — `/layouts-status` is built exactly for this, and hundreds of hits is trivial for it (plain KV+R2 read). See **[Companion Feedback — recommended](#companion-feedback--recommended-precise-per-button-state)** below.
+
+> **"I'd suggest keeping all separate clicks... current Bug button as-is, 4 buttons to set which is active... clear on long-press?"**
+> This is now the documented **primary path (Pattern 1)** — see **[Two ways to wire each button](#two-ways-to-wire-each-button--pick-whichever-fits-your-vmix-workflow)**. Your clear-on-long-press idea works with zero server changes: same duration-group trick already described for Pattern 2, just fire `action=clear` instead of `action=off`.
+
+> **"Does it cost to load that URL... thousands of times?"**
+> You were right to ask — the day after we talked, a forgotten test tab polling nonstop *did* blow the account's free-tier request cap (not your buttons — the always-on output pages, which poll every 1.5s regardless of where they're loaded). Direct result: a new **⭐ Power switch** (below) — explicit on/off, default **off**, output pages throttle to ~30s when nothing's happening. First action of the show = switch on, last action = switch off.
+
+> **"I wonder if we could have Companion polling to update variable... and use the same internal variable to read for the Format/Key values?"**
+> Exactly right — that's precisely how the shared-poll-one-variable pattern in **[Companion Feedback — recommended](#companion-feedback--recommended-precise-per-button-state)** works. You'd already worked out the mechanism before finding the section.
+
+---
+
 ## ⭐ Chad quick start — the 4 QR/bug buttons, ready to paste
 
 One Companion button per QR, one HTTP GET action each, straight to program — no
@@ -60,12 +76,13 @@ button and one vMix-side action per QR, at the cost of the overlay channel
 being on-air full time — worth testing live before committing the whole rig to it.
 ([Companion duration-group docs](https://companion.free/user-guide/v4.2/config/buttons/creating/actions/))
 
-Chad's take (2026-07-26): keep separate clicks — the existing vMix Bug-overlay
-button unchanged, plus 4 buttons that each set which QR is active, optionally
-with a clear-on-long-press per button (same duration-group trick as above, but
-firing `action=clear&layer=bugs&slot=both&event=officehours` instead of `off`).
-That's **Pattern 1** — treat it as the primary path; Pattern 2 stays documented
-as an option, not the default.
+> **Chad's take (2026-07-26):** keep separate clicks — the existing vMix
+> Bug-overlay button unchanged, plus 4 buttons that each set which QR is
+> active, optionally with a clear-on-long-press per button (same
+> duration-group trick as above, but firing
+> `action=clear&layer=bugs&slot=both&event=officehours` instead of `off`).
+> That's **Pattern 1** — treat it as the primary path; Pattern 2 stays
+> documented as an option, not the default.
 
 ---
 
