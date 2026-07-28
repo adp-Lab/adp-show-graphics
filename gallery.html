@@ -47,17 +47,6 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #auth-status { font-size: 15px; color: var(--muted); }
 #auth-status.ok { color: var(--green); }
 #auth-status.err { color: var(--red); }
-
-/* Power switch — OFF is the standard/default state between shows. Unmissable on
-   purpose: a forgotten-open output tab costs ~0 while off, but only if the operator
-   remembers to switch on before a show — hence the blink. */
-#power-toggle {
-  padding: 6px 14px; border-radius: 5px; border: 1px solid; cursor: pointer;
-  font-size: 14px; font-weight: 700; letter-spacing: .03em;
-}
-#power-toggle:hover { opacity: .85; }
-#power-toggle.on  { background: var(--green); border-color: var(--green); color: #000; }
-#power-toggle.off { background: var(--red); border-color: var(--red); color: #fff; animation: power-blink 1.4s ease-in-out infinite; }
 @keyframes power-blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 
 /* ── Auth gate ───────────────────────────────────────────────────────────── */
@@ -613,6 +602,19 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   background: var(--surf2); border: 1px solid #555; border-radius: 6px;
 }
 .center-panel .ctr-group .btn-gray:hover { border-color: var(--muted); background: var(--surf3); }
+/* Power switch — pinned above Save Layout, the very top of the centre column.
+   OFF is the standard/default state between shows. Both on/off pulse so the
+   current state is impossible to miss regardless of which it is. */
+#power-toggle {
+  width: 100%; justify-content: center; flex-shrink: 0;
+  padding: calc(var(--ui-scale) * 18px) 8px; border-radius: 6px; border: 2px solid;
+  cursor: pointer; font-size: calc(var(--ui-scale) * 20px); font-weight: 800;
+  letter-spacing: .03em; margin-bottom: 10px;
+}
+#power-toggle:hover { opacity: .85; }
+#power-toggle.on  { background: var(--green); border-color: var(--green); color: #000; animation: power-blink 1.4s ease-in-out infinite; }
+#power-toggle.off { background: var(--red);   border-color: var(--red);   color: #fff; animation: power-blink 1.4s ease-in-out infinite; }
+
 /* Prominent Save-Layout button pinned at the top of the centre column */
 .center-panel .save-layout-top {
   width: 100%; justify-content: center; font-weight: 700; flex-shrink: 0;
@@ -753,7 +755,6 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
   <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
   <button id="how-it-works-btn" onclick="openHelp()" title="How it works">❓ How it works</button>
-  <button id="power-toggle" class="off" onclick="togglePower()" title="System is OFF — outputs poll slowly; click to switch on before a show">⏻ OFF</button>
   <div class="hdr-spacer"></div>
   <button class="btn btn-gray btn-sm" onclick="loadAll()">↺ Refresh</button>
   <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
@@ -860,6 +861,8 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
 
       <!-- ── CENTER PANEL ── -->
       <div class="center-panel">
+
+        <button id="power-toggle" class="off" onclick="togglePower()" title="System is OFF — outputs poll slowly; click to switch on before a show">⏻ OFF</button>
 
         <button class="btn btn-blue save-layout-top" onclick="saveLayout()">+ Save Current Layout</button>
 
