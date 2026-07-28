@@ -85,8 +85,15 @@ GET .../trigger?apikey=123456&action=power&on=false&event=officehours   ← last
 ```
 
 New events default to **off** until switched on for the first time. There's
-also a manual on/off toggle in the gallery itself (header bar, next to "How it
-works") with a blinking red indicator whenever the system is off — hard to miss.
+also a manual toggle in the gallery itself — top of the centre panel, above
+"+ Save Current Layout" — labelled "Turn ON" / "Turn OFF" (shows the action a
+click performs, not just the current state), and it pulses in both states (red
+off, green on) so it's hard to miss either way. On top of that, opening the
+gallery while the system is off pops up a large "SYSTEM IS OFF" warning with
+its own "Switch ON now" button — shows at login, on switching to a different
+event, and every time you come back to an already-open gallery tab while still
+off (not a constant nag — it won't reappear while you're just sitting on the
+tab working with power deliberately left off).
 
 **Companion feedback for the power state:** it's now in `/status` at the top
 level:
