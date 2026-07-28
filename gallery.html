@@ -862,7 +862,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
       <!-- ── CENTER PANEL ── -->
       <div class="center-panel">
 
-        <button id="power-toggle" class="off" onclick="togglePower()" title="System is OFF — outputs poll slowly; click to switch on before a show">⏻ Turn ON</button>
+        <button id="power-toggle" class="off" onclick="togglePower()" title="System is OFF — outputs poll slowly; click to switch on before a show">⏻ First step: Turn ON</button>
 
         <button class="btn btn-blue save-layout-top" onclick="saveLayout()">+ Save Current Layout</button>
 
@@ -1609,7 +1609,7 @@ function updatePowerUI(on) {
   _powerOn = !!on;
   const el = document.getElementById('power-toggle');
   if (!el) return;
-  el.textContent = _powerOn ? '⏻ Turn OFF' : '⏻ Turn ON';
+  el.textContent = _powerOn ? '⏻ After show: Turn OFF' : '⏻ First step: Turn ON';
   el.className = _powerOn ? 'on' : 'off';
   el.title = _powerOn
     ? 'System is ON — outputs poll at full speed. Click to switch off after the show.'
