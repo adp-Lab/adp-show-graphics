@@ -48,6 +48,7 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #auth-status.ok { color: var(--green); }
 #auth-status.err { color: var(--red); }
 @keyframes power-blink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@keyframes power-blink-on { 0%, 100% { opacity: 1; } 50% { opacity: .8; } }
 
 /* ── Auth gate ───────────────────────────────────────────────────────────── */
 #auth-gate { max-width: 420px; margin: 80px auto; background: var(--surf); border: 1px solid var(--border); border-radius: 10px; padding: 32px; text-align: center; }
@@ -612,7 +613,7 @@ body.hide-bug .center-panel .layer-bug { display: flex !important; visibility: h
   letter-spacing: .03em; margin-bottom: 10px;
 }
 #power-toggle:hover { opacity: .85; }
-#power-toggle.on  { background: var(--green); border-color: var(--green); color: #000; animation: power-blink 1.4s ease-in-out infinite; }
+#power-toggle.on  { background: var(--green); border-color: var(--green); color: #000; animation: power-blink-on 2.8s ease-in-out infinite; }
 #power-toggle.off { background: var(--red);   border-color: var(--red);   color: #fff; animation: power-blink 1.4s ease-in-out infinite; }
 
 /* Prominent Save-Layout button pinned at the top of the centre column */
