@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>OH Operator</title>
+<style>
+/* ─────────────────────────────────────────────────────────────────────────────
+   operator.html — reduced touch surface for saved-layout recall.
+   Spec: Maggie/docs/superpowers/specs/2026-09-13-operator-view-design.md
+
+   COMPATIBILITY BASELINE — deliberately conservative, older iPads stay in scope:
+   no `inset`, no flexbox `gap`, no `aspect-ratio`, no optional chaining, ES5
+   syntax only. Grid `gap` is fine (Safari 10.1). Every frame is sized in pixels
+   by layout(), so the monitors are exactly 16:9 / 9:16 on any device.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:#141414; --surf:#1e1e1e; --surf2:#282828; --surf3:#323232;
+  --border:#3a3a3a; --text:#e0e0e0; --muted:#8b8b8b;
+  --blue:#4a9eff; --green:#4caf50; --red:#e53935; --orange:#ff9800;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+  font-family:var(--ui); -webkit-font-smoothing:antialiased;
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation; overscroll-behavior:none;
+}
+#app { position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; }
+#app > * { position:absolute; }
+
+/* Header — a real flex row. Allocation, never overlap. Margin, not gap. */
+.hdr { display:flex; align-items:center; overflow:hidden; }
+.hdr > * { margin-left:.5em; }
+.hdr > :first-child { margin-left:0; }
+.ev { color:var(--text); font-weight:700; letter-spacing:.02em; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis; flex:0 1 auto; min-width:0; }
+.chip { font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap;
+        padding:.18em .5em; border:1px solid var(--border); color:var(--muted); flex:none;
+        background:none; }
+.chip.on { border-color:var(--green); color:var(--green); }
+.chip.off { border-color:var(--red); color:var(--red); }
+.dot { font-size:.8em; margin-right:.35em; color:var(--green); }
+.chip.relax .dot { color:var(--orange); }
+.chip.stale { border-color:var(--red); color:var(--red); }
+.chip.stale .dot { color:var(--red); }
+button.chip { cursor:pointer; font-size:inherit; }
+
+.tune-btn { font-family:var(--mono); background:none; color:var(--muted);
+  border:1px solid var(--border); cursor:pointer; line-height:1; flex:none;
+  display:flex; align-items:center; justify-content:center; padding:0; }
+.tune-btn:active { color:var(--blue); border-color:var(--blue); }
+
+/* Live-name strip — merged to one when H and V match, split when they differ. */
+.mon-name { display:flex; align-items:center; justify-content:flex-end; overflow:hidden;
+  white-space:nowrap; min-width:0; flex:1 1 0; height:100%;
+  border-bottom:2px solid var(--border); padding-bottom:.1em; }
+.mon-name .ttl { letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+  flex:none; margin-right:.45em; }
+.mon-name .val { font-weight:700; color:var(--text); letter-spacing:.01em;
+  overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.mon-name.live { border-bottom-color:var(--red); }
+.mon-name.live .val { color:var(--red); }
+.mon-name .val.none { color:#555; font-weight:400; }
+
+.powerbar { background:var(--red); color:#fff; font-weight:700; display:flex;
+  align-items:center; justify-content:center; letter-spacing:.04em; cursor:pointer;
+  border:none; font-family:inherit; text-align:center; padding:0 .6em; z-index:10;
+  animation:pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity:.45; } }
+@media (prefers-reduced-motion: reduce) { .powerbar { animation:none; } }
+
+.mon { background:#000; border:1px solid var(--border); overflow:hidden; cursor:zoom-in; }
+.mon .stage { position:absolute; top:0; left:0; overflow:hidden; transform-origin:top left; }
+.mon img, #mag img { position:absolute; transform-origin:center center; }
+.mon .ph { position:absolute; top:0; left:0; width:100%; height:100%; display:flex;
+  align-items:center; justify-content:center; font-family:var(--mono); font-size:10px;
+  letter-spacing:.18em; color:#444; }
+
+.tiles { display:grid; }
+.tile { background:var(--surf); border:2px solid var(--border); color:var(--text);
+  font:inherit; cursor:pointer; position:relative; display:block; overflow:hidden;
+  text-align:left; }
+.tile:active { background:var(--surf3); }
+.tile .nm { display:block; font-weight:700; line-height:1.12; letter-spacing:.01em;
+  overflow:hidden; overflow-wrap:break-word; }
+.tile.clear .nm { display:flex; align-items:center; justify-content:center; text-align:center; }
+.tile .badge { position:absolute; font-family:var(--mono); letter-spacing:.09em;
+  color:var(--muted); display:flex; align-items:center; white-space:nowrap; overflow:hidden; }
+.badge .pip { width:.62em; height:.62em; background:#3a3a3a; border-radius:50%;
+  flex:none; margin-right:.5em; }
+.tile.onair { border-color:var(--red); background:#2a1414; }
+.tile.onair .pip { background:var(--red); }
+.tile.onair .badge { color:var(--red); }
+.tile.firing { border-color:var(--orange); background:#2a2014; }
+.tile.firing .pip { background:var(--orange); }
+.tile.firing .badge { color:var(--orange); }
+.tile.clear { background:var(--surf2); }
+.tile.clear .nm { color:var(--muted); }
+
+#scrim { z-index:29; background:rgba(0,0,0,.45); display:none; }
+#scrim.show { display:block; }
+#tune { z-index:30; background:rgba(18,18,18,.94); border:1px solid var(--blue);
+  display:none; flex-direction:column; justify-content:center;
+  box-shadow:0 10px 40px rgba(0,0,0,.7); }
+#tune.show { display:flex; }
+#tune > * { margin-top:.55em; }
+#tune > :first-child { margin-top:0; }
+#tune .lbl { display:flex; justify-content:space-between; align-items:baseline;
+  font-size:.8em; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+#tune .lbl b { color:var(--blue); font-family:var(--mono); font-weight:700; letter-spacing:0; }
+#tune input[type=range] { width:100%; display:block; margin:0; }
+#tune .foot { display:flex; justify-content:space-between; align-items:center; }
+#tune .diag { font-family:var(--mono); font-size:.66em; color:var(--muted);
+  letter-spacing:.05em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  flex:1 1 auto; min-width:0; }
+#tune button { font:inherit; font-size:.76em; background:var(--surf2); color:var(--text);
+  border:1px solid var(--border); padding:.4em .9em; cursor:pointer; flex:none; margin-left:.6em; }
+
+#mag { position:absolute; top:0; left:0; width:100%; height:100%; background:#000;
+  z-index:40; display:none; cursor:zoom-out; }
+#mag.show { display:block; }
+#mag .stage { position:absolute; overflow:hidden; transform-origin:top left; }
+#mag .hint { position:absolute; bottom:8px; left:0; width:100%; text-align:center;
+  font-family:var(--mono); font-size:10px; color:#666; letter-spacing:.1em; }
+
+/* Login */
+#login { position:absolute; top:0; left:0; width:100%; height:100%; z-index:50;
+  background:var(--bg); display:none; align-items:center; justify-content:center; padding:20px; }
+#login.show { display:flex; }
+#login .box { width:100%; max-width:420px; }
+#login h1 { font-size:19px; margin-bottom:4px; letter-spacing:.01em; }
+#login p { font-size:13px; color:var(--muted); margin-bottom:16px; line-height:1.5; }
+#login label { display:block; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:5px; margin-top:12px; }
+#login input { width:100%; padding:12px; background:var(--surf); color:var(--text);
+  border:1px solid var(--border); font:inherit; font-size:16px; }
+#login input:focus { outline:none; border-color:var(--blue); }
+#login .go { width:100%; margin-top:16px; padding:14px; background:var(--blue);
+  color:#06121f; border:none; font:inherit; font-weight:700; font-size:16px; cursor:pointer; }
+#login .err { color:var(--red); font-size:13px; margin-top:10px; min-height:1em; }
+
+#toast { position:absolute; left:50%; z-index:60; background:var(--surf3);
+  border:1px solid var(--border); color:var(--text); padding:.5em 1em; font-size:13px;
+  white-space:nowrap; display:none; }
+#toast.show { display:block; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr" id="hdr">
+    <span class="ev" id="ev">—</span>
+    <button type="button" class="chip on" id="chip-power">&#9211; ON</button>
+    <span class="chip" id="chip-age"><span class="dot">&#9679;</span><span id="age-val">—</span></span>
+    <div class="mon-name" id="name-h"><span class="ttl">H</span><span class="val none">—</span></div>
+    <div class="mon-name" id="name-v"><span class="ttl">V</span><span class="val none">—</span></div>
+    <button type="button" class="tune-btn" id="tune-btn" title="Adjust layout">&#8691;</button>
+  </div>
+  <div class="hdr" id="hdr2"></div>
+
+  <button type="button" class="powerbar" id="powerbar" hidden>&#9211; POWER OFF — nothing reaches vMix &middot; tap to switch on</button>
+
+  <div class="mon" id="mon-h"><div class="stage"><img alt=""></div><div class="ph">NO SIGNAL</div></div>
+  <div class="mon" id="mon-v"><div class="stage"><img alt=""></div><div class="ph">NO SIGNAL</div></div>
+
+  <div class="tiles" id="tiles"></div>
+  <button type="button" class="tile clear" id="clear"><span class="nm">CLEAR ALL</span></button>
+
+  <div id="scrim"></div>
+  <div id="tune">
+    <div class="lbl"><span id="tune-text">Layout</span><b id="tune-val">default</b></div>
+    <input type="range" id="tune-range" min="0" max="100" step="1" value="0" aria-label="Layout balance">
+    <div class="foot">
+      <span class="diag" id="tune-diag">—</span>
+      <button type="button" id="tune-reset">Reset</button>
+      <button type="button" id="tune-done">Done</button>
+    </div>
+  </div>
+
+  <div id="mag"><div class="stage"><img alt=""></div><div class="hint">tap anywhere to close</div></div>
+
+  <div id="login">
+    <div class="box">
+      <h1>OH Operator</h1>
+      <p>Recall saved layouts and watch the live QR outputs. The API key is the same one the gallery uses and is kept for this browser tab only.</p>
+      <label for="lg-event">Event</label>
+      <input type="text" id="lg-event" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label for="lg-key">API key</label>
+      <input type="password" id="lg-key" autocomplete="current-password">
+      <button type="button" class="go" id="lg-go">Open</button>
+      <div class="err" id="lg-err"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var WORKER_DEFAULT = 'https://adp-show-graphics.mohn-edgar.workers.dev';
+  var RES_FALLBACK = { h: { w: 1920, h: 1080 }, v: { w: 1080, h: 1920 } };
+  var LAYERS = ['graphics', 'bugs'];
+
+  function mk(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt !== undefined) n.textContent = txt;
+    return n;
+  }
+  function empty(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function store(o, k, v) { try { if (v === undefined) return o.getItem(k); o.setItem(k, v); } catch (e) { return null; } }
+
+  // ── Element table + startup assertion ─────────────────────────────────────
+  // A missing id used to throw mid-layout and leave a half-drawn surface. On a
+  // tablet there is no console, so that failure was unexplainable. Fail loudly.
+  var el = {}, MISSING = [];
+  ['app', 'hdr', 'hdr2', 'ev', 'chip-power', 'chip-age', 'age-val', 'name-h', 'name-v',
+   'tune-btn', 'powerbar', 'mon-h', 'mon-v', 'tiles', 'clear', 'scrim', 'tune',
+   'tune-range', 'tune-val', 'tune-text', 'tune-diag', 'tune-reset', 'tune-done',
+   'mag', 'login', 'lg-event', 'lg-key', 'lg-go', 'lg-err', 'toast']
+    .forEach(function (id) {
+      el[id] = document.getElementById(id);
+      if (!el[id]) MISSING.push(id);
+    });
+
+  function fatal(msg) {
+    var b = mk('div', null, 'OPERATOR VIEW ERROR — ' + msg);
+    b.style.cssText = 'position:absolute;left:0;top:0;width:100%;padding:10px 14px;' +
+      'background:#e53935;color:#fff;font:700 13px/1.4 monospace;z-index:999;white-space:normal';
+    (el.app || document.body).appendChild(b);
+  }
+  if (MISSING.length) fatal('missing elements: ' + MISSING.join(', '));
+
+  // ── Config ────────────────────────────────────────────────────────────────
+  var params = new URLSearchParams(window.location.search);
+  var WORKER = store(window.localStorage, 'adp_worker') || WORKER_DEFAULT;
+  var EVENT = params.get('event') || store(window.localStorage, 'adp_event') || 'default';
+  var API_KEY = store(window.sessionStorage, 'adp_key') || '';   // tab-scoped, as gallery.html
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  var st = {
+    power: true,
+    slots: { graphics: { h: null, v: null }, bugs: { h: null, v: null } },
+    layouts: {}, order: [],
+    firing: null, firingUntil: 0,
+    lastOk: 0, failed: false, lastTouch: Date.now(),
+    poll: 2000, timer: null, booted: false
+  };
+  var tune = { landscape: 0, portrait: 0 };
+  try {
+    var sv = JSON.parse(store(window.localStorage, 'adp_op_tune') || 'null');
+    if (sv && typeof sv.landscape === 'number' && typeof sv.portrait === 'number') tune = sv;
+  } catch (e) {}
+  function saveTune() { store(window.localStorage, 'adp_op_tune', JSON.stringify(tune)); }
+  function orientKey() { return el.app.clientWidth >= el.app.clientHeight ? 'landscape' : 'portrait'; }
+
+  // Only records the interaction. It deliberately does NOT poll immediately —
+  // otherwise every tap would cost a request. The next scheduled poll picks up
+  // the shorter interval on its own; an explicit action calls reschedule(true).
+  function markTouch() { st.lastTouch = Date.now(); }
+
+  function toast(msg) {
+    el.toast.textContent = msg;
+    el.toast.className = 'show';
+    window.clearTimeout(el.toast._t);
+    el.toast._t = window.setTimeout(function () { el.toast.className = ''; }, 2600);
+  }
+
+  // ── Worker ────────────────────────────────────────────────────────────────
+  function url(path) { return WORKER + path + (path.indexOf('?') < 0 ? '?' : '&') + 'event=' + encodeURIComponent(EVENT); }
+
+  function getStatus() {
+    return window.fetch(url('/status'), { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('status ' + r.status);
+      return r.json();
+    });
+  }
+  function getLayouts() {
+    return window.fetch(url('/layouts'), { headers: { 'X-API-Key': API_KEY } }).then(function (r) {
+      if (r.status === 401) throw new Error('unauthorized');
+      if (!r.ok) throw new Error('layouts ' + r.status);
+      return r.json();
+    });
+  }
+  function trigger(q) {
+    return window.fetch(WORKER + '/trigger?' + q + '&event=' + encodeURIComponent(EVENT) +
+      '&apikey=' + encodeURIComponent(API_KEY), { cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error('trigger ' + r.status);
+        return r.json();
+      });
+  }
+
+  // ── Polling ───────────────────────────────────────────────────────────────
+  // Adaptive: fast right after an action, relaxed while merely watching, paused
+  // when hidden. A confidence monitor must never stop while it is on screen, so
+  // there is no full pause while visible — only a slower beat, and the age chip
+  // always says how current the picture is.
+  function interval() {
+    var idle = Date.now() - st.lastTouch;
+    if (st.failed) return 1500;
+    if (idle < 10000) return 1000;
+    if (idle < 60000) return 2000;
+    return 5000;
+  }
+  function reschedule(immediate) {
+    if (st.timer) { window.clearTimeout(st.timer); st.timer = null; }
+    if (document.hidden) return;
+    st.poll = interval();
+    st.timer = window.setTimeout(poll, immediate ? 0 : st.poll);
+  }
+  function poll() {
+    // Two-argument then() rather than .catch/.finally — one continuation that
+    // always runs, so the next poll is scheduled after this one resolves and
+    // requests can never stack up.
+    getStatus().then(function (data) {
+      st.failed = false;
+      st.lastOk = Date.now();
+      st.power = data.power !== false;
+      LAYERS.forEach(function (L) {
+        ['h', 'v'].forEach(function (s) {
+          st.slots[L][s] = (data[L] && data[L][s]) ? data[L][s] : null;
+        });
+      });
+      paintAll();
+    }, function () {
+      st.failed = true;
+      paintAge();
+    }).then(function () { reschedule(false); }, function () { reschedule(false); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (st.timer) { window.clearTimeout(st.timer); st.timer = null; } }
+    else { markTouch(); }
+  });
+
+  // ── Slot helpers ──────────────────────────────────────────────────────────
+  function resOf(slot) {
+    var s = st.slots.bugs[slot] || st.slots.graphics[slot];
+    return (s && s.resolution) ? s.resolution : RES_FALLBACK[slot];
+  }
+  function liveBug(slot) {
+    var s = st.slots.bugs[slot];
+    return (s && s.key && s.live && st.power) ? s : null;
+  }
+
+  // A layout is on air for a slot when every layer it defines for that slot is
+  // loaded, live, and carrying a matching key — the same rule /layouts-status
+  // applies server-side, computed locally so no extra request is needed.
+  function layoutOnAir(layout, slot) {
+    var any = false;
+    for (var i = 0; i < LAYERS.length; i++) {
+      var want = layout[LAYERS[i]] && layout[LAYERS[i]][slot] && layout[LAYERS[i]][slot].key;
+      if (!want) continue;
+      any = true;
+      var cur = st.slots[LAYERS[i]][slot];
+      if (!cur || cur.key !== want || !cur.live) return false;
+    }
+    return any && st.power;
+  }
+
+  // ── Recall ────────────────────────────────────────────────────────────────
+  function fire(id) {
+    if (!API_KEY) { showLogin('An API key is needed to recall layouts.'); return; }
+    markTouch();
+    st.firing = id || 'clear';
+    st.firingUntil = Date.now() + 4000;
+    paintTiles();
+    var q = id
+      ? 'action=layout&layout=' + encodeURIComponent(id) + '&live=true&exclusive=bugs'
+      : 'action=clear&layer=bugs&slot=both';
+    trigger(q).then(function () {
+      reschedule(true);   // confirm immediately; paintAll clears FIRING on proof
+    })['catch'](function (e) {
+      st.firing = null;
+      paintTiles();
+      toast(String(e.message || e) === 'trigger 401' ? 'API key rejected' : 'Recall failed — check connection');
+    });
+  }
+
+  // ── Monitor rendering ─────────────────────────────────────────────────────
+  // CRITICAL: this replicates graphic-h.html / bug-h.html's transform block in
+  // full — not only the contain-fit. Position comes from the slot's x/y/scale/
+  // rotate/fit, not from the image: the same PNG sits in both slots at different
+  // positions. Applying only the fit puts every positioned graphic in the wrong
+  // place while looking entirely plausible.
+  // Keep in sync with bug-h.html's poll() render block.
+  function applySlot(img, slot, state, res) {
+    img.style.width = res.w + 'px';
+    img.style.height = res.h + 'px';
+    var sc = (state.scale === undefined ? 100 : state.scale) / 100;
+    var rot = state.rotate || 0;
+    if (state.fit === 'cover') {
+      img.style.objectFit = 'cover';
+      img.style.transform = 'scale(' + Math.max(sc, 1) + ') rotate(' + rot + 'deg)';
+      img.style.left = '0'; img.style.top = '0';
+    } else {
+      img.style.objectFit = 'contain';
+      img.style.transform = 'translate(-50%, -50%) scale(' + sc + ') rotate(' + rot + 'deg)';
+      img.style.left = (state.x === undefined ? 50 : state.x) + '%';
+      img.style.top = (state.y === undefined ? 50 : state.y) + '%';
+    }
+  }
+
+  function renderMon(box, slot) {
+    var stage = box.querySelector('.stage'), img = stage.querySelector('img');
+    var ph = box.querySelector('.ph');
+    var res = resOf(slot);
+    stage.style.width = res.w + 'px';
+    stage.style.height = res.h + 'px';
+    stage.style.transform = 'scale(' + Math.min(box.clientWidth / res.w, box.clientHeight / res.h) + ')';
+    var state = liveBug(slot);
+    if (state) {
+      var src = WORKER + '/img/' + encodeURIComponent(state.key);
+      if (img.getAttribute('src') !== src) img.src = src;   // only on change — no reflash
+      img.style.display = '';
+      applySlot(img, slot, state, res);
+      ph.style.display = 'none';
+    } else {
+      img.removeAttribute('src');
+      img.style.display = 'none';
+      ph.style.display = '';
+      ph.textContent = st.power ? 'NO SIGNAL' : 'POWER OFF';
+    }
+  }
+
+  // ── Crop-to-content magnify ───────────────────────────────────────────────
+  // The live graphic is a small object inside a large frame (24–32% scale in
+  // practice), so filling the screen with the whole 16:9 frame leaves the QR
+  // caption unreadable on a tablet. Zoom to the graphic's own bounding box
+  // instead — computed exactly from x/y/scale/fit and the source dimensions.
+  function contentRect(state, res, natW, natH) {
+    var sc = (state.scale === undefined ? 100 : state.scale) / 100;
+    var rot = ((state.rotate || 0) % 360) * Math.PI / 180;
+    var w, h, cx, cy;
+    if (state.fit === 'cover') {
+      w = res.w * Math.max(sc, 1); h = res.h * Math.max(sc, 1);
+      cx = res.w / 2; cy = res.h / 2;
+    } else {
+      var k = (natW && natH) ? Math.min(res.w / natW, res.h / natH) : 1;
+      w = (natW ? natW * k : res.w) * sc;
+      h = (natH ? natH * k : res.h) * sc;
+      cx = (state.x === undefined ? 50 : state.x) / 100 * res.w;
+      cy = (state.y === undefined ? 50 : state.y) / 100 * res.h;
+    }
+    var c = Math.abs(Math.cos(rot)), s2 = Math.abs(Math.sin(rot));
+    return { cx: cx, cy: cy, w: w * c + h * s2, h: w * s2 + h * c };
+  }
+
+  function magnify(slot) {
+    var state = liveBug(slot);
+    if (!state) return;
+    markTouch();
+    var res = resOf(slot);
+    var stage = el.mag.querySelector('.stage'), img = stage.querySelector('img');
+    var srcImg = el['mon-' + slot].querySelector('img');
+    var natW = srcImg.naturalWidth || 0, natH = srcImg.naturalHeight || 0;
+    var W = el.app.clientWidth, H = el.app.clientHeight;
+
+    stage.style.width = res.w + 'px';
+    stage.style.height = res.h + 'px';
+    var src = WORKER + '/img/' + encodeURIComponent(state.key);
+    if (img.getAttribute('src') !== src) img.src = src;
+    applySlot(img, slot, state, res);
+
+    var r = contentRect(state, res, natW, natH);
+    // Fall back to the whole frame if the source has not reported its size yet.
+    var bw = (r.w > 4 ? r.w : res.w), bh = (r.h > 4 ? r.h : res.h);
+    var zoom = Math.min(W / bw, H / bh) * 0.94;
+    stage.style.transform = 'scale(' + zoom + ')';
+    stage.style.left = Math.round(W / 2 - r.cx * zoom) + 'px';
+    stage.style.top = Math.round(H / 2 - r.cy * zoom) + 'px';
+    el.mag.className = 'show';
+  }
+  el['mon-h'].onclick = function () { magnify('h'); };
+  el['mon-v'].onclick = function () { magnify('v'); };
+  el.mag.onclick = function () { el.mag.className = ''; markTouch(); };
+
+  // ── Type fitting — measured, not estimated ────────────────────────────────
+  var UI_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  var MONO_STACK = 'ui-monospace, Menlo, Consolas, monospace';
+  var mctx = document.createElement('canvas').getContext('2d');
+  function wrapLines(text, maxW) {
+    var words = String(text).split(/\s+/), lines = [], cur = '';
+    for (var i = 0; i < words.length; i++) {
+      var t = cur ? cur + ' ' + words[i] : words[i];
+      if (!cur || mctx.measureText(t).width <= maxW) cur = t;
+      else { lines.push(cur); cur = words[i]; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function fitText(texts, boxW, boxH, maxLines, cap, stack, weight) {
+    stack = stack || UI_STACK; weight = weight || 700;
+    if (boxW < 12 || boxH < 10 || !texts.length) return 8;
+    var lo = 8, hi = Math.max(8, Math.floor(cap)), best = 8, safeW = boxW * 0.97;
+    while (lo <= hi) {
+      var mid = (lo + hi) >> 1;
+      mctx.font = weight + ' ' + mid + 'px ' + stack;
+      var ok = true;
+      for (var i = 0; i < texts.length && ok; i++) {
+        var lines = wrapLines(texts[i], safeW);
+        if (lines.length > maxLines) { ok = false; break; }
+        if (lines.length * mid * 1.14 > boxH) { ok = false; break; }
+        for (var j = 0; j < lines.length; j++) {
+          if (mctx.measureText(lines[j]).width > safeW) { ok = false; break; }
+        }
+      }
+      if (ok) { best = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    return best;
+  }
+
+  function bestGrid(n, w, h, gap) {
+    var best = null;
+    for (var c = 1; c <= n; c++) {
+      var r = Math.ceil(n / c);
+      var tw = (w - gap * (c - 1)) / c, th = (h - gap * (r - 1)) / r;
+      if (tw <= 0 || th <= 0) continue;
+      var sc = Math.abs(Math.log((tw / th) / 1.5)) + (c * r - n) * 0.16;
+      if (!best || sc < best.score) best = { c: c, r: r, tw: tw, th: th, score: sc };
+    }
+    if (!best) best = { c: n, r: 1, tw: (w - gap * (n - 1)) / n, th: h };
+    return best;
+  }
+
+  // ── Arrangements ──────────────────────────────────────────────────────────
+  var AR_H = 16 / 9, AR_V = 9 / 16, SUM = AR_H + AR_V;
+
+  function archRow(m, b) {
+    var availW = m.innerW - m.GAP;
+    var vhEq = (availW * AR_V) / (1 + AR_V * AR_V);
+    var vH = Math.min(m.bodyH, vhEq + (m.bodyH - vhEq) * b);
+    var vW = vH * AR_V, hW = availW - vW, hH = hW * AR_V;
+    var maxHH = m.bodyH - m.GAP - m.minBand;
+    if (hH > maxHH) {
+      hH = maxHH; hW = hH * AR_H;
+      vW = Math.min(availW - hW, m.bodyH * AR_V); vH = vW * AR_H;
+    }
+    if (hW < 90 || hH < 50 || vW < 24) return null;
+    var tY = m.top + hH + m.GAP, tH = m.bodyH - hH - m.GAP;
+    if (tH < 50) return null;
+    var used = hW + m.GAP + vW;
+    var x0 = m.PAD + Math.max(0, (m.innerW - used) / 2);
+    var bandW = ((m.top + vH) > tY + 2) ? hW : used;
+    var cw = clamp(bandW * 0.14, 70, 240);
+    return {
+      name: 'row', label: 'H width ↔ V height',
+      h: { x: x0, y: m.top, w: hW, h: hH },
+      v: { x: x0 + hW + m.GAP, y: m.top, w: vW, h: vH },
+      t: { x: x0, y: tY, w: bandW - cw - m.GAP, h: tH },
+      cl: { x: x0 + bandW - cw, y: tY, w: cw, h: tH }
+    };
+  }
+
+  function archStack(m, b) {
+    var hW = m.innerW * (1 - 0.32 * b), hH = hW * AR_V;
+    var hX = m.PAD + (m.innerW - hW) / 2;
+    var rowY = m.top + hH + m.GAP;
+    var rowTotal = m.H - m.PAD - rowY;
+    if (rowTotal < 130) return null;
+    var ch = clamp(rowTotal * 0.17, 44, 150);
+    var rowH = rowTotal - ch - m.GAP;
+    if (rowH < 74) return null;
+    var vH = rowH, vW = vH * AR_V;
+    if (vW > m.innerW * 0.46) { vW = m.innerW * 0.46; vH = vW * AR_H; }
+    var tW = m.innerW - vW - m.GAP;
+    if (tW < 96) return null;
+    return {
+      name: 'stack', label: 'H monitor ↔ V & buttons',
+      h: { x: hX, y: m.top, w: hW, h: hH },
+      v: { x: m.PAD, y: rowY, w: vW, h: vH },
+      t: { x: m.PAD + vW + m.GAP, y: rowY, w: tW, h: rowH },
+      cl: { x: m.PAD, y: rowY + rowH + m.GAP, w: m.innerW, h: ch }
+    };
+  }
+
+  function archRail(m, b) {
+    var railW = clamp(m.innerW * (0.25 - 0.10 * b), m.unit * 3.4, m.innerW * 0.36);
+    var monW = m.innerW - railW - m.GAP;
+    if (monW < 200) return null;
+    var mh = Math.min(m.bodyH, (monW - m.GAP) / SUM);
+    var hW = mh * AR_H, vW = mh * AR_V;
+    if (hW < 90) return null;
+    var used = hW + m.GAP + vW;
+    var x0 = m.PAD + railW + m.GAP + Math.max(0, (monW - used) / 2);
+    var y0 = m.top + Math.max(0, (m.bodyH - mh) / 2);
+    var ch = clamp(m.bodyH * 0.16, 42, 140);
+    return {
+      name: 'rail', label: 'Buttons ↔ monitors',
+      h: { x: x0, y: y0, w: hW, h: mh },
+      v: { x: x0 + hW + m.GAP, y: y0, w: vW, h: mh },
+      t: { x: m.PAD, y: m.top, w: railW, h: m.bodyH - ch - m.GAP },
+      cl: { x: m.PAD, y: m.top + m.bodyH - ch, w: railW, h: ch }
+    };
+  }
+
+  // The weakest monitor dominates — a QR you cannot read is not half-useful.
+  function score(g, m, n) {
+    if (!g) return -1;
+    var sH = g.h.w / RES_FALLBACK.h.w, sV = g.v.w / RES_FALLBACK.v.w;
+    var s = Math.min(sH, sV) * 2 + (sH + sV) * 0.5;
+    var grid = bestGrid(Math.max(1, n), g.t.w, g.t.h, m.GAP);
+    if (Math.min(grid.tw, grid.th) < 44) s *= 0.35;
+    if (Math.min(g.cl.w, g.cl.h) < 34) s *= 0.6;
+    return s;
+  }
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  var geo = null, lastArch = null, layoutFailed = false;
+  var HYST = 1.06;
+
+  function metrics() {
+    var W = el.app.clientWidth, H = el.app.clientHeight;
+    var S = Math.min(W, H);
+    var PAD = clamp(Math.round(S * 0.012), 5, 30);
+    var unit = clamp(Math.round(S * 0.046), 20, 86);
+    var twoRow = W < 560;
+    var headH = twoRow ? unit * 2 + 6 : unit;
+    var m = { W: W, H: H, S: S, PAD: PAD, GAP: PAD, unit: unit, twoRow: twoRow,
+              headH: headH, innerW: W - PAD * 2, top: PAD + headH + PAD };
+    m.bodyH = H - m.top - PAD;
+    m.minBand = clamp(S * 0.10, 56, 190);
+    return m;
+  }
+
+  function layout() {
+    try { layoutInner(); }
+    catch (err) {
+      if (!layoutFailed) {
+        layoutFailed = true;
+        fatal('layout: ' + ((err && err.message) ? err.message : String(err)));
+      }
+    }
+  }
+
+  function layoutInner() {
+    var m = metrics();
+    if (m.innerW < 80 || m.bodyH < 80) return;
+    var n = Math.max(1, st.order.length);
+    var b = tune[orientKey()] / 100;
+
+    // Arrangement is chosen at NEUTRAL balance so the operator's slider can
+    // never make the whole layout jump to a different arrangement mid-drag.
+    var makers = { row: archRow, stack: archStack, rail: archRail };
+    var scored = ['row', 'stack', 'rail'].map(function (k) {
+      return { k: k, s: score(makers[k](m, 0), m, n) };
+    }).sort(function (a, z) { return z.s - a.s; });
+
+    var win = scored[0];
+    if (lastArch && lastArch !== win.k) {
+      var inc = null;
+      scored.forEach(function (x) { if (x.k === lastArch) inc = x; });
+      if (inc && inc.s > 0 && win.s < inc.s * HYST) win = inc;
+    }
+    var g = makers[win.k](m, b) || makers[win.k](m, 0) ||
+            archStack(m, 0) || archRow(m, 0) || archRail(m, 0);
+    if (!g) return;
+    lastArch = g.name;
+
+    // Header
+    place(el.hdr, { x: m.PAD, y: m.PAD, w: m.innerW, h: m.twoRow ? m.unit : m.headH });
+    var host = el.hdr;
+    if (m.twoRow) {
+      place(el.hdr2, { x: m.PAD, y: m.PAD + m.unit + 6, w: m.innerW, h: m.unit });
+      host = el.hdr2;
+    }
+    el.hdr2.style.display = m.twoRow ? 'flex' : 'none';
+    if (el['name-h'].parentNode !== host) {
+      host.appendChild(el['name-h']);
+      host.appendChild(el['name-v']);
+      (m.twoRow ? el.hdr : host).appendChild(el['tune-btn']);
+    }
+    el.ev.style.display = (m.W < 760 || m.twoRow) ? 'none' : '';
+    el.hdr.style.fontSize = Math.max(10, Math.round(m.unit * 0.44)) + 'px';
+    el.hdr2.style.fontSize = el.hdr.style.fontSize;
+    el['tune-btn'].style.width = Math.round(m.unit * 1.15) + 'px';
+    el['tune-btn'].style.height = Math.round(m.unit * 0.86) + 'px';
+    el['tune-btn'].style.fontSize = Math.max(11, Math.round(m.unit * 0.5)) + 'px';
+    [el['name-h'], el['name-v']].forEach(function (nd) {
+      nd.style.fontSize = Math.max(10, Math.round(m.unit * 0.52)) + 'px';
+      nd.querySelector('.ttl').style.fontSize = Math.max(8, Math.round(m.unit * 0.30)) + 'px';
+    });
+
+    place(el['mon-h'], g.h);
+    place(el['mon-v'], g.v);
+    place(el.tiles, g.t);
+    place(el.clear, g.cl);
+    place(el.scrim, { x: 0, y: 0, w: m.W, h: m.H });
+
+    el.powerbar.style.left = m.PAD + 'px';
+    el.powerbar.style.top = Math.round(m.top - m.GAP / 2) + 'px';
+    el.powerbar.style.width = m.innerW + 'px';
+    el.powerbar.style.height = Math.round(m.unit * 1.3) + 'px';
+    el.powerbar.style.fontSize = Math.max(9, Math.round(m.unit * 0.36)) + 'px';
+
+    var pw = clamp(m.W * 0.56, 240, 660), ph = clamp(m.unit * 5.4, 150, 320);
+    place(el.tune, { x: (m.W - pw) / 2, y: (m.H - ph) / 2, w: pw, h: ph });
+    el.tune.style.padding = Math.round(m.unit * 0.42) + 'px ' + Math.round(m.unit * 0.55) + 'px';
+    el.tune.style.fontSize = Math.max(11, Math.round(m.unit * 0.44)) + 'px';
+    el.toast.style.bottom = Math.round(m.PAD * 2) + 'px';
+    el.toast.style.marginLeft = '-120px';
+
+    // Tiles — internals in explicit pixels, type measured to fit.
+    var grid = bestGrid(n, g.t.w, g.t.h, m.GAP);
+    el.tiles.style.gap = m.GAP + 'px';
+    el.tiles.style.gridTemplateColumns = 'repeat(' + grid.c + ', 1fr)';
+    el.tiles.style.gridAutoRows = '1fr';
+    var BORD = 4;
+    var tPad = clamp(Math.round(Math.min(grid.tw, grid.th) * 0.075), 4, 18);
+    var bF = clamp(Math.round(grid.th * 0.115), 8, 20);
+    bF = Math.min(bF, fitText(['ON AIR H·V'], grid.tw - BORD - tPad * 2, bF * 1.4, 1, bF, MONO_STACK, 400));
+    var bH = Math.round(bF * 1.45);
+    var nameW = grid.tw - BORD - tPad * 2;
+    var nameH = grid.th - BORD - tPad * 2 - bH;
+    var names = st.order.map(function (id) { return (st.layouts[id] && st.layouts[id].name) || id; });
+    if (!names.length) names = ['NO LAYOUTS'];
+    var tf = fitText(names, nameW, nameH, 2, Math.round(m.S * 0.06));
+    Array.prototype.forEach.call(el.tiles.children, function (t) {
+      t.style.padding = tPad + 'px';
+      var nm = t.querySelector('.nm');
+      nm.style.width = nameW + 'px';
+      nm.style.height = Math.max(0, nameH) + 'px';
+      nm.style.fontSize = tf + 'px';
+      var bd = t.querySelector('.badge');
+      if (bd) {
+        bd.style.left = tPad + 'px'; bd.style.right = tPad + 'px';
+        bd.style.bottom = tPad + 'px'; bd.style.fontSize = bF + 'px';
+      }
+    });
+
+    var cPad = clamp(Math.round(Math.min(g.cl.w, g.cl.h) * 0.08), 4, 18);
+    var cW = g.cl.w - BORD - cPad * 2, cH = g.cl.h - BORD - cPad * 2;
+    var cnm = el.clear.querySelector('.nm');
+    el.clear.style.padding = cPad + 'px';
+    cnm.style.width = Math.max(0, cW) + 'px';
+    cnm.style.height = Math.max(0, cH) + 'px';
+    cnm.style.fontSize = fitText(['CLEAR ALL'], cW, cH, 2, Math.round(m.S * 0.05)) + 'px';
+
+    geo = { g: g, grid: grid, m: m };
+    syncTune();
+    renderMon(el['mon-h'], 'h');
+    renderMon(el['mon-v'], 'v');
+  }
+
+  function place(node, r) {
+    node.style.left = Math.round(r.x) + 'px';
+    node.style.top = Math.round(r.y) + 'px';
+    node.style.width = Math.max(0, Math.round(r.w)) + 'px';
+    node.style.height = Math.max(0, Math.round(r.h)) + 'px';
+  }
+
+  // ── Painting ──────────────────────────────────────────────────────────────
+  function paintAll() {
+    // Hold the FIRING state until the server confirms the change (or it times
+    // out), so a tap never flickers back to idle while the round trip finishes.
+    if (st.firing) {
+      var done;
+      if (st.firing === 'clear') done = !liveBug('h') && !liveBug('v');
+      else {
+        var lay = st.layouts[st.firing];
+        done = !!lay && (layoutOnAir(lay, 'h') || layoutOnAir(lay, 'v'));
+      }
+      if (done || Date.now() > st.firingUntil) st.firing = null;
+    }
+    paintPower();
+    paintNames();
+    paintTiles();
+    paintAge();
+    renderMon(el['mon-h'], 'h');
+    renderMon(el['mon-v'], 'v');
+  }
+
+  function paintPower() {
+    el.powerbar.hidden = st.power;
+    el['chip-power'].textContent = st.power ? '⏻ ON' : '⏻ OFF';
+    el['chip-power'].className = 'chip ' + (st.power ? 'on' : 'off');
+  }
+
+  function setStrip(node, ttl, state) {
+    var v = node.querySelector('.val');
+    node.querySelector('.ttl').textContent = ttl;
+    if (state) {
+      v.textContent = '▸ ' + (state.name || state.key);
+      v.className = 'val';
+      node.className = 'mon-name live';
+    } else {
+      v.textContent = st.power ? '— clear —' : '— power off —';
+      v.className = 'val none';
+      node.className = 'mon-name';
+    }
+  }
+  function paintNames() {
+    var h = liveBug('h'), v = liveBug('v');
+    var merged = h && v && h.key === v.key;
+    el['name-v'].style.display = merged ? 'none' : '';
+    setStrip(el['name-h'], merged ? 'H·V' : 'H', h);
+    if (!merged) setStrip(el['name-v'], 'V', v);
+  }
+
+  function buildTiles() {
+    empty(el.tiles);
+    st.order.forEach(function (id) {
+      var lay = st.layouts[id];
+      if (!lay) return;
+      var b = mk('button', 'tile');
+      b.type = 'button';
+      b.setAttribute('data-id', id);
+      b.appendChild(mk('span', 'nm', lay.name || id));
+      var badge = mk('span', 'badge');
+      badge.appendChild(mk('span', 'pip'));
+      badge.appendChild(mk('span', 'st', ''));
+      b.appendChild(badge);
+      b.onclick = function () { fire(id); };
+      el.tiles.appendChild(b);
+    });
+    if (!st.order.length) {
+      var ph = mk('button', 'tile');
+      ph.type = 'button';
+      ph.appendChild(mk('span', 'nm', API_KEY ? 'NO SAVED LAYOUTS' : 'SIGN IN'));
+      ph.onclick = function () { showLogin(''); };
+      el.tiles.appendChild(ph);
+    }
+    layout();
+  }
+
+  function paintTiles() {
+    Array.prototype.forEach.call(el.tiles.children, function (t) {
+      var id = t.getAttribute('data-id');
+      if (!id) return;
+      var lay = st.layouts[id];
+      var cls = 'tile', txt = '';
+      if (st.firing === id) { cls += ' firing'; txt = 'FIRING…'; }
+      else if (lay) {
+        var oh = layoutOnAir(lay, 'h'), ov = layoutOnAir(lay, 'v');
+        if (oh || ov) {
+          cls += ' onair';
+          txt = 'ON AIR ' + (oh ? 'H' : '') + (oh && ov ? '·' : '') + (ov ? 'V' : '');
+        }
+      }
+      t.className = cls;
+      var s = t.querySelector('.st');
+      if (s) s.textContent = txt;
+    });
+  }
+
+  function paintAge() {
+    var secs = st.lastOk ? Math.round((Date.now() - st.lastOk) / 1000) : null;
+    el['age-val'].textContent = (secs === null) ? '—' : (secs + 's');
+    var cls = 'chip';
+    if (st.failed || (secs !== null && secs > 15)) cls += ' stale';
+    else if (st.poll >= 5000) cls += ' relax';
+    el['chip-age'].className = cls;
+  }
+  window.setInterval(paintAge, 1000);
+
+  // ── Tuning panel ──────────────────────────────────────────────────────────
+  function syncTune() {
+    var b = tune[orientKey()];
+    el['tune-range'].value = String(b);
+    el['tune-val'].textContent = b === 0 ? 'default' : String(b);
+    el['tune-text'].textContent = geo && geo.g ? geo.g.label : 'Layout';
+    el['tune-diag'].textContent = (geo && geo.g ? geo.g.name.toUpperCase() : '') +
+      ' · ' + orientKey() + ' · ' + EVENT + ' · poll ' + (st.poll / 1000).toFixed(1) + 's';
+  }
+  function openTune(on) {
+    el.tune.className = on ? 'show' : '';
+    el.scrim.className = on ? 'show' : '';
+    if (on) syncTune();
+  }
+  el['tune-btn'].onclick = function () { markTouch(); openTune(el.tune.className !== 'show'); };
+  el['tune-done'].onclick = function () { openTune(false); };
+  el.scrim.onclick = function () { openTune(false); };
+  el['tune-reset'].onclick = function () { tune[orientKey()] = 0; saveTune(); layout(); };
+  el['tune-range'].oninput = function () {
+    tune[orientKey()] = parseInt(el['tune-range'].value, 10);
+    saveTune(); layout();
+  };
+
+  // ── Power + clear ─────────────────────────────────────────────────────────
+  function setPower(on) {
+    if (!API_KEY) { showLogin('An API key is needed to switch power.'); return; }
+    markTouch();
+    trigger('action=power&on=' + (on ? 'true' : 'false')).then(function () {
+      st.power = on; paintAll(); reschedule(true);
+    })['catch'](function () { toast('Power switch failed'); });
+  }
+  el.powerbar.onclick = function () { setPower(true); };
+  el['chip-power'].onclick = function () { setPower(!st.power); };
+  el.clear.onclick = function () { fire(null); };
+
+  // ── Login ─────────────────────────────────────────────────────────────────
+  function showLogin(msg) {
+    el['lg-event'].value = EVENT;
+    el['lg-key'].value = '';
+    el['lg-err'].textContent = msg || '';
+    el.login.className = 'show';
+  }
+  el['lg-go'].onclick = function () {
+    var ev = (el['lg-event'].value || '').trim() || 'default';
+    var key = el['lg-key'].value || '';
+    if (!key) { el['lg-err'].textContent = 'Enter the API key.'; return; }
+    EVENT = ev; API_KEY = key;
+    store(window.localStorage, 'adp_event', EVENT);
+    store(window.sessionStorage, 'adp_key', API_KEY);
+    el['lg-err'].textContent = 'Checking…';
+    loadLayouts(true);
+  };
+  el['lg-key'].onkeydown = function (e) { if (e.key === 'Enter') el['lg-go'].click(); };
+
+  function loadLayouts(fromLogin) {
+    if (!API_KEY) { if (!fromLogin) showLogin(''); return; }
+    getLayouts().then(function (data) {
+      st.layouts = data.layouts || {};
+      st.order = (data.order || []).filter(function (id) { return !!st.layouts[id]; });
+      if (!st.order.length) {
+        st.order = Object.keys(st.layouts);
+      }
+      el.login.className = '';
+      el.ev.textContent = EVENT;
+      buildTiles();
+      paintAll();
+      reschedule(true);
+    })['catch'](function (e) {
+      if (String(e.message) === 'unauthorized') showLogin('That key was rejected.');
+      else if (fromLogin) el['lg-err'].textContent = 'Could not reach the Worker.';
+      else toast('Could not load layouts');
+    });
+  }
+
+  // ── Resize / rotation ─────────────────────────────────────────────────────
+  // iOS fires resize BEFORE the viewport settles after a rotation, so a single
+  // pass lands on stale numbers. Always follow up.
+  var raf = null;
+  function schedule() {
+    if (raf) window.cancelAnimationFrame(raf);
+    raf = window.requestAnimationFrame(function () { raf = null; layout(); });
+  }
+  window.addEventListener('resize', schedule);
+  window.addEventListener('orientationchange', function () {
+    schedule(); window.setTimeout(schedule, 200); window.setTimeout(schedule, 500);
+  });
+  ['touchstart', 'mousedown', 'keydown'].forEach(function (ev) {
+    document.addEventListener(ev, markTouch, true);
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  el.ev.textContent = EVENT;
+  buildTiles();
+  paintAll();
+  poll();
+  if (API_KEY) loadLayouts(false); else showLogin('');
+  st.booted = true;
+})();
+</script>
+</body>
+</html>

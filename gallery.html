@@ -42,6 +42,9 @@ body { background: var(--bg); color: var(--text); font: 17px/1.5 system-ui, sans
 #event-add-btn:hover { color: var(--text); border-color: var(--text); }
 #how-it-works-btn { background: none; border: 1px solid var(--blue); color: var(--blue); border-radius: 5px; padding: 6px 12px; cursor: pointer; font-size: 17px; font-weight: 600; }
 #how-it-works-btn:hover { background: rgba(74,158,255,.12); }
+/* Link to the reduced touch surface (operator.html) — iPad / phone / second screen */
+#operator-link { background: var(--blue); border: 1px solid var(--blue); color: #06121f; border-radius: 5px; padding: 6px 12px; cursor: pointer; font-size: 17px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+#operator-link:hover { filter: brightness(1.12); }
 #hdr .btn-sm { font-size: 15px; }
 .hdr-spacer { flex: 1; }
 #auth-status { font-size: 15px; color: var(--muted); }
@@ -756,6 +759,7 @@ body.hide-bug .sidebar-group.layer-gfx .mon-item-v .mon-iframe-wrap.portrait {
   <select id="event-sel" onchange="switchEvent(this.value)" title="Active Event"></select>
   <button id="event-add-btn" onclick="openEventModal()" title="Add Event">+ Event</button>
   <button id="how-it-works-btn" onclick="openHelp()" title="How it works">❓ How it works</button>
+  <a id="operator-link" href="operator.html" title="Touch surface for saved-layout recall — iPad, phone or second screen">🎛 Operator view</a>
   <div class="hdr-spacer"></div>
   <button class="btn btn-gray btn-sm" onclick="loadAll()">↺ Refresh</button>
   <button class="btn btn-gray btn-sm" onclick="openSettings()">⚙ Settings</button>
@@ -1684,11 +1688,20 @@ function api(method, path, body, isForm) {
 function renderEventSel() {
   const sel = document.getElementById('event-sel');
   sel.innerHTML = events.map(e => `<option value="${e.id}" ${e.id === currentEvent ? 'selected' : ''}>${e.name}</option>`).join('');
+  syncOperatorLink();
+}
+
+// Carry the active event into the operator view's URL, so the link (and any
+// bookmark made from it) opens the same event this gallery is driving.
+function syncOperatorLink() {
+  const a = document.getElementById('operator-link');
+  if (a) a.href = `operator.html?event=${encodeURIComponent(currentEvent)}`;
 }
 
 async function switchEvent(id) {
   currentEvent = id;
   localStorage.setItem('adp_event', id);   // persists across reloads — see the currentEvent init above
+  syncOperatorLink();
   [images, settings] = await Promise.all([
     api('GET', `/list?event=${currentEvent}`).then(r => r.json()),
     api('GET', `/settings?event=${currentEvent}`).then(r => r.json()),

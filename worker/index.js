@@ -3,7 +3,7 @@
 // v4: slot state + settings migrated from KV to R2 (globally strongly consistent)
 //     Worker Cache on /active and /status removed — no longer needed
 
-const VERSION    = 'v4.3';
+const VERSION    = 'v4.4';
 const LAYERS     = ['graphics', 'bugs'];
 const SLOTS_LIST = ['h', 'v'];
 
@@ -359,13 +359,34 @@ export default {
           if (!layout) return error('Layout not found', 404, origin);
           const doH = slot === 'h' || slot === 'both';
           const doV = slot === 'v' || slot === 'both';
+          const targets = [doH && 'h', doV && 'v'].filter(Boolean);
+
+          // `exclusive` (v4.4) — which layers this recall is allowed to CLEAR.
+          // Saved layouts store `null` for slots that were empty when saved
+          // (gallery.html saveLayout), and without this the action simply skips
+          // them, so residue from an earlier recall stays on air underneath.
+          // gallery.html's own recallLayout has always cleared them; this brings
+          // the trigger path in line, but scoped, so a one-tap QR recall from the
+          // operator view can never wipe a graphic the gallery operator put up.
+          //   exclusive=bugs      → clear only untouched bug slots  (operator.html)
+          //   exclusive=graphics  → clear only untouched graphic slots
+          //   exclusive=all       → clear every untouched slot (full snapshot recall)
+          //   omitted             → previous behaviour, clears nothing
+          const exclusive = url.searchParams.get('exclusive');
+          const exLayers = exclusive === 'all'
+            ? LAYERS
+            : (LAYERS.includes(exclusive) ? [exclusive] : []);
+
           const writes = [];
           for (const l of LAYERS) {
-            if (doH && layout[l]?.h) writes.push(writeSlot(env, event, l, 'h', { ...layout[l].h, live: goLive }));
-            if (doV && layout[l]?.v) writes.push(writeSlot(env, event, l, 'v', { ...layout[l].v, live: goLive }));
+            for (const s of targets) {
+              const entry = layout[l]?.[s];
+              if (entry?.key) writes.push(writeSlot(env, event, l, s, { ...entry, live: goLive }));
+              else if (exLayers.includes(l)) writes.push(writeSlot(env, event, l, s, null));
+            }
           }
           await Promise.all(writes);
-          return json({ ok: true, action: 'layout', id: layoutId, live: goLive, slots: [doH && 'h', doV && 'v'].filter(Boolean) }, 200, origin);
+          return json({ ok: true, action: 'layout', id: layoutId, live: goLive, exclusive: exclusive || null, slots: targets }, 200, origin);
         }
 
         case 'power': {
