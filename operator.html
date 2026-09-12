@@ -69,10 +69,18 @@ button.chip { cursor:pointer; font-size:inherit; }
 .mon-name.live .val { color:var(--red); }
 .mon-name .val.none { color:#555; font-weight:400; }
 
-.powerbar { background:var(--red); color:#fff; font-weight:700; display:flex;
+/* The UA rule [hidden]{display:none} loses to any author `display`, so a class
+   drives this instead of the attribute — the banner used to show permanently
+   because `.powerbar{display:flex}` silently beat `hidden`. */
+[hidden] { display:none !important; }
+.powerbar { background:var(--red); color:#fff; font-weight:700; display:none;
   align-items:center; justify-content:center; letter-spacing:.04em; cursor:pointer;
-  border:none; font-family:inherit; text-align:center; padding:0 .6em; z-index:10;
-  animation:pulse 1.4s ease-in-out infinite; }
+  border:none; font-family:inherit; text-align:center; padding:0 .6em; z-index:10; }
+.powerbar.show { display:flex; animation:pulse 1.4s ease-in-out infinite; }
+/* Asleep: the last picture is still on screen but is no longer being refreshed,
+   so it must not look live. */
+#app.asleep .mon { opacity:.30; }
+#app.asleep .tiles, #app.asleep .tile { opacity:.55; }
 @keyframes pulse { 50% { opacity:.45; } }
 @media (prefers-reduced-motion: reduce) { .powerbar { animation:none; } }
 
@@ -157,14 +165,14 @@ button.chip { cursor:pointer; font-size:inherit; }
   <div class="hdr" id="hdr">
     <span class="ev" id="ev">—</span>
     <button type="button" class="chip on" id="chip-power">&#9211; ON</button>
-    <span class="chip" id="chip-age"><span class="dot">&#9679;</span><span id="age-val">—</span></span>
+    <button type="button" class="chip" id="chip-age"><span class="dot">&#9679;</span><span id="age-val">—</span></button>
     <div class="mon-name" id="name-h"><span class="ttl">H</span><span class="val none">—</span></div>
     <div class="mon-name" id="name-v"><span class="ttl">V</span><span class="val none">—</span></div>
     <button type="button" class="tune-btn" id="tune-btn" title="Adjust layout">&#8691;</button>
   </div>
   <div class="hdr" id="hdr2"></div>
 
-  <button type="button" class="powerbar" id="powerbar" hidden>&#9211; POWER OFF — nothing reaches vMix &middot; tap to switch on</button>
+  <button type="button" class="powerbar" id="powerbar">&#9211; POWER OFF — nothing reaches vMix &middot; tap to switch on</button>
 
   <div class="mon" id="mon-h"><div class="stage"><img alt=""></div><div class="ph">NO SIGNAL</div></div>
   <div class="mon" id="mon-v"><div class="stage"><img alt=""></div><div class="ph">NO SIGNAL</div></div>
@@ -252,7 +260,7 @@ button.chip { cursor:pointer; font-size:inherit; }
     slots: { graphics: { h: null, v: null }, bugs: { h: null, v: null } },
     layouts: {}, order: [],
     firing: null, firingUntil: 0,
-    lastOk: 0, failed: false, lastTouch: Date.now(),
+    lastOk: 0, failed: false, lastTouch: Date.now(), sleeping: false,
     poll: 2000, timer: null, booted: false
   };
   var tune = { landscape: 0, portrait: 0 };
@@ -266,7 +274,11 @@ button.chip { cursor:pointer; font-size:inherit; }
   // Only records the interaction. It deliberately does NOT poll immediately —
   // otherwise every tap would cost a request. The next scheduled poll picks up
   // the shorter interval on its own; an explicit action calls reschedule(true).
-  function markTouch() { st.lastTouch = Date.now(); }
+  function markTouch() {
+    var wasAsleep = st.sleeping;
+    st.lastTouch = Date.now();
+    if (wasAsleep) reschedule(true);   // first touch after a sleep wakes it at once
+  }
 
   function toast(msg) {
     el.toast.textContent = msg;
@@ -304,6 +316,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   // when hidden. A confidence monitor must never stop while it is on screen, so
   // there is no full pause while visible — only a slower beat, and the age chip
   // always says how current the picture is.
+  var IDLE_SLEEP_MS = 300000;   // 5 min, matching gallery.html's idle-pause
   function interval() {
     var idle = Date.now() - st.lastTouch;
     if (st.failed) return 1500;
@@ -311,11 +324,25 @@ button.chip { cursor:pointer; font-size:inherit; }
     if (idle < 60000) return 2000;
     return 5000;
   }
+  function idleFor() { return Date.now() - st.lastTouch; }
   function reschedule(immediate) {
     if (st.timer) { window.clearTimeout(st.timer); st.timer = null; }
     if (document.hidden) return;
+    // Free-tier saver: a forgotten panel costs nothing. Polling stops entirely
+    // after 5 minutes untouched and wakes on the first interaction. The monitors
+    // dim at the same time — a picture that is no longer being refreshed must
+    // not keep looking live.
+    if (idleFor() > IDLE_SLEEP_MS) {
+      if (!st.sleeping) { st.sleeping = true; paintSleep(); }
+      return;
+    }
+    if (st.sleeping) { st.sleeping = false; paintSleep(); }
     st.poll = interval();
     st.timer = window.setTimeout(poll, immediate ? 0 : st.poll);
+  }
+  function paintSleep() {
+    el.app.className = st.sleeping ? 'asleep' : '';
+    paintAge();
   }
   function poll() {
     // Two-argument then() rather than .catch/.finally — one continuation that
@@ -780,7 +807,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   }
 
   function paintPower() {
-    el.powerbar.hidden = st.power;
+    el.powerbar.className = 'powerbar' + (st.power ? '' : ' show');
     el['chip-power'].textContent = st.power ? '⏻ ON' : '⏻ OFF';
     el['chip-power'].className = 'chip ' + (st.power ? 'on' : 'off');
   }
@@ -852,13 +879,17 @@ button.chip { cursor:pointer; font-size:inherit; }
     });
   }
 
+  // A number that resets every second is noise, not information. Say LIVE while
+  // the picture is current, and only show a figure once the age is worth knowing.
   function paintAge() {
-    var secs = st.lastOk ? Math.round((Date.now() - st.lastOk) / 1000) : null;
-    el['age-val'].textContent = (secs === null) ? '—' : (secs + 's');
-    var cls = 'chip';
-    if (st.failed || (secs !== null && secs > 15)) cls += ' stale';
-    else if (st.poll >= 5000) cls += ' relax';
-    el['chip-age'].className = cls;
+    var v = el['age-val'], chip = el['chip-age'];
+    if (st.sleeping) { v.textContent = 'PAUSED'; chip.className = 'chip relax'; return; }
+    if (!st.lastOk) { v.textContent = '…'; chip.className = 'chip'; return; }
+    var secs = Math.round((Date.now() - st.lastOk) / 1000);
+    if (st.failed) { v.textContent = 'OFFLINE ' + secs + 's'; chip.className = 'chip stale'; return; }
+    if (secs > 15) { v.textContent = secs + 's'; chip.className = 'chip stale'; return; }
+    if (secs > 6) { v.textContent = secs + 's'; chip.className = 'chip relax'; return; }
+    v.textContent = 'LIVE'; chip.className = 'chip';
   }
   window.setInterval(paintAge, 1000);
 
@@ -894,6 +925,7 @@ button.chip { cursor:pointer; font-size:inherit; }
     })['catch'](function () { toast('Power switch failed'); });
   }
   el.powerbar.onclick = function () { setPower(true); };
+  el['chip-age'].onclick = function () { markTouch(); reschedule(true); };
   el['chip-power'].onclick = function () { setPower(!st.power); };
   el.clear.onclick = function () { fire(null); };
 
