@@ -101,14 +101,15 @@
 <h2>Reading the state at a glance</h2>
 <table>
   <tr><th>What you see</th><th>What it means</th></tr>
-  <tr><td><span class="chip">● LIVE</span></td><td>The picture is current.</td></tr>
-  <tr><td><span class="chip amb">● 9s</span></td><td>Last updated nine seconds ago. Normal once you have left it alone for a while.</td></tr>
-  <tr><td><span class="chip red">● OFFLINE 20s</span></td><td>Not reaching the server. Check the network.</td></tr>
+  <tr><td><span class="chip">● LIVE</span></td><td>The picture is current. The dot flashes every time an update arrives — that flicker is your proof it is still running.</td></tr>
+  <tr><td><span class="chip amb">● 9s</span></td><td>An update is overdue. You will not normally see a number here at all — if one appears and keeps climbing, something is wrong.</td></tr>
+  <tr><td><span class="chip red">● OFFLINE 20s</span></td><td>Not reaching the server at all, for that long. Check the network.</td></tr>
   <tr><td><span class="chip on">⏻ ON</span></td><td>Output is enabled and reaching vMix.</td></tr>
   <tr><td><span class="chip red">⏻ OFF</span></td><td>Nothing reaches vMix, whatever you tap.</td></tr>
   <tr><td>H·V ▸ <strong>NAME</strong></td><td>The QR that is live. Splits into two entries if the horizontal and vertical outputs differ.</td></tr>
 </table>
 <p>That name is the quickest way to know which QR is in program — faster and more certain than squinting at the output windows.</p>
+<p>The small dot is the surface's pulse. It brightens each time fresh state arrives and fades between updates, so a glance tells you the panel is still talking to the server. A dot that has stopped flickering means the picture is frozen, whatever the rest of the strip says.</p>
 
 <h3>Power off</h3>
 <figure>
@@ -165,7 +166,7 @@
 <table>
   <tr><th>Symptom</th><th>What to do</th></tr>
   <tr><td>Nothing on air in vMix</td><td>Look for the red POWER OFF banner and tap it.</td></tr>
-  <tr><td>A button will not turn red</td><td>The change did not reach the server. Check the freshness chip — if it reads OFFLINE, it is the network.</td></tr>
+  <tr><td>A button will not turn red</td><td>The change did not reach the server. Check that the dot is still flickering — if it has stopped, or the chip reads OFFLINE, it is the network.</td></tr>
   <tr><td>Screen dimmed, PAUSED showing</td><td>Normal after five minutes idle. Tap anywhere.</td></tr>
   <tr><td>No buttons, just SIGN IN</td><td>The key was not accepted, or this is a new tab. Tap it and enter the key again.</td></tr>
   <tr><td>Buttons are there but wrong</td><td>Wrong event. Check the name at top left, and reopen from the gallery.</td></tr>
