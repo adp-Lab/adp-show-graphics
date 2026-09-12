@@ -46,7 +46,9 @@ html, body {
         background:none; }
 .chip.on { border-color:var(--green); color:var(--green); }
 .chip.off { border-color:var(--red); color:var(--red); }
-.dot { font-size:.8em; margin-right:.35em; color:var(--green); }
+.dot { font-size:.8em; margin-right:.35em; color:var(--green); opacity:.3;
+       transition:opacity .55s ease; }
+@media (prefers-reduced-motion: reduce) { .dot { transition:none; } }
 .chip.relax .dot { color:var(--orange); }
 .chip.stale { border-color:var(--red); color:var(--red); }
 .chip.stale .dot { color:var(--red); }
@@ -177,7 +179,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   <div class="hdr" id="hdr">
     <span class="ev" id="ev">—</span>
     <button type="button" class="chip on" id="chip-power">&#9211; ON</button>
-    <button type="button" class="chip" id="chip-age"><span class="dot">&#9679;</span><span id="age-val">—</span></button>
+    <button type="button" class="chip" id="chip-age"><span class="dot" id="age-dot">&#9679;</span><span id="age-val">—</span></button>
     <div class="mon-name" id="name-h"><span class="ttl">H</span><span class="val none">—</span></div>
     <div class="mon-name" id="name-v"><span class="ttl">V</span><span class="val none">—</span></div>
     <button type="button" class="tune-btn" id="tune-btn" title="Adjust layout">&#8691;</button>
@@ -253,6 +255,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   ['app', 'hdr', 'hdr2', 'ev', 'chip-power', 'chip-age', 'age-val', 'name-h', 'name-v',
    'tune-btn', 'powerbar', 'mon-h', 'mon-v', 'tiles', 'clear', 'scrim', 'tune',
    'tune-range', 'tune-val', 'tune-text', 'tune-diag', 'tune-reset', 'tune-done', 'sleepnote',
+   'age-dot',
    'mag', 'login', 'lg-event', 'lg-key', 'lg-go', 'lg-err', 'toast']
     .forEach(function (id) {
       el[id] = document.getElementById(id);
@@ -382,6 +385,7 @@ button.chip { cursor:pointer; font-size:inherit; }
           st.slots[L][s] = (data[L] && data[L][s]) ? data[L][s] : null;
         });
       });
+      beat();
       paintAll();
     }, function () {
       st.failed = true;
@@ -908,6 +912,13 @@ button.chip { cursor:pointer; font-size:inherit; }
 
   // A number that resets every second is noise, not information. Say LIVE while
   // the picture is current, and only show a figure once the age is worth knowing.
+  var beatTimer = null;
+  function beat() {
+    el['age-dot'].style.opacity = '1';
+    if (beatTimer) window.clearTimeout(beatTimer);
+    beatTimer = window.setTimeout(function () { el['age-dot'].style.opacity = '0.3'; }, 170);
+  }
+
   function paintAge() {
     var v = el['age-val'], chip = el['chip-age'];
     if (st.sleeping) { v.textContent = 'PAUSED'; chip.className = 'chip relax'; return; }
