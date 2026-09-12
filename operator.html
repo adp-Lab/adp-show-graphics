@@ -78,9 +78,19 @@ button.chip { cursor:pointer; font-size:inherit; }
   border:none; font-family:inherit; text-align:center; padding:0 .6em; z-index:10; }
 .powerbar.show { display:flex; animation:pulse 1.4s ease-in-out infinite; }
 /* Asleep: the last picture is still on screen but is no longer being refreshed,
-   so it must not look live. */
-#app.asleep .mon { opacity:.30; }
-#app.asleep .tiles, #app.asleep .tile { opacity:.55; }
+   so it must not look live. The overlay is the signal — dimming alone is too
+   quiet to notice across a room — and because it covers the whole surface, the
+   tap that wakes the panel lands on it and cannot reach a layout tile. */
+#sleepnote { z-index:36; background:rgba(8,8,8,.80); display:none;
+  align-items:center; justify-content:center; cursor:pointer; text-align:center; }
+#sleepnote.show { display:flex; }
+#sleepnote .box { padding:1.2em 1.6em; border:1px solid var(--orange);
+  background:rgba(20,16,10,.96); max-width:80%; }
+#sleepnote .t { color:var(--orange); font-weight:700; letter-spacing:.08em;
+  margin-bottom:.45em; }
+#sleepnote .s { color:var(--text); line-height:1.45; }
+#sleepnote .s2 { color:var(--muted); margin-top:.7em; letter-spacing:.06em;
+  text-transform:uppercase; }
 @keyframes pulse { 50% { opacity:.45; } }
 @media (prefers-reduced-motion: reduce) { .powerbar { animation:none; } }
 
@@ -153,6 +163,8 @@ button.chip { cursor:pointer; font-size:inherit; }
 #login .go { width:100%; margin-top:16px; padding:14px; background:var(--blue);
   color:#06121f; border:none; font:inherit; font-weight:700; font-size:16px; cursor:pointer; }
 #login .err { color:var(--red); font-size:13px; margin-top:10px; min-height:1em; }
+#login .guide { display:inline-block; margin-top:14px; color:var(--blue); font-size:14px;
+  text-decoration:none; border-bottom:1px solid rgba(74,158,255,.35); padding-bottom:1px; }
 
 #toast { position:absolute; left:50%; z-index:60; background:var(--surf3);
   border:1px solid var(--border); color:var(--text); padding:.5em 1em; font-size:13px;
@@ -180,6 +192,12 @@ button.chip { cursor:pointer; font-size:inherit; }
   <div class="tiles" id="tiles"></div>
   <button type="button" class="tile clear" id="clear"><span class="nm">CLEAR ALL</span></button>
 
+  <div id="sleepnote"><div class="box">
+    <div class="t">&#9208; PAUSED</div>
+    <div class="s">Not refreshing &mdash; what you see may be out of date.</div>
+    <div class="s2">Tap anywhere to resume</div>
+  </div></div>
+
   <div id="scrim"></div>
   <div id="tune">
     <div class="lbl"><span id="tune-text">Layout</span><b id="tune-val">default</b></div>
@@ -203,6 +221,7 @@ button.chip { cursor:pointer; font-size:inherit; }
       <input type="password" id="lg-key" autocomplete="current-password">
       <button type="button" class="go" id="lg-go">Open</button>
       <div class="err" id="lg-err"></div>
+      <a class="guide" href="docs/2026-09-13-operator-view-howto.html" target="_blank" rel="noopener">First time here? Read the quick guide &rarr;</a>
     </div>
   </div>
 
@@ -233,7 +252,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   var el = {}, MISSING = [];
   ['app', 'hdr', 'hdr2', 'ev', 'chip-power', 'chip-age', 'age-val', 'name-h', 'name-v',
    'tune-btn', 'powerbar', 'mon-h', 'mon-v', 'tiles', 'clear', 'scrim', 'tune',
-   'tune-range', 'tune-val', 'tune-text', 'tune-diag', 'tune-reset', 'tune-done',
+   'tune-range', 'tune-val', 'tune-text', 'tune-diag', 'tune-reset', 'tune-done', 'sleepnote',
    'mag', 'login', 'lg-event', 'lg-key', 'lg-go', 'lg-err', 'toast']
     .forEach(function (id) {
       el[id] = document.getElementById(id);
@@ -275,9 +294,14 @@ button.chip { cursor:pointer; font-size:inherit; }
   // otherwise every tap would cost a request. The next scheduled poll picks up
   // the shorter interval on its own; an explicit action calls reschedule(true).
   function markTouch() {
-    var wasAsleep = st.sleeping;
+    if (st.sleeping) return;   // only the overlay wakes it — see wake() below
     st.lastTouch = Date.now();
-    if (wasAsleep) reschedule(true);   // first touch after a sleep wakes it at once
+  }
+  function wake() {
+    st.sleeping = false;
+    st.lastTouch = Date.now();
+    paintSleep();
+    reschedule(true);
   }
 
   function toast(msg) {
@@ -342,6 +366,7 @@ button.chip { cursor:pointer; font-size:inherit; }
   }
   function paintSleep() {
     el.app.className = st.sleeping ? 'asleep' : '';
+    el.sleepnote.className = st.sleeping ? 'show' : '';
     paintAge();
   }
   function poll() {
@@ -722,6 +747,8 @@ button.chip { cursor:pointer; font-size:inherit; }
     place(el.tiles, g.t);
     place(el.clear, g.cl);
     place(el.scrim, { x: 0, y: 0, w: m.W, h: m.H });
+    place(el.sleepnote, { x: 0, y: 0, w: m.W, h: m.H });
+    el.sleepnote.style.fontSize = Math.max(12, Math.round(m.unit * 0.46)) + 'px';
 
     el.powerbar.style.left = m.PAD + 'px';
     el.powerbar.style.top = Math.round(m.top - m.GAP / 2) + 'px';
@@ -926,6 +953,10 @@ button.chip { cursor:pointer; font-size:inherit; }
   }
   el.powerbar.onclick = function () { setPower(true); };
   el['chip-age'].onclick = function () { markTouch(); reschedule(true); };
+  el.sleepnote.onclick = function (e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    wake();
+  };
   el['chip-power'].onclick = function () { setPower(!st.power); };
   el.clear.onclick = function () { fire(null); };
 
