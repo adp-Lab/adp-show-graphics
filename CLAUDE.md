@@ -3,11 +3,12 @@
 Browser-source graphics tool for live vMix shows. Operator panel + Cloudflare Worker backend.
 
 ## Stack
-- **Frontend:** Single-file gallery (`gallery.html`) — no build step, deployed via GitHub Pages
+- **Frontend:** Single-file gallery (`gallery.html`) plus `operator.html` — no build step, deployed via GitHub Pages
 - **Backend:** Cloudflare Worker (`worker/index.js`) — R2 for live state + images, KV for gallery metadata
 - **Output pages:** `bug-h.html`, `bug-v.html`, `graphic-h.html`, `graphic-v.html` — loaded as browser sources in vMix
 - **Deploy worker:** commit + push to main — GitHub Actions deploys (wrangler.toml is at root, not in worker/)
 - **Gallery URL:** https://adp-lab.github.io/adp-show-graphics/gallery.html
+- **Operator URL:** https://adp-lab.github.io/adp-show-graphics/operator.html?event=officehours
 - **Worker URL:** https://adp-show-graphics.mohn-edgar.workers.dev
 - **CF account:** [redacted]
 
@@ -48,6 +49,10 @@ Never put time-critical state in KV — cross-region propagation takes up to 60s
 - Bump `VERSION` in `worker/index.js` whenever Worker behaviour changes
 - **Output pages (`bug-*.html`, `graphic-*.html`) are SEPARATE documents** loaded directly as vMix browser sources. They must NEVER depend on the gallery's polling/visibility/pause logic. The gallery's free-tier savers (visibility-pause, idle-pause, slowed status loop) only touch `gallery.html`'s own polling — on-air must keep updating @1.5s regardless of any gallery state. Don't couple them. (The one exception, added deliberately in v4.3: they DO read the server-side `power` flag from `/active` and slow to ~30s while off — this is independent of the gallery, driven by explicit Companion/gallery trigger calls, not gallery visibility/idle state. Don't conflate the two.)
 - **State-indicator colours** (slot-button tally, layout cards, SEND LIVE) use `--green`/`--red` consistently — match these, don't introduce `--live` or new tones for live/preview state.
+- **Verify front-end changes by running them**, not by reading them. The verification
+  harness for `operator.html` is rebuilt per session (pattern in the 2026-09-13 handoff on
+  Maggie) — and **every detector needs a positive control that breaks it on purpose**.
+  Two "clean" results during that build came from checks that had gone blind.
 
 ## Companion integration
 See `docs/companion-cheatsheet.md` for trigger URL reference.
@@ -64,6 +69,37 @@ See `docs/companion-cheatsheet.md` for trigger URL reference.
 - Chad's preferred button layout (2026-07-26): keep the vMix Bug-overlay button as-is,
   separate from 4 buttons that each set which QR is active — i.e. "Pattern 1" in the
   cheatsheet. Treat that as the primary recommendation.
+
+## Operator view — `operator.html` (v4.4, 2026-09-13)
+Reduced touch surface for iPad/phone/Fold: recall a saved layout in one tap, plus both
+live QR outputs at true 16:9 / 9:16. Linked from the gallery header. Crew guide at
+`docs/2026-09-13-operator-view-howto.html`. Design record lives on Maggie at
+`Maggie/docs/superpowers/specs/2026-09-13-operator-view-design.md`.
+
+- Driven by **one public `GET /status` poll** — deliberately NOT iframes of the output
+  pages. That is the ~4× request saving (≈4.3k vs ≈19.2k for a 3h two-operator show).
+  Adaptive 1s/2s/5s, stops entirely when hidden or after 5 min idle (PAUSED overlay).
+- **The monitors replicate `graphic-h.html`'s FULL transform, not just its contain-fit.**
+  Position comes from the slot's `x/y/scale/rotate/fit`, never from the image — the same
+  PNG sits in both slots at different positions. Applying only the fit puts every
+  positioned graphic in the wrong place *while looking plausible*. Keep `applySlot()` in
+  `operator.html` in sync with `bug-h.html`'s render block; both carry a cross-reference
+  comment.
+- Layout is computed in JS from the viewport — no CSS breakpoints, no `aspect-ratio`, no
+  `inset`, no flexbox `gap`, ES5 syntax (older iPads stay in scope). Three arrangements
+  scored at neutral balance with 6% hysteresis.
+- Visibility of the power banner is driven by a **class, not the `hidden` attribute** —
+  author `display` beats the UA `[hidden]` rule and the banner showed permanently.
+- Button/CLEAR type is sized with canvas `measureText`, not estimated character widths.
+
+## `exclusive=` on the layout trigger (v4.4)
+`/trigger?action=layout&layout=ID&live=true&exclusive=bugs|graphics|all` — which layers the
+recall may CLEAR. Saved layouts store `null` for slots that were empty when saved, and the
+trigger path skipped them (while `gallery.html`'s own `recallLayout` always cleared them),
+so residue from an earlier recall stayed on air underneath. Scoped so a one-tap QR recall
+from `operator.html` can never wipe a graphic the gallery operator put up. **Omitting the
+parameter preserves the previous behaviour exactly** — existing Companion buttons are
+unaffected.
 
 ## Power switch (v4.3)
 Free-tier safety net: a single forgotten output-page tab (anywhere, not just vMix)
